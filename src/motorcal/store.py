@@ -395,6 +395,10 @@ def backup_database(source_path: Path, dest_path: Path) -> None:
     requires the destination to be empty or a valid SQLite file — writing
     over pre-existing non-SQLite bytes raises "file is not a database".
     """
+    source_path = Path(source_path)
+    if not source_path.exists():
+        raise FileNotFoundError(f"Source database not found: {source_path}")
+
     for path in (dest_path, Path(f"{dest_path}-wal"), Path(f"{dest_path}-shm")):
         if path.exists():
             path.unlink()

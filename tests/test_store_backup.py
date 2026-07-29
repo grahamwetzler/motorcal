@@ -1,4 +1,4 @@
-from pathlib import Path
+import pytest
 
 from motorcal.store import (
     backup_database,
@@ -58,3 +58,8 @@ def test_backup_database_overwrites_existing_destination(tmp_path):
 
     backup_conn = connect(dest_path)
     assert check_integrity(backup_conn) is True
+
+
+def test_backup_database_raises_on_missing_source(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        backup_database(tmp_path / "does-not-exist.db", tmp_path / "backup.db")

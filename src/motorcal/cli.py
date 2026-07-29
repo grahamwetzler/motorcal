@@ -22,10 +22,14 @@ def _cmd_backup(args: argparse.Namespace) -> int:
     db_path = Path(args.db)
     dest_path = Path(args.dest)
 
+    if not db_path.exists():
+        print(f"Source database not found: {db_path}", file=sys.stderr)
+        return 1
+
     try:
         conn = connect(db_path)
-    except sqlite3.DatabaseError:
-        print(f"Refusing to back up {db_path}: integrity check failed", file=sys.stderr)
+    except sqlite3.DatabaseError as err:
+        print(f"Refusing to back up {db_path}: could not open database ({err})", file=sys.stderr)
         return 1
 
     integrity_ok = check_integrity(conn)

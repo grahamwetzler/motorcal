@@ -44,6 +44,30 @@ def test_backup_command_refuses_to_back_up_corrupt_database(tmp_path, capsys):
     assert captured.err != ""
 
 
+def test_backup_command_reports_missing_source(tmp_path, capsys):
+    exit_code = main(["backup", "--db", str(tmp_path / "missing.db"), "--dest", str(tmp_path / "backup.db")])
+    assert exit_code == 1
+    assert not (tmp_path / "backup.db").exists()
+    captured = capsys.readouterr()
+    assert captured.err != ""
+
+
+def test_backup_command_handles_header_corruption_without_crashing(tmp_path, capsys):
+    db_path = tmp_path / "corrupt.db"
+    dest_path = tmp_path / "backup.db"
+    main(["init-db", "--db", str(db_path)])
+
+    with open(db_path, "r+b") as f:
+        f.seek(0)
+        f.write(b"\xff" * 50)  # corrupt the file header itself, not just page data
+
+    exit_code = main(["backup", "--db", str(db_path), "--dest", str(dest_path)])
+    assert exit_code == 1
+    assert not dest_path.exists()
+    captured = capsys.readouterr()
+    assert captured.err != ""
+
+
 def test_main_with_no_subcommand_returns_1(capsys):
     exit_code = main([])
     assert exit_code == 1
