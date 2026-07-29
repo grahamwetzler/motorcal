@@ -2,9 +2,10 @@ from pathlib import Path
 
 import pytest
 
-from motorcal.config import ConfigError, load_config, parse_duration
+from motorcal.config import ConfigError, load_config, parse_alarm_offset, parse_duration
 
-EXAMPLE_CONFIG = Path("config/config.example.yaml")
+REPO_ROOT = Path(__file__).resolve().parent.parent
+EXAMPLE_CONFIG = REPO_ROOT / "config" / "config.example.yaml"
 
 
 def test_parse_duration_hours():
@@ -39,7 +40,7 @@ def test_load_example_config_succeeds():
 
 def test_load_config_missing_file_raises_config_error():
     with pytest.raises(ConfigError):
-        load_config(Path("config/does-not-exist.yaml"))
+        load_config(REPO_ROOT / "config" / "does-not-exist.yaml")
 
 
 def test_load_config_rejects_unknown_session_in_include_sessions(tmp_path):
@@ -71,3 +72,28 @@ def test_load_config_rejects_bad_alarm_offset(tmp_path):
     )
     with pytest.raises(ConfigError):
         load_config(bad)
+
+
+def test_load_config_rejects_unknown_top_level_key(tmp_path):
+    bad = tmp_path / "bad.yaml"
+    bad.write_text(EXAMPLE_CONFIG.read_text() + "\nnot_a_real_top_level_key: true\n")
+    with pytest.raises(ConfigError):
+        load_config(bad)
+
+
+def test_parse_alarm_offset_days():
+    assert parse_alarm_offset("-1d") == -86400
+
+
+def test_parse_alarm_offset_minutes():
+    assert parse_alarm_offset("-30m") == -1800
+
+
+def test_parse_duration_rejects_zero_hours():
+    with pytest.raises(ConfigError):
+        parse_duration("0h")
+
+
+def test_parse_alarm_offset_rejects_zero_minutes():
+    with pytest.raises(ConfigError):
+        parse_alarm_offset("-0m")

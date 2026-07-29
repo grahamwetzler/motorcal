@@ -6,17 +6,31 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, ValidationError, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, ValidationError, field_validator, model_validator
 
-from motorcal.models import SessionType
+from motorcal.models import EventStatus, SessionType
 
-_DURATION_RE = re.compile(r"^(\d+)(h|m)$")
-_ALARM_OFFSET_RE = re.compile(r"^-\d+[dhm]$")
+_DURATION_RE = re.compile(r"^([1-9]\d*)(h|m)$")
+_ALARM_OFFSET_RE = re.compile(r"^-[1-9]\d*[dhm]$")
 _VALID_SESSION_NAMES = {member.value for member in SessionType}
+_VALID_STATUS_NAMES = {member.value for member in EventStatus}
 
 
 class ConfigError(Exception):
     """Raised for any invalid or unreadable configuration."""
+
+
+class _StrictModel(BaseModel):
+    """Base class for all config/overrides models: rejects unknown keys."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+def _validate_duration_string(value: str | None) -> str | None:
+    """Shared field-validator body for duration-string fields."""
+    if value is not None and not _DURATION_RE.match(value):
+        raise ValueError(f"Invalid duration string: {value!r}")
+    return value
 
 
 def parse_duration(value: str) -> int:
@@ -29,23 +43,59 @@ def parse_duration(value: str) -> int:
     return amount * 3600 if unit == "h" else amount * 60
 
 
-class ServerConfig(BaseModel):
+def parse_alarm_offset(value: str) -> int:
+    """Parse an alarm-offset string like '-1d' or '-30m' into whole seconds (negative)."""
+    match = _ALARM_OFFSET_RE.match(value)
+    if not match:
+        raise ConfigError(
+            f"Invalid alarm offset: {value!r} (expected e.g. '-1d', '-30m', '-15m')"
+        )
+    amount = int(value[1:-1])
+    unit = value[-1]
+    if unit == "d":
+        seconds = amount * 86400
+    elif unit == "h":
+        seconds = amount * 3600
+    else:
+        seconds = amount * 60
+    return -seconds
+
+
+def _load_yaml_mapping(path: Path, kind: str) -> Any:
+    """Read, parse, and mapping-check a YAML file, wrapping all failures in ConfigError."""
+    try:
+        raw_text = Path(path).read_text()
+    except OSError as exc:
+        raise ConfigError(f"Could not read {kind} file {path}: {exc}") from exc
+
+    try:
+        raw: Any = yaml.safe_load(raw_text)
+    except yaml.YAMLError as exc:
+        raise ConfigError(f"Invalid YAML in {path}: {exc}") from exc
+
+    if not isinstance(raw, dict):
+        raise ConfigError(f"{kind.capitalize()} file {path} did not parse to a mapping")
+
+    return raw
+
+
+class ServerConfig(_StrictModel):
     base_url: str
     uid_domain: str
 
 
-class SourceSettings(BaseModel):
+class SourceSettings(_StrictModel):
     rate_limit_per_min: int = 28
     refresh_cron: str
     next_season_from: str = "10-01"
 
 
-class RetentionConfig(BaseModel):
+class RetentionConfig(_StrictModel):
     historical_days: int = 180
     cancelled_after_event_days: int = 90
 
 
-class DurationDefaults(BaseModel):
+class DurationDefaults(_StrictModel):
     practice: str | None = None
     qualifying: str | None = None
     hyperpole: str | None = None
@@ -58,17 +108,24 @@ class DurationDefaults(BaseModel):
     )
     @classmethod
     def validate_duration_format(cls, value: str | None) -> str | None:
-        if value is not None and not _DURATION_RE.match(value):
-            raise ValueError(f"Invalid duration string: {value!r}")
-        return value
+        return _validate_duration_string(value)
 
 
-class UnknownTimeConfig(BaseModel):
+class UnknownTimeConfig(_StrictModel):
     mode: str = "all_day"
     summary_suffix: str = " (time TBC)"
 
+    @field_validator("mode")
+    @classmethod
+    def validate_mode(cls, value: str) -> str:
+        if value != "all_day":
+            raise ValueError(
+                f"Invalid unknown_time.mode: {value!r} (only 'all_day' is currently supported)"
+            )
+        return value
 
-class DefaultsConfig(BaseModel):
+
+class DefaultsConfig(_StrictModel):
     durations: DurationDefaults
     alerts: dict[str, list[str]]
     include_sessions: list[str]
@@ -97,14 +154,14 @@ class DefaultsConfig(BaseModel):
         return value
 
 
-class SeriesConfig(BaseModel):
+class SeriesConfig(_StrictModel):
     league_id: int
     name: str
     max_round: int
     race_only: bool = False
 
 
-class RootConfig(BaseModel):
+class RootConfig(_StrictModel):
     server: ServerConfig
     source: SourceSettings
     retention: RetentionConfig
@@ -116,32 +173,20 @@ class RootConfig(BaseModel):
 
 def load_config(path: Path) -> RootConfig:
     """Load and validate a config.yaml bundle. Raises ConfigError on any failure."""
-    try:
-        raw_text = Path(path).read_text()
-    except OSError as exc:
-        raise ConfigError(f"Could not read config file {path}: {exc}") from exc
-
-    try:
-        raw: Any = yaml.safe_load(raw_text)
-    except yaml.YAMLError as exc:
-        raise ConfigError(f"Invalid YAML in {path}: {exc}") from exc
-
-    if not isinstance(raw, dict):
-        raise ConfigError(f"Config file {path} did not parse to a mapping")
-
+    raw = _load_yaml_mapping(path, "config")
     try:
         return RootConfig.model_validate(raw)
     except ValidationError as exc:
         raise ConfigError(f"Invalid configuration in {path}: {exc}") from exc
 
 
-class PatchMatcher(BaseModel):
+class PatchMatcher(_StrictModel):
     series: str
     date: str
     contains: str
 
 
-class PatchConfig(BaseModel):
+class PatchConfig(_StrictModel):
     id_event: str | None = None
     match: PatchMatcher | None = None
     start: str | None = None
@@ -155,8 +200,13 @@ class PatchConfig(BaseModel):
     @field_validator("duration")
     @classmethod
     def validate_duration_format(cls, value: str | None) -> str | None:
-        if value is not None and not _DURATION_RE.match(value):
-            raise ValueError(f"Invalid duration string: {value!r}")
+        return _validate_duration_string(value)
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value: str | None) -> str | None:
+        if value is not None and value not in _VALID_STATUS_NAMES:
+            raise ValueError(f"Invalid status: {value!r} (expected one of {sorted(_VALID_STATUS_NAMES)})")
         return value
 
     @model_validator(mode="after")
@@ -166,7 +216,7 @@ class PatchConfig(BaseModel):
         return self
 
 
-class SyntheticEventConfig(BaseModel):
+class SyntheticEventConfig(_StrictModel):
     uid: str
     series: str
     summary: str
@@ -181,8 +231,13 @@ class SyntheticEventConfig(BaseModel):
     @field_validator("duration")
     @classmethod
     def validate_duration_format(cls, value: str | None) -> str | None:
-        if value is not None and not _DURATION_RE.match(value):
-            raise ValueError(f"Invalid duration string: {value!r}")
+        return _validate_duration_string(value)
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value: str | None) -> str | None:
+        if value is not None and value not in _VALID_STATUS_NAMES:
+            raise ValueError(f"Invalid status: {value!r} (expected one of {sorted(_VALID_STATUS_NAMES)})")
         return value
 
     @field_validator("alarms")
@@ -200,26 +255,14 @@ class SyntheticEventConfig(BaseModel):
         return self
 
 
-class OverridesConfig(BaseModel):
+class OverridesConfig(_StrictModel):
     patches: list[PatchConfig] = []
     events: list[SyntheticEventConfig] = []
 
 
 def load_overrides(path: Path) -> OverridesConfig:
     """Load and validate an overrides.yaml bundle. Raises ConfigError on any failure."""
-    try:
-        raw_text = Path(path).read_text()
-    except OSError as exc:
-        raise ConfigError(f"Could not read overrides file {path}: {exc}") from exc
-
-    try:
-        raw: Any = yaml.safe_load(raw_text)
-    except yaml.YAMLError as exc:
-        raise ConfigError(f"Invalid YAML in {path}: {exc}") from exc
-
-    if not isinstance(raw, dict):
-        raise ConfigError(f"Overrides file {path} did not parse to a mapping")
-
+    raw = _load_yaml_mapping(path, "overrides")
     try:
         return OverridesConfig.model_validate(raw)
     except ValidationError as exc:

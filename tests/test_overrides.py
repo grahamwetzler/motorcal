@@ -4,7 +4,8 @@ import pytest
 
 from motorcal.config import ConfigError, load_overrides
 
-EXAMPLE_OVERRIDES = Path("config/overrides.example.yaml")
+REPO_ROOT = Path(__file__).resolve().parent.parent
+EXAMPLE_OVERRIDES = REPO_ROOT / "config" / "overrides.example.yaml"
 
 
 def test_load_example_overrides_succeeds():
@@ -105,4 +106,49 @@ events:
 
 def test_load_overrides_missing_file_raises_config_error():
     with pytest.raises(ConfigError):
-        load_overrides(Path("config/does-not-exist-overrides.yaml"))
+        load_overrides(REPO_ROOT / "config" / "does-not-exist-overrides.yaml")
+
+
+def test_patch_rejects_unknown_key(tmp_path):
+    bad = tmp_path / "bad.yaml"
+    bad.write_text(
+        """
+patches:
+  - id_event: "123"
+    not_a_real_key: "oops"
+events: []
+"""
+    )
+    with pytest.raises(ConfigError):
+        load_overrides(bad)
+
+
+def test_patch_rejects_invalid_status(tmp_path):
+    bad = tmp_path / "bad.yaml"
+    bad.write_text(
+        """
+patches:
+  - id_event: "123"
+    status: cancelled
+events: []
+"""
+    )
+    with pytest.raises(ConfigError):
+        load_overrides(bad)
+
+
+def test_synthetic_event_rejects_invalid_status(tmp_path):
+    bad = tmp_path / "bad.yaml"
+    bad.write_text(
+        """
+patches: []
+events:
+  - uid: "imsa-2026-rolex-24"
+    series: imsa
+    summary: "Rolex 24 at Daytona"
+    start: "2026-01-25T18:40:00Z"
+    status: not_a_real_status
+"""
+    )
+    with pytest.raises(ConfigError):
+        load_overrides(bad)
