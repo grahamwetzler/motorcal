@@ -18,6 +18,21 @@ def test_connect_enables_wal_mode(tmp_path):
     assert mode.lower() == "wal"
 
 
+def test_connect_raises_if_wal_unavailable():
+    with pytest.raises(RuntimeError):
+        connect(":memory:")  # in-memory databases cannot use WAL
+
+
+def test_wal_mode_persists_across_reconnect(tmp_path):
+    db_path = tmp_path / "test.db"
+    conn1 = connect(db_path)
+    init_schema(conn1)
+    conn1.close()
+    conn2 = connect(db_path)
+    mode = conn2.execute("PRAGMA journal_mode").fetchone()[0]
+    assert mode.lower() == "wal"
+
+
 def test_init_schema_sets_user_version(tmp_path):
     conn = _fresh_conn(tmp_path)
     version = conn.execute("PRAGMA user_version").fetchone()[0]

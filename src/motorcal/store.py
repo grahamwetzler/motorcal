@@ -118,7 +118,12 @@ def connect(db_path: Path) -> sqlite3.Connection:
     """Open a database connection in autocommit mode with WAL and foreign keys enabled."""
     conn = sqlite3.connect(db_path, isolation_level=None, timeout=30)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
+    mode = conn.execute("PRAGMA journal_mode=WAL").fetchone()[0]
+    if mode.lower() != "wal":
+        raise RuntimeError(f"WAL mode unavailable for {db_path} (got {mode!r})")
+    # No FOREIGN KEY constraints are declared: published_events must be able to
+    # outlive its source_events/synthetic_events row (retention/tombstones).
+    # This pragma is enabled for forward-compatibility if a later phase adds one.
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
