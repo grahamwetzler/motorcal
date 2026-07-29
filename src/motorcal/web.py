@@ -4,12 +4,14 @@ from __future__ import annotations
 import secrets
 import sqlite3
 from datetime import datetime, timezone
+from email.utils import format_datetime
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse, Response
 
 from motorcal.config import RootConfig
+from motorcal.ics import render_calendar_bytes, sync_feed_revision
 from motorcal.store import (
     check_integrity,
     connect,
@@ -84,5 +86,38 @@ def create_app(db_path: Path, root_config: RootConfig, tokens: list[str]) -> Fas
         all_healthy = all(not v["stale"] for v in series_health.values())
         body = {"healthy": all_healthy, "series": series_health}
         return JSONResponse(content=body, status_code=200 if all_healthy else 503)
+
+    @app.get("/c/{token}/{series}.ics")
+    def get_calendar(token: str, series: str, request: Request):
+        if not verify_token(token, app.state.tokens):
+            raise HTTPException(status_code=404)
+        if series not in app.state.root_config.series:
+            raise HTTPException(status_code=404)
+
+        conn = connect(app.state.db_path)
+        try:
+            rows = list_published_events_by_series(conn, series)
+            if not rows:
+                raise HTTPException(status_code=503, detail="no usable stored events for this series")
+
+            series_config = app.state.root_config.series[series]
+            ics_bytes = render_calendar_bytes(conn, series, series_config)
+            now_iso = datetime.now(timezone.utc).isoformat()
+            revision = sync_feed_revision(conn, series, ics_bytes, now_iso)
+        finally:
+            conn.close()
+
+        etag = f'"{revision.revision}"'
+        last_modified = format_datetime(datetime.fromisoformat(revision.updated_at), usegmt=True)
+        headers = {
+            "Cache-Control": "private, no-cache",
+            "ETag": etag,
+            "Last-Modified": last_modified,
+        }
+
+        if request.headers.get("if-none-match") == etag:
+            return Response(status_code=304, headers=headers)
+
+        return Response(content=ics_bytes, media_type="text/calendar", headers=headers)
 
     return app
