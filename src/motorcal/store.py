@@ -11,7 +11,7 @@ from pathlib import Path
 
 from motorcal.providers.thesportsdb import SnapshotResult
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 _MIGRATIONS: dict[int, list[str]] = {
     1: [
@@ -125,6 +125,14 @@ _MIGRATIONS: dict[int, list[str]] = {
             events_published INTEGER NOT NULL,
             events_cancelled INTEGER NOT NULL,
             events_pruned INTEGER NOT NULL
+        )
+        """,
+    ],
+    3: [
+        """
+        CREATE TABLE IF NOT EXISTS service_identity (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            uid_domain TEXT NOT NULL
         )
         """,
     ],
@@ -681,6 +689,26 @@ def upsert_refresh_diagnostics(
         (updated_at, patch_errors_json, unknown_events_json,
          events_published, events_cancelled, events_pruned),
     )
+
+
+def get_bound_uid_domain(conn: sqlite3.Connection) -> str | None:
+    """The uid_domain this database's published events are keyed under, if any."""
+    row = conn.execute("SELECT uid_domain FROM service_identity WHERE id = 1").fetchone()
+    return row["uid_domain"] if row is not None else None
+
+
+def bind_uid_domain(conn: sqlite3.Connection, uid_domain: str) -> None:
+    """Record the uid_domain this (previously unbound) database is now keyed under.
+
+    Insert-only by design: once bound, changing it must go through an explicit,
+    deliberate migration rather than a plain upsert, since every published UID
+    is keyed on this value.
+    """
+    with transaction(conn):
+        conn.execute(
+            "INSERT OR IGNORE INTO service_identity (id, uid_domain) VALUES (1, ?)",
+            (uid_domain,),
+        )
 
 
 def force_advance_all_sequences(

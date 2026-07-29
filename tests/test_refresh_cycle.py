@@ -7,6 +7,7 @@ from motorcal.config import (
     DefaultsConfig,
     DurationDefaults,
     OverridesConfig,
+    PatchConfig,
     RetentionConfig,
     RootConfig,
     SeriesConfig,
@@ -169,3 +170,53 @@ def test_refresh_cycle_fetches_next_season_after_cutoff(tmp_path, monkeypatch):
     )
 
     assert set(result.series_season_outcomes["wec"].keys()) == {"2026", "2027"}
+
+
+def test_refresh_cycle_rolls_back_ingest_when_a_patch_fails_to_match(tmp_path, monkeypatch):
+    _patched_client(monkeypatch)
+    conn = _fresh_conn(tmp_path)
+    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    overrides = OverridesConfig(patches=[PatchConfig(id_event="does-not-exist")])
+
+    result = run_refresh_cycle(
+        conn, root_config=_root_config(), overrides=overrides, api_key="3",
+        uid_domain=UID_DOMAIN, lease_holder="worker-a", lease_ttl_seconds=300, now=now,
+    )
+
+    assert result.series_season_outcomes["wec"]["2026"] == "patch_error_blocked"
+    # The whole transaction rolled back -- the freshly scanned source event too, not
+    # just the publication -- so a crash can never leave new source paired with old
+    # publication just because an unrelated patch is broken.
+    assert get_source_event(conn, "thesportsdb", "2421035") is None
+    assert get_published_event(conn, source_uid("2421035", UID_DOMAIN)) is None
+
+    diagnostics = get_refresh_diagnostics(conn)
+    assert diagnostics is not None
+    assert json.loads(diagnostics["patch_errors_json"])[0]["reason"] == "no_match"
+
+
+def test_refresh_cycle_stops_committing_once_the_lease_is_lost_mid_cycle(tmp_path, monkeypatch):
+    _patched_client(monkeypatch)
+    conn = _fresh_conn(tmp_path)
+    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+    # Simulate a scan that ran long enough (retries/backoff) to blow past a 1-second
+    # lease TTL: the cycle's first time.monotonic() call anchors the start, the
+    # second (checked right before the first write) reports 1000s of elapsed time.
+    calls = {"n": 0}
+
+    def fake_monotonic():
+        calls["n"] += 1
+        return 0.0 if calls["n"] == 1 else 1000.0
+
+    monkeypatch.setattr("time.monotonic", fake_monotonic)
+
+    result = run_refresh_cycle(
+        conn, root_config=_root_config(), overrides=OverridesConfig(), api_key="3",
+        uid_domain=UID_DOMAIN, lease_holder="worker-a", lease_ttl_seconds=1, now=now,
+    )
+
+    assert result.lease_acquired is True
+    assert result.lease_lost is True
+    assert result.series_season_outcomes["wec"] == {}  # broke out before committing anything
+    assert get_source_event(conn, "thesportsdb", "2421035") is None

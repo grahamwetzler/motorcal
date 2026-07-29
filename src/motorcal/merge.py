@@ -379,7 +379,8 @@ def build_published_event_from_synthetic(
     location: str | None,
     note: str | None,
     alarms: list[str],
-    is_cancelled: bool,
+    configured_status: str,
+    is_removed: bool,
     uid_domain: str,
     root_config: RootConfig,
     previous: PreviousPublishedState | None,
@@ -395,7 +396,9 @@ def build_published_event_from_synthetic(
         start_dt = None
         all_day_date = date
 
-    status = EventStatus.CANCELLED if is_cancelled else EventStatus.CONFIRMED
+    # Removal from config is a sticky cancellation regardless of the last configured
+    # status; otherwise the configured status (CONFIRMED/TENTATIVE/CANCELLED) applies.
+    status = EventStatus.CANCELLED if is_removed else EventStatus(configured_status)
 
     description = build_description(
         venue=None, country=None, round_number=None, race_only=False,
@@ -450,6 +453,26 @@ class RebuildReport:
     unknown_events: list[str]
 
 
+class PublicationBlockedError(Exception):
+    """Raised by rebuild_publication when any patch fails to match exactly one
+    source event, before any write is attempted.
+
+    Every patch must match exactly one source event; zero or multiple matches
+    must leave the previously valid published configuration entirely active --
+    not just the affected event, the whole rebuild. Raising (rather than
+    returning a report) lets the caller's enclosing transaction() roll back in
+    full, including any source ingestion staged alongside this rebuild, so a
+    crash can never leave new source state paired with an old publication.
+    """
+
+    def __init__(self, patch_errors: list[PatchMatchError], unknown_events: list[str]):
+        self.patch_errors = patch_errors
+        self.unknown_events = unknown_events
+        super().__init__(
+            f"{len(patch_errors)} patch(es) failed to match exactly one source event"
+        )
+
+
 def _row_to_source_event(row: sqlite3.Row) -> SourceEvent:
     return SourceEvent(
         key=SourceEventKey(provider=row["provider"], id_event=row["id_event"]),
@@ -495,6 +518,14 @@ def rebuild_publication(
     source_rows = list_all_source_events(conn)
     source_events = [_row_to_source_event(row) for row in source_rows]
     matches, patch_errors = match_all_patches(overrides.patches, source_events)
+
+    if patch_errors:
+        unknown_events = [
+            source_uid(e.key.id_event, uid_domain) for e in source_events
+            if classify_event(e.series, e.name, e.round) == SessionType.UNKNOWN
+        ]
+        raise PublicationBlockedError(patch_errors, unknown_events)
+
     patch_by_id_event = {m.source_event.key.id_event: m.patch for m in matches}
 
     events_published = 0
@@ -529,7 +560,8 @@ def rebuild_publication(
             event = build_published_event_from_synthetic(
                 uid=row["uid"], series=row["series"], summary=row["summary"], start=row["start"],
                 date=row["date"], duration_seconds=row["duration_seconds"], location=row["location"],
-                note=row["note"], alarms=alarms, is_cancelled=row["cancelled_at"] is not None,
+                note=row["note"], alarms=alarms, configured_status=row["status"],
+                is_removed=row["cancelled_at"] is not None,
                 uid_domain=uid_domain, root_config=root_config,
                 previous=_previous_state(previous_row), now=now,
             )

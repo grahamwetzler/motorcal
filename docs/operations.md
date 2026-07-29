@@ -80,10 +80,31 @@ startup or on its periodic hot-reload check, but never opens the database and ne
 affects a running server. A nonzero exit code means the files are invalid — do not
 restart/reload with them until this passes. Note that the running app's own hot-reload
 poller performs the same validation automatically on every config file change and
-silently keeps the previous configuration active if validation fails (see
+keeps the previous configuration active if validation fails (see
 `src/motorcal/refresh.py`'s `check_and_reload_config`) — running `validate-config`
 by hand ahead of time is a convenience for catching mistakes before they're written
 to the live config files at all, not the only safety net.
+
+`server.uid_domain` cannot be changed at all without an explicit migration: since
+it's baked into every event's stable ICS `UID`, applying a new one would republish
+every event under a fresh UID and duplicate the entire calendar in subscribers'
+clients. This is enforced twice:
+
+- The hot-reload poller rejects any reload that changes it, logs a warning, and
+  keeps the previous bundle active.
+- On startup, `motorcal serve` compares `config.yaml`'s `uid_domain` against the
+  one bound to the database on its first run (stored in the `service_identity`
+  table) and refuses to start at all — even after a full restart — if they differ.
+
+To actually change `uid_domain`, back up the database (see above), then either:
+
+- start from a fresh database file (`motorcal init-db --db <new-path>`) and accept
+  that subscribers must re-add the calendar URL, since every event gets a new UID
+  and old calendar apps will otherwise show duplicates alongside the new entries; or
+- if you specifically need to keep the existing database, delete its `service_identity`
+  row (`sqlite3 /data/motorcal.db "DELETE FROM service_identity"`) after weighing
+  that every existing subscriber's calendar app will show duplicate entries for
+  every still-retained event until they expire under the normal retention window.
 
 ## Resolving unmatched patches and classifications
 

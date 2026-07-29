@@ -81,6 +81,17 @@ def test_load_config_rejects_unknown_top_level_key(tmp_path):
         load_config(bad)
 
 
+def test_load_config_rejects_malformed_refresh_cron(tmp_path):
+    bad = tmp_path / "bad.yaml"
+    bad.write_text(
+        EXAMPLE_CONFIG.read_text().replace(
+            'refresh_cron: "17 */6 * * *"', 'refresh_cron: "not a cron expression"'
+        )
+    )
+    with pytest.raises(ConfigError):
+        load_config(bad)
+
+
 def test_parse_alarm_offset_days():
     assert parse_alarm_offset("-1d") == -86400
 

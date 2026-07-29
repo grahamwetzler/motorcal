@@ -348,7 +348,8 @@ def test_synthetic_event_uses_local_uid_format_and_own_alarms():
         location=None,
         note="official IMSA timetable",
         alarms=["-1d", "-30m"],
-        is_cancelled=False,
+        configured_status="CONFIRMED",
+        is_removed=False,
         uid_domain="x.example.com",
         root_config=_root_config(),
         previous=None,
@@ -362,7 +363,7 @@ def test_synthetic_event_uses_local_uid_format_and_own_alarms():
     assert event.source_id_event is None
 
 
-def test_synthetic_event_cancelled_flag_produces_cancelled_status():
+def test_synthetic_event_removed_from_config_produces_cancelled_status():
     event = build_published_event_from_synthetic(
         uid="imsa-2026-rolex-24",
         series="imsa",
@@ -373,7 +374,50 @@ def test_synthetic_event_cancelled_flag_produces_cancelled_status():
         location=None,
         note=None,
         alarms=[],
-        is_cancelled=True,
+        configured_status="CONFIRMED",
+        is_removed=True,
+        uid_domain="x.example.com",
+        root_config=_root_config(),
+        previous=None,
+        now=NOW,
+    )
+    assert event.status is EventStatus.CANCELLED
+
+
+def test_synthetic_event_honors_configured_tentative_status():
+    event = build_published_event_from_synthetic(
+        uid="imsa-2026-rolex-24",
+        series="imsa",
+        summary="Rolex 24 at Daytona",
+        start="2026-01-25T18:40:00Z",
+        date=None,
+        duration_seconds=24 * 3600,
+        location=None,
+        note=None,
+        alarms=[],
+        configured_status="TENTATIVE",
+        is_removed=False,
+        uid_domain="x.example.com",
+        root_config=_root_config(),
+        previous=None,
+        now=NOW,
+    )
+    assert event.status is EventStatus.TENTATIVE
+
+
+def test_synthetic_event_honors_configured_cancelled_status_while_still_present():
+    event = build_published_event_from_synthetic(
+        uid="imsa-2026-rolex-24",
+        series="imsa",
+        summary="Rolex 24 at Daytona",
+        start="2026-01-25T18:40:00Z",
+        date=None,
+        duration_seconds=24 * 3600,
+        location=None,
+        note=None,
+        alarms=[],
+        configured_status="CANCELLED",
+        is_removed=False,
         uid_domain="x.example.com",
         root_config=_root_config(),
         previous=None,
@@ -393,7 +437,8 @@ def test_synthetic_event_with_date_only_is_all_day():
         location=None,
         note=None,
         alarms=[],
-        is_cancelled=False,
+        configured_status="CONFIRMED",
+        is_removed=False,
         uid_domain="x.example.com",
         root_config=_root_config(),
         previous=None,

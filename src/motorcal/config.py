@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from apscheduler.triggers.cron import CronTrigger
 from pydantic import BaseModel, ConfigDict, ValidationError, field_validator, model_validator
 
 from motorcal.models import EventStatus, SessionType
@@ -88,6 +89,18 @@ class SourceSettings(_StrictModel):
     rate_limit_per_min: int = 28
     refresh_cron: str
     next_season_from: str = "10-01"
+
+    @field_validator("refresh_cron")
+    @classmethod
+    def validate_refresh_cron(cls, value: str) -> str:
+        """Reject a malformed cron expression here, at config-validation time --
+        catching it later, only when APScheduler builds a CronTrigger from it during
+        a hot reload, would mean the new bundle was already partially activated."""
+        try:
+            CronTrigger.from_crontab(value)
+        except ValueError as exc:
+            raise ValueError(f"Invalid refresh_cron: {value!r} ({exc})") from exc
+        return value
 
 
 class RetentionConfig(_StrictModel):

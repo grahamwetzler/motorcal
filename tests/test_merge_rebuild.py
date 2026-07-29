@@ -1,6 +1,8 @@
 import json
 from datetime import datetime, timezone
 
+import pytest
+
 from motorcal.config import (
     DefaultsConfig,
     OverridesConfig,
@@ -11,7 +13,7 @@ from motorcal.config import (
     SyntheticEventConfig,
     UnknownTimeConfig,
 )
-from motorcal.merge import rebuild_publication, reconcile_synthetic_events
+from motorcal.merge import PublicationBlockedError, rebuild_publication, reconcile_synthetic_events
 from motorcal.models import source_uid, synthetic_event_uid
 from motorcal.store import (
     connect,
@@ -90,17 +92,48 @@ def test_rebuild_applies_a_matched_patch(tmp_path):
     assert row["duration_seconds"] == 6 * 3600
 
 
-def test_rebuild_reports_an_unmatched_patch_as_an_error_without_crashing(tmp_path):
+def test_rebuild_raises_on_an_unmatched_patch_without_writing_anything(tmp_path):
     conn = _fresh_conn(tmp_path)
     overrides = OverridesConfig(patches=[PatchConfig(id_event="does-not-exist")])
 
-    report = rebuild_publication(
-        conn, root_config=_root_config(), overrides=overrides,
+    with pytest.raises(PublicationBlockedError) as exc_info:
+        rebuild_publication(
+            conn, root_config=_root_config(), overrides=overrides,
+            uid_domain=UID_DOMAIN, now=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        )
+
+    assert len(exc_info.value.patch_errors) == 1
+    assert exc_info.value.patch_errors[0].reason == "no_match"
+
+
+def test_rebuild_preserves_previously_published_state_when_a_later_patch_fails_to_match(tmp_path):
+    conn = _fresh_conn(tmp_path)
+    with transaction(conn):
+        upsert_source_event(
+            conn, provider="thesportsdb", id_event="1", series="wec", season="2026", round=1,
+            name="6 Hours of Imola", date="2026-04-19", time="13:00:00", venue="Imola",
+            country="Italy", raw_json="{}", seen_at="t0",
+        )
+
+    good_report = rebuild_publication(
+        conn, root_config=_root_config(), overrides=OverridesConfig(),
         uid_domain=UID_DOMAIN, now=datetime(2026, 1, 1, tzinfo=timezone.utc),
     )
+    assert good_report.events_published == 1
+    previously_published = get_published_event(conn, source_uid("1", UID_DOMAIN))
+    assert previously_published is not None
 
-    assert len(report.patch_errors) == 1
-    assert report.patch_errors[0].reason == "no_match"
+    broken_overrides = OverridesConfig(patches=[PatchConfig(id_event="does-not-exist")])
+    with pytest.raises(PublicationBlockedError) as exc_info:
+        rebuild_publication(
+            conn, root_config=_root_config(), overrides=broken_overrides,
+            uid_domain=UID_DOMAIN, now=datetime(2026, 1, 2, tzinfo=timezone.utc),
+        )
+
+    assert len(exc_info.value.patch_errors) == 1
+    still_published = get_published_event(conn, source_uid("1", UID_DOMAIN))
+    assert still_published is not None
+    assert dict(still_published) == dict(previously_published)  # entirely untouched
 
 
 def test_rebuild_cancels_a_disappeared_future_event(tmp_path):
@@ -149,6 +182,26 @@ def test_rebuild_publishes_a_synthetic_event(tmp_path):
     row = get_published_event(conn, uid)
     assert row is not None
     assert row["duration_seconds"] == 24 * 3600
+
+
+def test_rebuild_honors_a_configured_tentative_synthetic_status(tmp_path):
+    conn = _fresh_conn(tmp_path)
+    cfg = SyntheticEventConfig(
+        uid="imsa-2026-rolex-24", series="imsa", summary="Rolex 24 at Daytona",
+        start="2026-01-25T18:40:00Z", duration="24h", status="TENTATIVE",
+    )
+    with transaction(conn):
+        reconcile_synthetic_events(conn, [cfg], now="t0")
+
+    report = rebuild_publication(
+        conn, root_config=_root_config(), overrides=OverridesConfig(events=[cfg]),
+        uid_domain=UID_DOMAIN, now=datetime(2026, 1, 1, tzinfo=timezone.utc),
+    )
+
+    assert report.events_published == 1
+    uid = synthetic_event_uid("imsa-2026-rolex-24", UID_DOMAIN)
+    row = get_published_event(conn, uid)
+    assert row["status"] == "TENTATIVE"
 
 
 def test_rebuild_prunes_a_long_cancelled_event(tmp_path):

@@ -1,5 +1,5 @@
 from motorcal.cli import main
-from motorcal.store import check_integrity, connect
+from motorcal.store import bind_uid_domain, check_integrity, connect, init_schema
 
 
 def test_init_db_creates_and_initializes_database(tmp_path, capsys):
@@ -71,3 +71,27 @@ def test_main_with_no_subcommand_returns_1(capsys):
     assert exit_code == 1
     captured = capsys.readouterr()
     assert captured.err != ""
+
+
+def test_serve_refuses_to_start_when_uid_domain_has_changed(tmp_path, capsys, monkeypatch):
+    db_path = tmp_path / "test.db"
+    conn = connect(db_path)
+    init_schema(conn)
+    bind_uid_domain(conn, "old.example.com")
+    conn.close()
+
+    monkeypatch.setenv("THESPORTSDB_API_KEY", "key")
+    monkeypatch.setenv("MOTORCAL_TOKENS", "tok")
+
+    # config.example.yaml's uid_domain is "racing.example.com", which differs from
+    # the domain already bound above -- this must be refused before ever starting
+    # the scheduler or HTTP server (uvicorn.run would otherwise block forever).
+    exit_code = main([
+        "serve", "--db", str(db_path),
+        "--config", "config/config.example.yaml",
+        "--overrides", "config/overrides.example.yaml",
+    ])
+
+    assert exit_code == 1
+    captured = capsys.readouterr()
+    assert "uid_domain" in captured.err
