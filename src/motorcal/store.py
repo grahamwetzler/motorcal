@@ -11,7 +11,7 @@ from pathlib import Path
 
 from motorcal.providers.thesportsdb import SnapshotResult
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 _MIGRATIONS: dict[int, list[str]] = {
     1: [
@@ -114,6 +114,19 @@ _MIGRATIONS: dict[int, list[str]] = {
         updated_at TEXT NOT NULL
     )
     """,
+    ],
+    2: [
+        """
+        CREATE TABLE IF NOT EXISTS refresh_diagnostics (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            updated_at TEXT NOT NULL,
+            patch_errors_json TEXT NOT NULL,
+            unknown_events_json TEXT NOT NULL,
+            events_published INTEGER NOT NULL,
+            events_cancelled INTEGER NOT NULL,
+            events_pruned INTEGER NOT NULL
+        )
+        """,
     ],
 }
 
@@ -635,4 +648,36 @@ def upsert_feed_revision(conn: sqlite3.Connection, series: str, revision: str, u
             updated_at = excluded.updated_at
         """,
         (series, revision, updated_at),
+    )
+
+
+def get_refresh_diagnostics(conn: sqlite3.Connection) -> sqlite3.Row | None:
+    return conn.execute("SELECT * FROM refresh_diagnostics WHERE id = 1").fetchone()
+
+
+def upsert_refresh_diagnostics(
+    conn: sqlite3.Connection,
+    updated_at: str,
+    patch_errors_json: str,
+    unknown_events_json: str,
+    events_published: int,
+    events_cancelled: int,
+    events_pruned: int,
+) -> None:
+    conn.execute(
+        """
+        INSERT INTO refresh_diagnostics
+            (id, updated_at, patch_errors_json, unknown_events_json,
+             events_published, events_cancelled, events_pruned)
+        VALUES (1, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (id) DO UPDATE SET
+            updated_at = excluded.updated_at,
+            patch_errors_json = excluded.patch_errors_json,
+            unknown_events_json = excluded.unknown_events_json,
+            events_published = excluded.events_published,
+            events_cancelled = excluded.events_cancelled,
+            events_pruned = excluded.events_pruned
+        """,
+        (updated_at, patch_errors_json, unknown_events_json,
+         events_published, events_cancelled, events_pruned),
     )

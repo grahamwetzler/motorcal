@@ -57,6 +57,7 @@ def test_init_schema_is_idempotent(tmp_path):
         "published_events",
         "refresh_lease",
         "feed_revision",
+        "refresh_diagnostics",
     }
 
 
