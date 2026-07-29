@@ -35,6 +35,14 @@ def _parse_retry_after(value: str | None, *, fallback: float) -> float:
     return max(0.0, min(seconds, _RETRY_AFTER_CAP_SECONDS))
 
 
+def build_client() -> httpx.Client:
+    """Construct an httpx.Client configured correctly for calling TheSportsDB."""
+    return httpx.Client(
+        follow_redirects=True,
+        headers={"User-Agent": "motorcal/0.1 (+https://github.com/)"},
+    )
+
+
 class RateLimiter:
     """Token-bucket rate limiter. acquire() blocks until a token is available."""
 

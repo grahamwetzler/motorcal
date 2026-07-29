@@ -3,7 +3,13 @@ from pathlib import Path
 import httpx
 import pytest
 
-from motorcal.providers.thesportsdb import ProviderError, ProviderEvent, RateLimiter, fetch_round
+from motorcal.providers.thesportsdb import (
+    ProviderError,
+    ProviderEvent,
+    RateLimiter,
+    build_client,
+    fetch_round,
+)
 
 FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures" / "thesportsdb"
 
@@ -204,3 +210,12 @@ def test_provider_event_is_hashable():
     )
     hash(ev)  # must not raise
     {ev}  # must be usable in a set
+
+
+def test_build_client_follows_redirects_and_sets_user_agent():
+    client = build_client()
+    try:
+        assert client.follow_redirects is True
+        assert "motorcal" in client.headers.get("user-agent", "")
+    finally:
+        client.close()
