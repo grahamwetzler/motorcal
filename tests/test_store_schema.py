@@ -126,6 +126,48 @@ def test_check_integrity_ok_on_fresh_db(tmp_path):
     assert check_integrity(conn) is True
 
 
+def test_init_schema_refuses_to_run_against_newer_schema_version(tmp_path):
+    conn = connect(tmp_path / "test.db")
+    conn.execute(f"PRAGMA user_version={SCHEMA_VERSION + 1}")
+    with pytest.raises(RuntimeError):
+        init_schema(conn)
+
+
+def test_init_schema_applies_multiple_migration_steps_in_order(tmp_path, monkeypatch):
+    import motorcal.store as store
+
+    db_path = tmp_path / "test.db"
+    conn = connect(db_path)
+    monkeypatch.setattr(store, "SCHEMA_VERSION", 2)
+    monkeypatch.setattr(
+        store,
+        "_MIGRATIONS",
+        {
+            1: ["CREATE TABLE IF NOT EXISTS demo (id INTEGER PRIMARY KEY)"],
+            2: ["ALTER TABLE demo ADD COLUMN label TEXT"],
+        },
+    )
+    store.init_schema(conn)
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(demo)").fetchall()}
+    assert columns == {"id", "label"}
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == 2
+
+
+def test_init_schema_from_version_zero_creates_current_tables(tmp_path):
+    db_path = tmp_path / "test.db"
+    conn = connect(db_path)
+    conn.execute("PRAGMA user_version=0")
+    init_schema(conn)
+    tables = {
+        row[0]
+        for row in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+        ).fetchall()
+    }
+    assert "source_events" in tables
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+
+
 def test_check_integrity_detects_corruption(tmp_path):
     db_path = tmp_path / "corrupt.db"
     conn = connect(db_path)

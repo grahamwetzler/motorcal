@@ -9,7 +9,8 @@ from pathlib import Path
 
 SCHEMA_VERSION = 1
 
-_SCHEMA_STATEMENTS = [
+_MIGRATIONS: dict[int, list[str]] = {
+    1: [
     """
     CREATE TABLE IF NOT EXISTS source_events (
         provider TEXT NOT NULL,
@@ -109,7 +110,8 @@ _SCHEMA_STATEMENTS = [
         updated_at TEXT NOT NULL
     )
     """,
-]
+    ],
+}
 
 
 def connect(db_path: Path) -> sqlite3.Connection:
@@ -124,12 +126,19 @@ def connect(db_path: Path) -> sqlite3.Connection:
 def init_schema(conn: sqlite3.Connection) -> None:
     """Create all tables if missing and stamp the schema version. Idempotent."""
     current_version = conn.execute("PRAGMA user_version").fetchone()[0]
-    if current_version >= SCHEMA_VERSION:
+    if current_version > SCHEMA_VERSION:
+        raise RuntimeError(
+            f"Database schema version {current_version} is newer than this build "
+            f"supports (expected <= {SCHEMA_VERSION}); refusing to run against a "
+            "newer schema."
+        )
+    if current_version == SCHEMA_VERSION:
         return
     with transaction(conn):
-        for statement in _SCHEMA_STATEMENTS:
-            conn.execute(statement)
-        conn.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
+        for version in range(current_version + 1, SCHEMA_VERSION + 1):
+            for statement in _MIGRATIONS[version]:
+                conn.execute(statement)
+            conn.execute(f"PRAGMA user_version={version}")
 
 
 def check_integrity(conn: sqlite3.Connection) -> bool:
