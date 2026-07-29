@@ -212,8 +212,15 @@ def scan_series_season(
     timeout: float = 10.0,
     max_retries: int = 3,
     sleep: Callable[[float], None] = time.sleep,
+    deadline_seconds: float | None = None,
+    clock: Callable[[], float] = time.monotonic,
 ) -> SnapshotResult:
-    """Scan rounds 1..max_round (plus 500 if include_non_championship) for one series/season."""
+    """Scan rounds 1..max_round (plus 500 if include_non_championship) for one series/season.
+
+    If deadline_seconds is set, once elapsed the scan stops issuing new requests and
+    marks every remaining round as skipped (contributing to an incomplete snapshot)
+    rather than running indefinitely while holding the caller's refresh lease.
+    """
     rounds = list(range(1, max_round + 1))
     if include_non_championship:
         rounds.append(500)
@@ -221,8 +228,15 @@ def scan_series_season(
     events: list[ProviderEvent] = []
     diagnostics: list[str] = []
     complete = True
+    start = clock()
 
     for round_number in rounds:
+        if deadline_seconds is not None and (clock() - start) > deadline_seconds:
+            complete = False
+            diagnostics.append(
+                f"round {round_number}: skipped, scan deadline of {deadline_seconds}s exceeded"
+            )
+            continue
         try:
             round_events = fetch_round(
                 client,

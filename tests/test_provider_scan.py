@@ -120,3 +120,30 @@ def test_scan_marks_incomplete_rather_than_raising_on_hostile_response_shape():
     )
     assert result.complete is False
     assert len(result.diagnostics) == 2  # both rounds hit the hostile shape
+
+
+def test_scan_stops_issuing_requests_past_deadline():
+    handler = _fixture_handler({1: "wec_r1_2026.json"})
+    client = _client_with_handler(handler)
+
+    fake_time = [0.0]
+    def fake_clock():
+        return fake_time[0]
+
+    call_log = []
+    real_handler = handler
+    def counting_handler(request: httpx.Request) -> httpx.Response:
+        call_log.append(request.url.params["r"])
+        fake_time[0] += 100  # simulate each request taking so long the deadline blows past immediately
+        return real_handler(request)
+
+    client = _client_with_handler(counting_handler)
+    result = scan_series_season(
+        client, "3", 4413, "2026", max_round=5, series="wec",
+        include_non_championship=False, rate_limiter=RateLimiter(rate_per_minute=6000),
+        deadline_seconds=50, clock=fake_clock, sleep=lambda s: None,
+    )
+
+    assert result.complete is False
+    assert len(call_log) == 1  # only round 1 was actually requested before the deadline tripped
+    assert any("deadline" in d for d in result.diagnostics)
