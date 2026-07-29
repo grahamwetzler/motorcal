@@ -86,9 +86,18 @@ def _parse_events(response_text: str, round_number: int, series: str) -> list[Pr
     if not isinstance(data, dict) or "events" not in data:
         raise ProviderError(f"Unexpected response shape for round {round_number}: {data!r}")
 
-    raw_events = data["events"] or []
+    raw_events = data["events"]
+    if raw_events is None:
+        raw_events = []
+    if not isinstance(raw_events, list):
+        raise ProviderError(
+            f"Expected a list for 'events' in round {round_number}, got {type(raw_events).__name__}"
+        )
+
     events = []
     for raw in raw_events:
+        if not isinstance(raw, dict):
+            raise ProviderError(f"Expected an event object in round {round_number}, got {raw!r}")
         _validate_event(raw)
         events.append(
             ProviderEvent(

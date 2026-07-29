@@ -130,3 +130,25 @@ def test_fetch_round_raises_after_exhausting_retries_on_repeated_429():
             client, "3", 4413, "2026", 1, series="wec",
             rate_limiter=_NoOpRateLimiter(), max_retries=2, sleep=lambda s: None,
         )
+
+
+@pytest.mark.parametrize(
+    "events_value",
+    [
+        '"oops"',
+        "42",
+        "[null]",
+        '["a string"]',
+        '[{"idEvent": "1"}]',  # a dict but missing required fields — already covered by validate_event, include for completeness
+    ],
+)
+def test_fetch_round_raises_provider_error_not_something_else_for_hostile_events_shapes(events_value):
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, text=f'{{"events": {events_value}}}')
+
+    client = _client_with_handler(handler)
+    with pytest.raises(ProviderError):  # must be ProviderError specifically, not AttributeError/TypeError
+        fetch_round(
+            client, "3", 4413, "2026", 1, series="wec",
+            rate_limiter=_NoOpRateLimiter(), max_retries=0, sleep=lambda s: None,
+        )

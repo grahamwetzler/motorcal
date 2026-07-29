@@ -7,11 +7,6 @@ from motorcal.providers.thesportsdb import RateLimiter, scan_series_season
 FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures" / "thesportsdb"
 
 
-class _NoOpRateLimiter:
-    def acquire(self) -> None:
-        pass
-
-
 def _client_with_handler(handler) -> httpx.Client:
     return httpx.Client(transport=httpx.MockTransport(handler))
 
@@ -111,3 +106,17 @@ def test_scan_real_world_shape_imsa_race_only_series():
     names = [e.name for e in result.events]
     assert "Rolex 24 At DAYTONA" in names
     assert "Roar Before The Rolex 24" in names
+
+
+def test_scan_marks_incomplete_rather_than_raising_on_hostile_response_shape():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, text='{"events": "not-a-list"}')
+
+    client = _client_with_handler(handler)
+    result = scan_series_season(
+        client, "3", 4413, "2026", max_round=2, series="wec",
+        include_non_championship=False, rate_limiter=RateLimiter(rate_per_minute=6000),
+        max_retries=0, sleep=lambda s: None,
+    )
+    assert result.complete is False
+    assert len(result.diagnostics) == 2  # both rounds hit the hostile shape
