@@ -410,3 +410,50 @@ def backup_database(source_path: Path, dest_path: Path) -> None:
     finally:
         dest_conn.close()
         source_conn.close()
+
+
+def list_source_events_by_scope(
+    conn: sqlite3.Connection, provider: str, series: str, season: str
+) -> list[sqlite3.Row]:
+    return conn.execute(
+        "SELECT * FROM source_events WHERE provider = ? AND series = ? AND season = ?",
+        (provider, series, season),
+    ).fetchall()
+
+
+def get_snapshot_meta(
+    conn: sqlite3.Connection, provider: str, series: str, season: str
+) -> sqlite3.Row | None:
+    return conn.execute(
+        "SELECT * FROM source_snapshot_meta WHERE provider = ? AND series = ? AND season = ?",
+        (provider, series, season),
+    ).fetchone()
+
+
+def upsert_snapshot_meta(
+    conn: sqlite3.Connection,
+    provider: str,
+    series: str,
+    season: str,
+    last_complete_at: str,
+    last_event_count: int,
+) -> None:
+    conn.execute(
+        """
+        INSERT INTO source_snapshot_meta (provider, series, season, last_complete_at, last_event_count)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT (provider, series, season) DO UPDATE SET
+            last_complete_at = excluded.last_complete_at,
+            last_event_count = excluded.last_event_count
+        """,
+        (provider, series, season, last_complete_at, last_event_count),
+    )
+
+
+def mark_source_event_disappeared(
+    conn: sqlite3.Connection, provider: str, id_event: str, disappeared_at: str
+) -> None:
+    conn.execute(
+        "UPDATE source_events SET disappeared_at = ? WHERE provider = ? AND id_event = ?",
+        (disappeared_at, provider, id_event),
+    )
