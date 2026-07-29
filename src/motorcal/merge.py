@@ -8,12 +8,34 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-from motorcal.config import PatchConfig, RootConfig, SeriesConfig, SyntheticEventConfig, parse_duration
-from motorcal.models import EventStatus, PublishedEvent, SessionType, SourceEvent, source_uid, synthetic_event_uid
+from motorcal.classify import classify_event
+from motorcal.config import (
+    OverridesConfig,
+    PatchConfig,
+    RootConfig,
+    SeriesConfig,
+    SyntheticEventConfig,
+    parse_duration,
+)
+from motorcal.models import (
+    EventStatus,
+    PublishedEvent,
+    SessionType,
+    SourceEvent,
+    SourceEventKey,
+    source_uid,
+    synthetic_event_uid,
+)
 from motorcal.store import (
+    delete_published_event,
+    delete_source_event,
+    get_published_event,
+    list_all_source_events,
+    list_published_events,
     list_synthetic_events,
     mark_synthetic_event_removed,
     transaction,
+    upsert_published_event,
     upsert_synthetic_event,
 )
 
@@ -417,3 +439,135 @@ def _event_effective_end(
         return start
     day = datetime.fromisoformat(all_day_date).replace(tzinfo=timezone.utc)
     return day + timedelta(days=1)
+
+
+@dataclass
+class RebuildReport:
+    events_published: int
+    events_cancelled: int
+    events_pruned: int
+    patch_errors: list[PatchMatchError]
+    unknown_events: list[str]
+
+
+def _row_to_source_event(row: sqlite3.Row) -> SourceEvent:
+    return SourceEvent(
+        key=SourceEventKey(provider=row["provider"], id_event=row["id_event"]),
+        series=row["series"], season=row["season"], round=row["round"], name=row["name"],
+        date=row["date"], time=row["time"], venue=row["venue"], country=row["country"],
+        raw=json.loads(row["raw_json"]),
+    )
+
+
+def _previous_state(row: sqlite3.Row | None) -> PreviousPublishedState | None:
+    if row is None:
+        return None
+    return PreviousPublishedState(
+        fingerprint=row["fingerprint"], sequence=row["sequence"],
+        dtstamp=row["dtstamp"], last_modified=row["last_modified"], status=row["status"],
+    )
+
+
+def _write_published_event(conn: sqlite3.Connection, event: PublishedEvent) -> None:
+    upsert_published_event(
+        conn, uid=event.uid, series=event.series, session_type=event.session_type.value,
+        summary=event.summary, start=event.start.isoformat() if event.start else None,
+        all_day_date=event.all_day_date, time_confirmed=event.time_confirmed,
+        duration_seconds=event.duration_seconds, location=event.location,
+        description=event.description, status=event.status.value, sequence=event.sequence,
+        dtstamp=event.dtstamp.isoformat(), last_modified=event.last_modified.isoformat(),
+        fingerprint=event.fingerprint, alarms_json=json.dumps(event.alarms),
+        source_provider="thesportsdb" if event.source_id_event else None,
+        source_id_event=event.source_id_event, synthetic_uid=event.synthetic_uid,
+        cancelled_at=None, retain_until=None,
+    )
+
+
+def rebuild_publication(
+    conn: sqlite3.Connection,
+    *,
+    root_config: RootConfig,
+    overrides: OverridesConfig,
+    uid_domain: str,
+    now: datetime,
+) -> RebuildReport:
+    """Rebuild every published event from current source/synthetic state, atomically."""
+    source_rows = list_all_source_events(conn)
+    source_events = [_row_to_source_event(row) for row in source_rows]
+    matches, patch_errors = match_all_patches(overrides.patches, source_events)
+    patch_by_id_event = {m.source_event.key.id_event: m.patch for m in matches}
+
+    events_published = 0
+    events_cancelled = 0
+    unknown_events: list[str] = []
+
+    with transaction(conn):
+        for row, source_event in zip(source_rows, source_events):
+            session_type = classify_event(source_event.series, source_event.name, source_event.round)
+            series_config = root_config.series[source_event.series]
+            matched_patch = patch_by_id_event.get(source_event.key.id_event)
+            previous_row = get_published_event(conn, source_uid(source_event.key.id_event, uid_domain))
+
+            event = build_published_event_from_source(
+                source_event=source_event, session_type=session_type,
+                is_disappeared=row["disappeared_at"] is not None, matched_patch=matched_patch,
+                uid_domain=uid_domain, race_only=series_config.race_only,
+                series_config=series_config, root_config=root_config,
+                previous=_previous_state(previous_row), now=now,
+            )
+            _write_published_event(conn, event)
+            events_published += 1
+            if event.status == EventStatus.CANCELLED:
+                events_cancelled += 1
+            if session_type == SessionType.UNKNOWN:
+                unknown_events.append(event.uid)
+
+        for row in list_synthetic_events(conn):
+            uid = synthetic_event_uid(row["uid"], uid_domain)
+            previous_row = get_published_event(conn, uid)
+            alarms = json.loads(row["alarms_json"])
+            event = build_published_event_from_synthetic(
+                uid=row["uid"], series=row["series"], summary=row["summary"], start=row["start"],
+                date=row["date"], duration_seconds=row["duration_seconds"], location=row["location"],
+                note=row["note"], alarms=alarms, is_cancelled=row["cancelled_at"] is not None,
+                uid_domain=uid_domain, root_config=root_config,
+                previous=_previous_state(previous_row), now=now,
+            )
+            _write_published_event(conn, event)
+            events_published += 1
+            if event.status == EventStatus.CANCELLED:
+                events_cancelled += 1
+
+        events_pruned = _prune_expired(
+            conn, retention=root_config.retention, now=now,
+        )
+
+    return RebuildReport(
+        events_published=events_published, events_cancelled=events_cancelled,
+        events_pruned=events_pruned, patch_errors=patch_errors, unknown_events=unknown_events,
+    )
+
+
+def _prune_expired(conn: sqlite3.Connection, *, retention, now: datetime) -> int:
+    """Delete published (and, where applicable, source) events past their retention window."""
+    from datetime import timedelta
+
+    pruned = 0
+    for row in list_published_events(conn):
+        start = datetime.fromisoformat(row["start"]) if row["start"] else None
+        effective_end = _event_effective_end(start, row["all_day_date"], row["duration_seconds"])
+        if effective_end >= now:
+            continue  # still current/future -- never prune
+
+        if row["status"] == "CANCELLED":
+            cutoff = effective_end + timedelta(days=retention.cancelled_after_event_days)
+        else:
+            cutoff = effective_end + timedelta(days=retention.historical_days)
+
+        if now > cutoff:
+            delete_published_event(conn, row["uid"])
+            if row["source_id_event"] is not None:
+                delete_source_event(conn, row["source_provider"], row["source_id_event"])
+            pruned += 1
+
+    return pruned
