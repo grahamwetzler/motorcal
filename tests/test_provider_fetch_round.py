@@ -3,7 +3,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from motorcal.providers.thesportsdb import ProviderError, RateLimiter, fetch_round
+from motorcal.providers.thesportsdb import ProviderError, ProviderEvent, RateLimiter, fetch_round
 
 FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures" / "thesportsdb"
 
@@ -195,3 +195,12 @@ def test_fetch_round_rejects_negative_retry_after_without_crashing():
             rate_limiter=_NoOpRateLimiter(), max_retries=1, sleep=sleeps.append,
         )
     assert sleeps[0] >= 0.0  # negative value was clamped, sleep() was never called with a negative number
+
+
+def test_provider_event_is_hashable():
+    ev = ProviderEvent(
+        id_event="1", name="Race", date="2026-01-01", time=None, round=1,
+        season="2026", series="wec", venue=None, country=None, raw={"a": 1},
+    )
+    hash(ev)  # must not raise
+    {ev}  # must be usable in a set

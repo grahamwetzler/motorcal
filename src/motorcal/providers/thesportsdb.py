@@ -12,7 +12,7 @@ import random
 import threading
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 _RETRY_AFTER_CAP_SECONDS = 60.0
@@ -89,7 +89,7 @@ class ProviderEvent:
     series: str
     venue: str | None
     country: str | None
-    raw: dict
+    raw: dict = field(hash=False)
 
 
 _REQUIRED_EVENT_FIELDS = ("idEvent", "idLeague", "strSeason", "dateEvent", "strEvent")
