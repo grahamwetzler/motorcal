@@ -2,10 +2,18 @@
 fingerprinting, sequencing, duration/alarm resolution, and cancellation lifecycle."""
 from __future__ import annotations
 
+import json
+import sqlite3
 from dataclasses import dataclass
 
-from motorcal.config import PatchConfig
+from motorcal.config import PatchConfig, SyntheticEventConfig, parse_duration
 from motorcal.models import SourceEvent
+from motorcal.store import (
+    list_synthetic_events,
+    mark_synthetic_event_removed,
+    transaction,
+    upsert_synthetic_event,
+)
 
 
 @dataclass
@@ -60,3 +68,35 @@ def match_all_patches(
             )
 
     return matches, errors
+
+
+def reconcile_synthetic_events(
+    conn: sqlite3.Connection, synthetic_configs: list[SyntheticEventConfig], now: str
+) -> None:
+    """Sync configured synthetic events into storage, marking removed ones.
+
+    Every event currently in synthetic_configs is upserted (reactivating it if it
+    was previously removed). Every stored synthetic event whose uid is NOT in
+    synthetic_configs, and that is not already cancelled, is marked removed at `now`.
+    """
+    configured_uids = {cfg.uid for cfg in synthetic_configs}
+
+    with transaction(conn):
+        for cfg in synthetic_configs:
+            upsert_synthetic_event(
+                conn,
+                uid=cfg.uid,
+                series=cfg.series,
+                summary=cfg.summary,
+                start=cfg.start,
+                date=cfg.date,
+                duration_seconds=parse_duration(cfg.duration) if cfg.duration else None,
+                location=cfg.location,
+                status=cfg.status or "CONFIRMED",
+                note=cfg.note,
+                alarms_json=json.dumps(cfg.alarms),
+            )
+
+        for row in list_synthetic_events(conn):
+            if row["uid"] not in configured_uids and row["cancelled_at"] is None:
+                mark_synthetic_event_removed(conn, row["uid"], now)
