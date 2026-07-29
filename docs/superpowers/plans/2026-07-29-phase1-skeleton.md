@@ -12,6 +12,7 @@
 
 - Full spec: `~/.claude/plans/research-and-plan-how-expressive-cookie.md` — every task below implements a slice of it; consult it if a step is ambiguous.
 - Repository layout is fixed (do not deviate):
+  This is the end-state layout across all 10 project phases — do not deviate from it. This phase (Phase 1) creates only the files listed in each task below; the rest are added in later phases.
   ```
   motorsports-calendar/
     pyproject.toml
@@ -668,7 +669,7 @@ def load_config(path: Path) -> RootConfig:
 - [ ] **Step 5: Run tests to verify they pass**
 
 Run: `uv run pytest tests/test_config.py -v`
-Expected: PASS, 7 passed.
+Expected: PASS, 13 passed.
 
 - [ ] **Step 6: Commit**
 
@@ -939,12 +940,12 @@ def load_overrides(path: Path) -> OverridesConfig:
 - [ ] **Step 5: Run tests to verify they pass**
 
 Run: `uv run pytest tests/test_overrides.py -v`
-Expected: PASS, 7 passed.
+Expected: PASS, 10 passed.
 
 - [ ] **Step 6: Run the full test suite so far**
 
 Run: `uv run pytest -v`
-Expected: all tests from Tasks 2-4 pass (21 passed).
+Expected: all tests from Tasks 2-4 pass (30 passed: 7 models + 13 config + 10 overrides).
 
 - [ ] **Step 7: Commit**
 
@@ -963,7 +964,7 @@ This task copies them into the repo's fixture corpus with descriptive names and 
 
 Observed naming patterns worth preserving verbatim (do not "clean up" or re-type these — copy the files as-is):
 - F1 round 1 (`league4370_r1_2026.json`): `"Australian Grand Prix Practice 1/2/3"`, `"...Qualifying"`, bare `"Australian Grand Prix"` (race).
-- F1 round 3 (`league4370_r3_2026.json`): `"Chinese Grand Prix Sprint Qualifying"` and `"...Sprint"` alongside `"...Practice 1"`, `"...Qualifying"`, bare race name — proves sprint-qualifying-before-sprint/qualifying ordering matters.
+- F1 round 2 (`league4370_r2_2026.json`, stored as `f1_r2_2026_sprint.json` — round 3 has no Sprint content, so round 2's Chinese Grand Prix Sprint data was substituted here): `"Chinese Grand Prix Sprint Qualifying"` and `"...Sprint"` alongside `"...Practice 1"`, `"...Qualifying"`, bare race name — proves sprint-qualifying-before-sprint/qualifying ordering matters.
 - F1 round 500 (`league4370_r500_2026.json`): `"Bahrain Testing 1 Day 1"` etc. — round 500 is testing regardless of name.
 - WEC round 1 (`league4413_r1_2026.json`): `"6 Hours of Imola Free Practice 3"`, `"...Qualifying"`, bare `"6 Hours of Imola"` (id_event `2421035` — matches the example patch in overrides.yaml) with `strTime` `"00:00:00"` (unconfirmed time).
 - WEC round 2 (`league4413_r2_2026.json`): `"...Qualifying - LMGT3"` and `"...Qualifying - Hypercar"` — class-suffixed qualifying, hyphen separator.
@@ -976,7 +977,7 @@ Observed naming patterns worth preserving verbatim (do not "clean up" or re-type
 
 **Files:**
 - Create: `tests/fixtures/thesportsdb/f1_r1_2026.json`
-- Create: `tests/fixtures/thesportsdb/f1_r3_2026.json`
+- Create: `tests/fixtures/thesportsdb/f1_r2_2026_sprint.json`
 - Create: `tests/fixtures/thesportsdb/f1_r500_2026_testing.json`
 - Create: `tests/fixtures/thesportsdb/wec_r1_2026.json`
 - Create: `tests/fixtures/thesportsdb/wec_r2_2026_class_split.json`
@@ -997,7 +998,7 @@ Observed naming patterns worth preserving verbatim (do not "clean up" or re-type
 mkdir -p tests/fixtures/thesportsdb
 RAW=/private/tmp/claude-501/-Users-graham-Developer-motorsports-calendar/43dffb51-cffe-469e-97cd-67bcc3a8f97e/scratchpad/fixtures_raw
 cp "$RAW/league4370_r1_2026.json"   tests/fixtures/thesportsdb/f1_r1_2026.json
-cp "$RAW/league4370_r3_2026.json"   tests/fixtures/thesportsdb/f1_r3_2026.json
+cp "$RAW/league4370_r2_2026.json"   tests/fixtures/thesportsdb/f1_r2_2026_sprint.json
 cp "$RAW/league4370_r500_2026.json" tests/fixtures/thesportsdb/f1_r500_2026_testing.json
 cp "$RAW/league4413_r1_2026.json"   tests/fixtures/thesportsdb/wec_r1_2026.json
 cp "$RAW/league4413_r2_2026.json"   tests/fixtures/thesportsdb/wec_r2_2026_class_split.json
@@ -1025,7 +1026,7 @@ FIXTURE_DIR = Path("tests/fixtures/thesportsdb")
 
 FIXTURE_FILES = [
     "f1_r1_2026.json",
-    "f1_r3_2026.json",
+    "f1_r2_2026_sprint.json",
     "f1_r500_2026_testing.json",
     "wec_r1_2026.json",
     "wec_r2_2026_class_split.json",
@@ -1052,8 +1053,8 @@ def test_f1_round1_has_practice_qualifying_and_race():
     assert "Australian Grand Prix" in names
 
 
-def test_f1_round3_has_sprint_qualifying_and_sprint():
-    data = json.loads((FIXTURE_DIR / "f1_r3_2026.json").read_text())
+def test_f1_round2_has_sprint_qualifying_and_sprint():
+    data = json.loads((FIXTURE_DIR / "f1_r2_2026_sprint.json").read_text())
     names = [e["strEvent"] for e in data["events"]]
     assert any("Sprint Qualifying" in n for n in names)
     assert any(n.endswith("Sprint") for n in names)
@@ -1109,12 +1110,12 @@ Expected (only if Step 1 has not yet run in this shell): FAIL with missing files
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `uv run pytest tests/test_fixtures.py -v`
-Expected: PASS, 18 passed (11 parametrized + 7 named).
+Expected: PASS, 19 passed (11 parametrized + 8 named).
 
 - [ ] **Step 5: Run the entire Phase 1 test suite**
 
 Run: `uv run pytest -v`
-Expected: all tests from Tasks 2-5 pass (39 passed total: 7 models + 7 config + 7 overrides + 18 fixtures).
+Expected: all tests from Tasks 2-5 pass (49 passed total: 7 models + 13 config + 10 overrides + 19 fixtures).
 
 - [ ] **Step 6: Commit**
 

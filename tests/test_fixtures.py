@@ -3,11 +3,12 @@ from pathlib import Path
 
 import pytest
 
-FIXTURE_DIR = Path("tests/fixtures/thesportsdb")
+REPO_ROOT = Path(__file__).resolve().parent.parent
+FIXTURE_DIR = REPO_ROOT / "tests" / "fixtures" / "thesportsdb"
 
 FIXTURE_FILES = [
     "f1_r1_2026.json",
-    "f1_r3_2026.json",
+    "f1_r2_2026_sprint.json",
     "f1_r500_2026_testing.json",
     "wec_r1_2026.json",
     "wec_r2_2026_class_split.json",
@@ -34,8 +35,8 @@ def test_f1_round1_has_practice_qualifying_and_race():
     assert "Australian Grand Prix" in names
 
 
-def test_f1_round3_has_sprint_qualifying_and_sprint():
-    data = json.loads((FIXTURE_DIR / "f1_r3_2026.json").read_text())
+def test_f1_round2_has_sprint_qualifying_and_sprint():
+    data = json.loads((FIXTURE_DIR / "f1_r2_2026_sprint.json").read_text())
     names = [e["strEvent"] for e in data["events"]]
     assert any("Sprint Qualifying" in n for n in names)
     assert any(n.endswith("Sprint") for n in names)
@@ -64,7 +65,7 @@ def test_wec_round2_class_split_qualifying_uses_hyphen():
 
 def test_indycar_round500_is_empty():
     data = json.loads((FIXTURE_DIR / "indycar_r500_2026_empty.json").read_text())
-    assert data["events"] in (None, [])
+    assert data["events"] is None
 
 
 def test_imsa_round1_is_bare_race_name_with_unconfirmed_time():
@@ -81,3 +82,6 @@ def test_round_500_fixtures_are_non_championship_named():
     assert any("Testing" in e["strEvent"] for e in f1["events"])
     assert any("Prologue" in e["strEvent"] for e in wec["events"])
     assert any("Roar" in e["strEvent"] for e in imsa["events"])
+    assert all(e["intRound"] == "500" for e in f1["events"])
+    assert all(e["intRound"] == "500" for e in wec["events"])
+    assert all(e["intRound"] == "500" for e in imsa["events"])
