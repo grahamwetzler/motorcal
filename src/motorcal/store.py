@@ -155,3 +155,156 @@ def transaction(conn: sqlite3.Connection):
         raise
     else:
         conn.execute("COMMIT")
+
+
+class IntentionalRollback(Exception):
+    """Test-only exception used to prove a transaction rolls back cleanly."""
+
+
+def upsert_source_event(
+    conn: sqlite3.Connection,
+    *,
+    provider: str,
+    id_event: str,
+    series: str,
+    season: str,
+    round: int,
+    name: str,
+    date: str,
+    time: str | None,
+    venue: str | None,
+    country: str | None,
+    raw_json: str,
+    seen_at: str,
+) -> None:
+    """Insert a new source event or update its mutable fields, preserving first_seen_at."""
+    conn.execute(
+        """
+        INSERT INTO source_events
+            (provider, id_event, series, season, round, name, date, time, venue, country,
+             raw_json, first_seen_at, last_seen_at, disappeared_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+        ON CONFLICT (provider, id_event) DO UPDATE SET
+            series = excluded.series,
+            season = excluded.season,
+            round = excluded.round,
+            name = excluded.name,
+            date = excluded.date,
+            time = excluded.time,
+            venue = excluded.venue,
+            country = excluded.country,
+            raw_json = excluded.raw_json,
+            last_seen_at = excluded.last_seen_at,
+            disappeared_at = NULL
+        """,
+        (
+            provider,
+            id_event,
+            series,
+            season,
+            round,
+            name,
+            date,
+            time,
+            venue,
+            country,
+            raw_json,
+            seen_at,
+            seen_at,
+        ),
+    )
+
+
+def get_source_event(conn: sqlite3.Connection, provider: str, id_event: str) -> sqlite3.Row | None:
+    return conn.execute(
+        "SELECT * FROM source_events WHERE provider = ? AND id_event = ?",
+        (provider, id_event),
+    ).fetchone()
+
+
+def upsert_published_event(
+    conn: sqlite3.Connection,
+    *,
+    uid: str,
+    series: str,
+    session_type: str,
+    summary: str,
+    start: str | None,
+    all_day_date: str | None,
+    time_confirmed: bool,
+    duration_seconds: int | None,
+    location: str | None,
+    description: str,
+    status: str,
+    sequence: int,
+    dtstamp: str,
+    last_modified: str,
+    fingerprint: str,
+    alarms_json: str,
+    source_provider: str | None,
+    source_id_event: str | None,
+    synthetic_uid: str | None,
+    cancelled_at: str | None,
+    retain_until: str | None,
+) -> None:
+    """Insert or fully replace a published event by its stable UID."""
+    conn.execute(
+        """
+        INSERT INTO published_events
+            (uid, series, session_type, summary, start, all_day_date, time_confirmed,
+             duration_seconds, location, description, status, sequence, dtstamp,
+             last_modified, fingerprint, alarms_json, source_provider, source_id_event,
+             synthetic_uid, cancelled_at, retain_until)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (uid) DO UPDATE SET
+            series = excluded.series,
+            session_type = excluded.session_type,
+            summary = excluded.summary,
+            start = excluded.start,
+            all_day_date = excluded.all_day_date,
+            time_confirmed = excluded.time_confirmed,
+            duration_seconds = excluded.duration_seconds,
+            location = excluded.location,
+            description = excluded.description,
+            status = excluded.status,
+            sequence = excluded.sequence,
+            dtstamp = excluded.dtstamp,
+            last_modified = excluded.last_modified,
+            fingerprint = excluded.fingerprint,
+            alarms_json = excluded.alarms_json,
+            source_provider = excluded.source_provider,
+            source_id_event = excluded.source_id_event,
+            synthetic_uid = excluded.synthetic_uid,
+            cancelled_at = excluded.cancelled_at,
+            retain_until = excluded.retain_until
+        """,
+        (
+            uid,
+            series,
+            session_type,
+            summary,
+            start,
+            all_day_date,
+            int(time_confirmed),
+            duration_seconds,
+            location,
+            description,
+            status,
+            sequence,
+            dtstamp,
+            last_modified,
+            fingerprint,
+            alarms_json,
+            source_provider,
+            source_id_event,
+            synthetic_uid,
+            cancelled_at,
+            retain_until,
+        ),
+    )
+
+
+def get_published_event(conn: sqlite3.Connection, uid: str) -> sqlite3.Row | None:
+    return conn.execute(
+        "SELECT * FROM published_events WHERE uid = ?", (uid,)
+    ).fetchone()
