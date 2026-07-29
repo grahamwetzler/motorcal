@@ -1,3 +1,6 @@
+import threading
+import time as time_module
+
 from motorcal.providers.thesportsdb import RateLimiter
 
 
@@ -58,3 +61,23 @@ def test_default_capacity_equals_rate_per_minute():
 
     limiter.acquire()  # the 29th call exhausts the default capacity
     assert fake_time[0] > 0.0
+
+
+def test_rate_limiter_is_thread_safe_under_concurrent_acquire():
+    limiter = RateLimiter(rate_per_minute=60, capacity=2)  # real clock/sleep, 1 token/sec after the burst
+    start = time_module.monotonic()
+
+    def worker():
+        for _ in range(3):
+            limiter.acquire()
+
+    threads = [threading.Thread(target=worker) for _ in range(4)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    elapsed = time_module.monotonic() - start
+    # 12 total acquisitions; 2 are free (capacity), the remaining 10 must be paced at 1/sec.
+    # A thread-safe limiter takes close to 10s; a racy one (double-granting tokens) finishes much faster.
+    assert elapsed >= 9.0

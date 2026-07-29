@@ -9,6 +9,7 @@ import email.utils
 import httpx
 import json
 import random
+import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -51,6 +52,7 @@ class RateLimiter:
         self._clock = clock
         self._sleep = sleep
         self._last_refill = clock()
+        self._lock = threading.Lock()
 
     def _refill(self) -> None:
         now = self._clock()
@@ -59,15 +61,15 @@ class RateLimiter:
         self._last_refill = now
 
     def acquire(self) -> None:
-        self._refill()
-        if self._tokens >= 1:
-            self._tokens -= 1
-            return
-        deficit = 1 - self._tokens
-        wait_time = deficit / self._rate_per_second
-        self._sleep(wait_time)
-        self._refill()
-        self._tokens -= 1
+        while True:
+            with self._lock:
+                self._refill()
+                if self._tokens >= 1:
+                    self._tokens -= 1
+                    return
+                deficit = 1 - self._tokens
+                wait_time = deficit / self._rate_per_second
+            self._sleep(wait_time)
 
 
 class ProviderError(Exception):
