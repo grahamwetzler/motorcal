@@ -1,0 +1,57 @@
+server:
+  base_url: "https://racing.example.com"
+  uid_domain: "racing.example.com"
+
+source:
+  rate_limit_per_min: 28
+  refresh_cron: "17 */6 * * *"
+  next_season_from: "10-01"
+
+retention:
+  historical_days: 180
+  cancelled_after_event_days: 90
+
+defaults:
+  durations:
+    practice: "1h"
+    qualifying: "1h"
+    sprint: "45m"
+  alerts:
+    race: ["-1d", "-30m"]
+    qualifying: ["-15m"]
+    hyperpole: ["-15m"]
+    sprint: ["-15m"]
+    sprint_qualifying: ["-15m"]
+    practice: []
+  include_sessions:
+    - practice
+    - qualifying
+    - hyperpole
+    - sprint_qualifying
+    - sprint
+    - race
+
+include_non_championship: false
+unknown_time:
+  mode: all_day
+  summary_suffix: " (time TBC)"
+
+series:
+  f1:
+    league_id: 4370
+    name: "Formula 1"
+    max_round: 30
+  wec:
+    league_id: 4413
+    name: "WEC"
+    max_round: 20
+  indycar:
+    league_id: 4373
+    name: "IndyCar"
+    max_round: 30
+    race_only: true
+  imsa:
+    league_id: 4488
+    name: "IMSA"
+    max_round: 30
+    race_only: true
