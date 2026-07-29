@@ -8,6 +8,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
+
 from motorcal.config import ConfigError, OverridesConfig, RootConfig, load_config, load_overrides
 from motorcal.ics import render_calendar_bytes, sync_feed_revision
 from motorcal.merge import PatchMatchError, RebuildReport, rebuild_publication, reconcile_synthetic_events
@@ -201,3 +205,14 @@ def check_and_reload_config(
         reloaded=True, root_config=new_root_config, overrides=new_overrides,
         bundle_hash=new_hash, error=None,
     )
+
+
+def build_scheduler(
+    refresh_job, refresh_cron: str, reload_job, reload_interval_seconds: float = 30
+) -> BackgroundScheduler:
+    """Build (but do not start) a scheduler running refresh_job on refresh_cron
+    and reload_job on a fixed interval."""
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(refresh_job, CronTrigger.from_crontab(refresh_cron))
+    scheduler.add_job(reload_job, IntervalTrigger(seconds=reload_interval_seconds))
+    return scheduler

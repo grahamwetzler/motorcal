@@ -1,6 +1,7 @@
 """FastAPI application: token-protected feed/status routes and health checks."""
 from __future__ import annotations
 
+import json
 import logging
 import re
 import secrets
@@ -19,6 +20,7 @@ from motorcal.store import (
     check_integrity,
     connect,
     get_feed_revision,
+    get_refresh_diagnostics,
     get_snapshot_meta,
     list_published_events_by_series,
 )
@@ -163,6 +165,13 @@ def create_app(db_path: Path, root_config: RootConfig, tokens: list[str]) -> Fas
                     "feed_revision": revision_row["revision"] if revision_row else None,
                     "feed_updated_at": revision_row["updated_at"] if revision_row else None,
                 }
+
+            diagnostics_row = get_refresh_diagnostics(conn)
+            if diagnostics_row is None:
+                patch_errors, unknown_events = [], []
+            else:
+                patch_errors = json.loads(diagnostics_row["patch_errors_json"])
+                unknown_events = json.loads(diagnostics_row["unknown_events_json"])
         finally:
             conn.close()
 
@@ -170,6 +179,8 @@ def create_app(db_path: Path, root_config: RootConfig, tokens: list[str]) -> Fas
             "ready": all(v["ready"] for v in series_status.values()),
             "healthy": all(not v["stale"] for v in series_status.values()),
             "series": series_status,
+            "patch_errors": patch_errors,
+            "unknown_events": unknown_events,
         }
         return body
 
