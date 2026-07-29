@@ -5,11 +5,33 @@ Phase 4 decides whether and how to persist it.
 """
 from __future__ import annotations
 
+import email.utils
 import httpx
 import json
+import random
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime, timezone
+
+_RETRY_AFTER_CAP_SECONDS = 60.0
+
+
+def _parse_retry_after(value: str | None, *, fallback: float) -> float:
+    """Parse a Retry-After header (delta-seconds or HTTP-date), clamped to a sane range."""
+    if value is None:
+        return fallback
+    try:
+        seconds = float(value)
+    except ValueError:
+        try:
+            parsed = email.utils.parsedate_to_datetime(value)
+        except (TypeError, ValueError):
+            return fallback
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        seconds = (parsed - datetime.now(timezone.utc)).total_seconds()
+    return max(0.0, min(seconds, _RETRY_AFTER_CAP_SECONDS))
 
 
 class RateLimiter:
@@ -140,21 +162,24 @@ def fetch_round(
             response = client.get(url, params=params, timeout=timeout)
         except httpx.HTTPError as exc:
             last_error = exc
-            sleep(min(2**attempt, 30))
+            if attempt < max_retries:
+                sleep(min(2**attempt, 30) * random.uniform(1.0, 1.3))
             continue
 
         if response.status_code == 429:
-            retry_after = response.headers.get("Retry-After")
-            wait = float(retry_after) if retry_after else min(2**attempt, 30)
+            fallback = min(2**attempt, 30)
+            wait = _parse_retry_after(response.headers.get("Retry-After"), fallback=fallback)
             last_error = ProviderError(f"Rate limited (429) on round {round_number}")
-            sleep(wait)
+            if attempt < max_retries:
+                sleep(wait)
             continue
 
         if response.status_code != 200:
             last_error = ProviderError(
                 f"Unexpected status {response.status_code} for round {round_number}"
             )
-            sleep(min(2**attempt, 30))
+            if attempt < max_retries:
+                sleep(min(2**attempt, 30) * random.uniform(1.0, 1.3))
             continue
 
         return _parse_events(response.text, round_number, series)

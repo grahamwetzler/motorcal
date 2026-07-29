@@ -152,3 +152,46 @@ def test_fetch_round_raises_provider_error_not_something_else_for_hostile_events
             client, "3", 4413, "2026", 1, series="wec",
             rate_limiter=_NoOpRateLimiter(), max_retries=0, sleep=lambda s: None,
         )
+
+
+def test_fetch_round_parses_http_date_retry_after_without_crashing():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(429, headers={"Retry-After": "Wed, 21 Oct 2026 07:28:00 GMT"}, text="rate limited")
+
+    client = _client_with_handler(handler)
+    sleeps = []
+    with pytest.raises(ProviderError):
+        fetch_round(
+            client, "3", 4413, "2026", 1, series="wec",
+            rate_limiter=_NoOpRateLimiter(), max_retries=1, sleep=sleeps.append,
+        )
+    assert len(sleeps) == 1
+    assert sleeps[0] >= 0  # did not raise, did not go negative
+
+
+def test_fetch_round_caps_excessive_retry_after_value():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(429, headers={"Retry-After": "86400"}, text="rate limited")
+
+    client = _client_with_handler(handler)
+    sleeps = []
+    with pytest.raises(ProviderError):
+        fetch_round(
+            client, "3", 4413, "2026", 1, series="wec",
+            rate_limiter=_NoOpRateLimiter(), max_retries=1, sleep=sleeps.append,
+        )
+    assert sleeps[0] <= 60.0  # capped, not 86400
+
+
+def test_fetch_round_rejects_negative_retry_after_without_crashing():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(429, headers={"Retry-After": "-5"}, text="rate limited")
+
+    client = _client_with_handler(handler)
+    sleeps = []
+    with pytest.raises(ProviderError):
+        fetch_round(
+            client, "3", 4413, "2026", 1, series="wec",
+            rate_limiter=_NoOpRateLimiter(), max_retries=1, sleep=sleeps.append,
+        )
+    assert sleeps[0] >= 0.0  # negative value was clamped, sleep() was never called with a negative number
