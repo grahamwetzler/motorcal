@@ -6,7 +6,6 @@ import pytest
 from motorcal.providers.thesportsdb import (
     ProviderError,
     ProviderEvent,
-    RateLimiter,
     build_client,
     fetch_round,
 )
@@ -219,3 +218,29 @@ def test_build_client_follows_redirects_and_sets_user_agent():
         assert "motorcal" in client.headers.get("user-agent", "")
     finally:
         client.close()
+
+
+class _CountingRateLimiter:
+    def __init__(self):
+        self.acquire_count = 0
+
+    def acquire(self) -> None:
+        self.acquire_count += 1
+
+
+def test_fetch_round_calls_rate_limiter_acquire_once_per_attempt_including_retries():
+    call_count = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        call_count["n"] += 1
+        if call_count["n"] < 3:
+            return httpx.Response(503, text="temporarily unavailable")
+        return httpx.Response(200, text='{"events":null}')
+
+    client = _client_with_handler(handler)
+    limiter = _CountingRateLimiter()
+    fetch_round(
+        client, "3", 4413, "2026", 1, series="wec",
+        rate_limiter=limiter, sleep=lambda s: None,
+    )
+    assert limiter.acquire_count == 3  # one per attempt: 2 failures + 1 success
