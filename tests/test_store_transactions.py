@@ -140,3 +140,14 @@ def test_transaction_commits_both_tables_together_on_success(tmp_path):
         _insert_sample_published_event(conn)
     assert get_source_event(conn, "thesportsdb", "2421035") is not None
     assert get_published_event(conn, "thesportsdb-2421035@racing.example.com") is not None
+
+
+def test_transaction_is_composable_with_lease_functions(tmp_path):
+    from motorcal.store import acquire_lease, current_lease_holder
+
+    conn = _fresh_conn(tmp_path)
+    with transaction(conn):
+        assert acquire_lease(conn, "worker-a", ttl_seconds=60, now=1000.0) is True
+        _insert_sample_source_event(conn)
+    assert current_lease_holder(conn, now=1000.0) == "worker-a"
+    assert get_source_event(conn, "thesportsdb", "2421035") is not None

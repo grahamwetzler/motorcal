@@ -148,12 +148,22 @@ def check_integrity(conn: sqlite3.Connection) -> bool:
 
 @contextmanager
 def transaction(conn: sqlite3.Connection):
-    """Wrap a block of writes in an immediate, all-or-nothing SQLite transaction."""
+    """Wrap a block of writes in an immediate, all-or-nothing SQLite transaction.
+
+    Reentrant: if a transaction is already open on this connection, this call
+    is a no-op passthrough and the outermost transaction() owns commit/rollback.
+    """
+    if conn.in_transaction:
+        yield conn
+        return
     conn.execute("BEGIN IMMEDIATE")
     try:
         yield conn
     except BaseException:
-        conn.execute("ROLLBACK")
+        try:
+            conn.execute("ROLLBACK")
+        except sqlite3.OperationalError:
+            pass  # SQLite already auto-rolled back (e.g. disk full / I/O error)
         raise
     else:
         conn.execute("COMMIT")
@@ -329,7 +339,7 @@ def acquire_lease(
         row = conn.execute(
             "SELECT holder, expires_at FROM refresh_lease WHERE id = 1"
         ).fetchone()
-        if row is not None and _parse_iso(row["expires_at"]) > now:
+        if row is not None and row["holder"] != holder and _parse_iso(row["expires_at"]) > now:
             return False
         conn.execute(
             """

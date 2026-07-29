@@ -1,4 +1,4 @@
-import time
+import threading
 
 from motorcal.store import (
     acquire_lease,
@@ -55,18 +55,33 @@ def test_current_lease_holder_is_none_when_never_acquired(tmp_path):
     assert current_lease_holder(conn, now=1000.0) is None
 
 
+def test_same_holder_can_renew_before_expiry(tmp_path):
+    conn = _fresh_conn(tmp_path)
+    assert acquire_lease(conn, "worker-a", ttl_seconds=60, now=1000.0) is True
+    assert acquire_lease(conn, "worker-a", ttl_seconds=60, now=1030.0) is True  # renewal, not expired yet
+    assert current_lease_holder(conn, now=1085.0) == "worker-a"  # expiry extended by the renewal
+    assert current_lease_holder(conn, now=1091.0) is None  # now past the renewed expiry (1030+60=1090)
+
+
 def test_two_connections_racing_for_the_lease_only_one_wins(tmp_path):
-    # Simulates two separate processes/workers each holding their own connection
-    # to the same database file, both trying to acquire the lease at the same moment.
     db_path = tmp_path / "shared.db"
-    conn_a = connect(db_path)
-    init_schema(conn_a)
-    conn_b = connect(db_path)
+    setup_conn = connect(db_path)
+    init_schema(setup_conn)
+    setup_conn.close()
 
-    now = time.time()
-    result_a = acquire_lease(conn_a, "worker-a", ttl_seconds=60, now=now)
-    result_b = acquire_lease(conn_b, "worker-b", ttl_seconds=60, now=now)
+    barrier = threading.Barrier(2)
+    results = {}
 
-    assert result_a is True
-    assert result_b is False
-    assert current_lease_holder(conn_a, now=now) == "worker-a"
+    def worker(name):
+        conn = connect(db_path)
+        barrier.wait()  # force genuine overlap between the two acquire_lease calls
+        results[name] = acquire_lease(conn, name, ttl_seconds=60, now=1000.0)
+        conn.close()
+
+    threads = [threading.Thread(target=worker, args=(name,)) for name in ("worker-a", "worker-b")]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert sorted(results.values()) == [False, True]
