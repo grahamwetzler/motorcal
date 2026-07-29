@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta
 
-from icalendar import Alarm, Event
+from icalendar import Alarm, Calendar, Event
 
-from motorcal.config import parse_alarm_offset
+from motorcal.config import SeriesConfig, parse_alarm_offset
 
 PRODID = "-//motorcal//motorsports-calendar//EN"
 
@@ -55,3 +55,25 @@ def build_vevent(
         event.add_component(alarm)
 
     return event
+
+
+def build_calendar(series_config: SeriesConfig, vevents: list[Event]) -> Calendar:
+    """Assemble one deterministic VCALENDAR for a series from its rendered VEVENTs."""
+    calendar = Calendar()
+    calendar.add("prodid", PRODID)
+    calendar.add("version", "2.0")
+    calendar.add("method", "PUBLISH")
+    calendar.add("x-wr-calname", series_config.name)
+
+    caldesc = f"{series_config.name} calendar"
+    if series_config.race_only:
+        caldesc += " (race sessions only)"
+    calendar.add("x-wr-caldesc", caldesc)
+
+    calendar.add("refresh-interval;value=duration", "PT1H")
+    calendar.add("x-published-ttl", "PT1H")
+
+    for vevent in sorted(vevents, key=lambda e: str(e.get("uid"))):
+        calendar.add_component(vevent)
+
+    return calendar
