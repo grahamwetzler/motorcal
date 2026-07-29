@@ -205,6 +205,7 @@ class SnapshotResult:
     events: list[ProviderEvent]
     diagnostics: list[str]
     rounds_attempted: int
+    rounds_failed: int
 
 
 def scan_series_season(
@@ -268,4 +269,5 @@ def scan_series_season(
         events=events,
         diagnostics=diagnostics,
         rounds_attempted=len(rounds),
+        rounds_failed=len(diagnostics),
     )
