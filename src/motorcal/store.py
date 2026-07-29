@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import sqlite3
+import time
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 
 SCHEMA_VERSION = 1
@@ -308,3 +310,55 @@ def get_published_event(conn: sqlite3.Connection, uid: str) -> sqlite3.Row | Non
     return conn.execute(
         "SELECT * FROM published_events WHERE uid = ?", (uid,)
     ).fetchone()
+
+
+def _iso(timestamp: float) -> str:
+    return datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()
+
+
+def _parse_iso(value: str) -> float:
+    return datetime.fromisoformat(value).timestamp()
+
+
+def acquire_lease(
+    conn: sqlite3.Connection, holder: str, ttl_seconds: float, *, now: float | None = None
+) -> bool:
+    """Atomically claim the single refresh lease if it is free or expired."""
+    now = time.time() if now is None else now
+    with transaction(conn):
+        row = conn.execute(
+            "SELECT holder, expires_at FROM refresh_lease WHERE id = 1"
+        ).fetchone()
+        if row is not None and _parse_iso(row["expires_at"]) > now:
+            return False
+        conn.execute(
+            """
+            INSERT INTO refresh_lease (id, holder, acquired_at, expires_at)
+            VALUES (1, ?, ?, ?)
+            ON CONFLICT (id) DO UPDATE SET
+                holder = excluded.holder,
+                acquired_at = excluded.acquired_at,
+                expires_at = excluded.expires_at
+            """,
+            (holder, _iso(now), _iso(now + ttl_seconds)),
+        )
+        return True
+
+
+def release_lease(conn: sqlite3.Connection, holder: str) -> None:
+    """Release the lease, but only if it is currently held by `holder`."""
+    with transaction(conn):
+        conn.execute(
+            "DELETE FROM refresh_lease WHERE id = 1 AND holder = ?", (holder,)
+        )
+
+
+def current_lease_holder(conn: sqlite3.Connection, *, now: float | None = None) -> str | None:
+    """Return the current live lease holder, or None if unheld or expired."""
+    now = time.time() if now is None else now
+    row = conn.execute(
+        "SELECT holder, expires_at FROM refresh_lease WHERE id = 1"
+    ).fetchone()
+    if row is None or _parse_iso(row["expires_at"]) <= now:
+        return None
+    return row["holder"]
