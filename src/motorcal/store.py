@@ -1,11 +1,15 @@
 """SQLite persistence: schema, migrations, transactions, lease, and backup."""
 from __future__ import annotations
 
+import json
 import sqlite3
 import time
 from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+
+from motorcal.providers.thesportsdb import SnapshotResult
 
 SCHEMA_VERSION = 1
 
@@ -457,3 +461,74 @@ def mark_source_event_disappeared(
         "UPDATE source_events SET disappeared_at = ? WHERE provider = ? AND id_event = ?",
         (disappeared_at, provider, id_event),
     )
+
+
+@dataclass
+class IngestResult:
+    """The outcome of deciding whether to commit one provider scan."""
+
+    committed: bool
+    reason: str | None
+    events_written: int
+
+
+def ingest_snapshot(
+    conn: sqlite3.Connection,
+    snapshot: SnapshotResult,
+    *,
+    provider: str,
+    series: str,
+    season: str,
+    now: str,
+    is_current_season: bool,
+) -> IngestResult:
+    """Decide whether to commit a provider scan, and if so, write it atomically.
+
+    Implements: incomplete snapshots are discarded in full; an empty snapshot is
+    suspicious (and rejected) for the current season always, and for a future
+    season only if that scope was previously populated; disappearance marking
+    (not published cancellation — that is Phase 6) happens only for a committed,
+    complete snapshot.
+    """
+    if not snapshot.complete:
+        return IngestResult(committed=False, reason="incomplete_snapshot", events_written=0)
+
+    if len(snapshot.events) == 0:
+        if is_current_season:
+            return IngestResult(
+                committed=False, reason="suspicious_empty_current_season", events_written=0
+            )
+        existing_meta = get_snapshot_meta(conn, provider, series, season)
+        previously_populated = existing_meta is not None and existing_meta["last_event_count"] > 0
+        if previously_populated:
+            return IngestResult(
+                committed=False, reason="suspicious_empty_future_season", events_written=0
+            )
+
+    with transaction(conn):
+        seen_ids = set()
+        for event in snapshot.events:
+            upsert_source_event(
+                conn,
+                provider=provider,
+                id_event=event.id_event,
+                series=event.series,
+                season=event.season,
+                round=event.round,
+                name=event.name,
+                date=event.date,
+                time=event.time,
+                venue=event.venue,
+                country=event.country,
+                raw_json=json.dumps(event.raw),
+                seen_at=now,
+            )
+            seen_ids.add(event.id_event)
+
+        for row in list_source_events_by_scope(conn, provider, series, season):
+            if row["id_event"] not in seen_ids and row["disappeared_at"] is None:
+                mark_source_event_disappeared(conn, provider, row["id_event"], now)
+
+        upsert_snapshot_meta(conn, provider, series, season, now, len(snapshot.events))
+
+    return IngestResult(committed=True, reason=None, events_written=len(snapshot.events))
