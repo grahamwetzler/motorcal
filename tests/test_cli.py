@@ -1,7 +1,5 @@
-from pathlib import Path
-
 from motorcal.cli import main
-from motorcal.store import check_integrity, connect, init_schema, transaction, upsert_source_event
+from motorcal.store import check_integrity, connect
 
 
 def test_init_db_creates_and_initializes_database(tmp_path, capsys):

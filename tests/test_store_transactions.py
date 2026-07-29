@@ -108,6 +108,7 @@ def test_upsert_and_get_published_event(tmp_path):
     assert row["summary"] == "6 Hours of Imola"
     assert row["status"] == "CONFIRMED"
     assert row["sequence"] == 1
+    assert row["time_confirmed"] == 0  # stored as SQLite INTEGER; sample event passed time_confirmed=False
 
 
 def test_get_source_event_returns_none_when_missing(tmp_path):
