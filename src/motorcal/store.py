@@ -589,3 +589,25 @@ def mark_synthetic_event_removed(conn: sqlite3.Connection, uid: str, removed_at:
         """,
         (removed_at, uid),
     )
+
+
+def list_all_source_events(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    return conn.execute("SELECT * FROM source_events").fetchall()
+
+
+def list_published_events(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    return conn.execute("SELECT * FROM published_events").fetchall()
+
+
+def delete_source_event(conn: sqlite3.Connection, provider: str, id_event: str) -> None:
+    conn.execute(
+        "DELETE FROM source_events WHERE provider = ? AND id_event = ?", (provider, id_event)
+    )
+
+
+def delete_published_event(conn: sqlite3.Connection, uid: str) -> None:
+    conn.execute("DELETE FROM published_events WHERE uid = ?", (uid,))
+
+
+def purge_synthetic_event(conn: sqlite3.Connection, uid: str) -> None:
+    conn.execute("DELETE FROM synthetic_events WHERE uid = ?", (uid,))
