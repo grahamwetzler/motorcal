@@ -1,12 +1,14 @@
 """Scheduled refresh orchestration and runtime config reload."""
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 
-from motorcal.config import OverridesConfig, RootConfig
+from motorcal.config import ConfigError, OverridesConfig, RootConfig, load_config, load_overrides
 from motorcal.ics import render_calendar_bytes, sync_feed_revision
 from motorcal.merge import PatchMatchError, RebuildReport, rebuild_publication, reconcile_synthetic_events
 from motorcal.providers.thesportsdb import RateLimiter, build_client, scan_series_season
@@ -130,3 +132,72 @@ def run_refresh_cycle(
         )
     finally:
         release_lease(conn, lease_holder)
+
+
+def config_bundle_hash(config_path: Path, overrides_path: Path) -> str:
+    """A content-based hash of both config files, used to detect a real change."""
+    hasher = hashlib.sha256()
+    for path in (config_path, overrides_path):
+        hasher.update(Path(path).read_bytes())
+    return hasher.hexdigest()
+
+
+@dataclass
+class ReloadResult:
+    reloaded: bool
+    root_config: RootConfig
+    overrides: OverridesConfig
+    bundle_hash: str | None
+    error: str | None
+
+
+def check_and_reload_config(
+    conn: sqlite3.Connection,
+    config_path: Path,
+    overrides_path: Path,
+    previous_hash: str | None,
+    previous_root_config: RootConfig,
+    previous_overrides: OverridesConfig,
+    uid_domain: str,
+    now: datetime,
+) -> ReloadResult:
+    """Detect a config-file change, validate the whole bundle, and rebuild atomically.
+
+    On any failure the previous config/overrides/published state remain
+    completely untouched -- validation happens before any database write, and
+    reconciliation + rebuild happen inside one transaction so a mid-way
+    failure can never leave a half-applied config active.
+    """
+    new_hash = config_bundle_hash(config_path, overrides_path)
+    if new_hash == previous_hash:
+        return ReloadResult(
+            reloaded=False, root_config=previous_root_config, overrides=previous_overrides,
+            bundle_hash=previous_hash, error=None,
+        )
+
+    try:
+        new_root_config = load_config(config_path)
+        new_overrides = load_overrides(overrides_path)
+    except ConfigError as exc:
+        return ReloadResult(
+            reloaded=False, root_config=previous_root_config, overrides=previous_overrides,
+            bundle_hash=previous_hash, error=str(exc),
+        )
+
+    try:
+        with transaction(conn):
+            reconcile_synthetic_events(conn, new_overrides.events, now.isoformat())
+            rebuild_publication(
+                conn, root_config=new_root_config, overrides=new_overrides,
+                uid_domain=uid_domain, now=now,
+            )
+    except Exception as exc:  # noqa: BLE001 -- any rebuild failure must roll back and be reported
+        return ReloadResult(
+            reloaded=False, root_config=previous_root_config, overrides=previous_overrides,
+            bundle_hash=previous_hash, error=str(exc),
+        )
+
+    return ReloadResult(
+        reloaded=True, root_config=new_root_config, overrides=new_overrides,
+        bundle_hash=new_hash, error=None,
+    )
