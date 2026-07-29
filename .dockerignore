@@ -1,0 +1,14 @@
+.venv/
+.git/
+.github/
+__pycache__/
+*.pyc
+*.db
+*.db-wal
+*.db-shm
+.env
+config/config.yaml
+config/overrides.yaml
+docs/
+.worktrees/
+.claude/
