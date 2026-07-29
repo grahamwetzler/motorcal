@@ -1,6 +1,8 @@
 """FastAPI application: token-protected feed/status routes and health checks."""
 from __future__ import annotations
 
+import logging
+import re
 import secrets
 import sqlite3
 from datetime import datetime, timezone
@@ -9,17 +11,30 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from motorcal.config import RootConfig
 from motorcal.ics import render_calendar_bytes, sync_feed_revision
 from motorcal.store import (
     check_integrity,
     connect,
+    get_feed_revision,
     get_snapshot_meta,
     list_published_events_by_series,
 )
 
 DEFAULT_STALE_AFTER_HOURS = 12
+
+_TOKEN_PATH_RE = re.compile(r"^/c/[^/]+")
+_access_logger = logging.getLogger("motorcal.access")
+
+
+class RedactTokenMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        redacted_path = _TOKEN_PATH_RE.sub("/c/REDACTED", request.url.path)
+        _access_logger.info("%s %s -> %s", request.method, redacted_path, response.status_code)
+        return response
 
 
 def verify_token(token: str, valid_tokens: list[str]) -> bool:
@@ -29,6 +44,7 @@ def verify_token(token: str, valid_tokens: list[str]) -> bool:
 
 def create_app(db_path: Path, root_config: RootConfig, tokens: list[str]) -> FastAPI:
     app = FastAPI()
+    app.add_middleware(RedactTokenMiddleware)
     app.state.db_path = db_path
     app.state.root_config = root_config
     app.state.tokens = tokens
@@ -119,5 +135,42 @@ def create_app(db_path: Path, root_config: RootConfig, tokens: list[str]) -> Fas
             return Response(status_code=304, headers=headers)
 
         return Response(content=ics_bytes, media_type="text/calendar", headers=headers)
+
+    @app.get("/c/{token}/status")
+    def get_status(token: str):
+        if not verify_token(token, app.state.tokens):
+            raise HTTPException(status_code=404)
+
+        conn = connect(app.state.db_path)
+        now = datetime.now(timezone.utc)
+        season = str(now.year)
+        try:
+            series_status = {}
+            for series in app.state.root_config.series:
+                ready = len(list_published_events_by_series(conn, series)) > 0
+                meta = get_snapshot_meta(conn, "thesportsdb", series, season)
+                if meta is None:
+                    stale, last_complete_at = True, None
+                else:
+                    last_complete_at = meta["last_complete_at"]
+                    age_hours = (now - datetime.fromisoformat(last_complete_at)).total_seconds() / 3600
+                    stale = age_hours > DEFAULT_STALE_AFTER_HOURS
+                revision_row = get_feed_revision(conn, series)
+                series_status[series] = {
+                    "ready": ready,
+                    "stale": stale,
+                    "last_complete_at": last_complete_at,
+                    "feed_revision": revision_row["revision"] if revision_row else None,
+                    "feed_updated_at": revision_row["updated_at"] if revision_row else None,
+                }
+        finally:
+            conn.close()
+
+        body = {
+            "ready": all(v["ready"] for v in series_status.values()),
+            "healthy": all(not v["stale"] for v in series_status.values()),
+            "series": series_status,
+        }
+        return body
 
     return app
