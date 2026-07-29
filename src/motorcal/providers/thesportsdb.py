@@ -5,8 +5,11 @@ Phase 4 decides whether and how to persist it.
 """
 from __future__ import annotations
 
+import httpx
+import json
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
 
 
 class RateLimiter:
@@ -43,3 +46,108 @@ class RateLimiter:
         self._sleep(wait_time)
         self._refill()
         self._tokens -= 1
+
+
+class ProviderError(Exception):
+    """Raised when a round's response is malformed/invalid, or retries are exhausted."""
+
+
+@dataclass(frozen=True)
+class ProviderEvent:
+    """A validated event as reported by TheSportsDB for one round."""
+
+    id_event: str
+    name: str
+    date: str
+    time: str | None
+    round: int
+    season: str
+    series: str
+    venue: str | None
+    country: str | None
+    raw: dict
+
+
+_REQUIRED_EVENT_FIELDS = ("idEvent", "idLeague", "strSeason", "dateEvent", "strEvent")
+
+
+def _validate_event(raw: dict) -> None:
+    for field in _REQUIRED_EVENT_FIELDS:
+        if not raw.get(field):
+            raise ProviderError(f"Event missing required field {field!r}: {raw!r}")
+
+
+def _parse_events(response_text: str, round_number: int, series: str) -> list[ProviderEvent]:
+    try:
+        data = json.loads(response_text, strict=False)
+    except ValueError as exc:
+        raise ProviderError(f"Malformed JSON response for round {round_number}: {exc}") from exc
+
+    if not isinstance(data, dict) or "events" not in data:
+        raise ProviderError(f"Unexpected response shape for round {round_number}: {data!r}")
+
+    raw_events = data["events"] or []
+    events = []
+    for raw in raw_events:
+        _validate_event(raw)
+        events.append(
+            ProviderEvent(
+                id_event=raw["idEvent"],
+                name=raw["strEvent"],
+                date=raw["dateEvent"],
+                time=raw.get("strTime") or None,
+                round=round_number,
+                season=raw["strSeason"],
+                series=series,
+                venue=raw.get("strVenue") or None,
+                country=raw.get("strCountry") or None,
+                raw=raw,
+            )
+        )
+    return events
+
+
+def fetch_round(
+    client: httpx.Client,
+    api_key: str,
+    league_id: int,
+    season: str,
+    round_number: int,
+    *,
+    series: str,
+    rate_limiter: RateLimiter,
+    timeout: float = 10.0,
+    max_retries: int = 3,
+    sleep: Callable[[float], None] = time.sleep,
+) -> list[ProviderEvent]:
+    """Fetch and validate one round's events. Raises ProviderError if retries are exhausted."""
+    url = f"https://www.thesportsdb.com/api/v1/json/{api_key}/eventsround.php"
+    params = {"id": league_id, "r": round_number, "s": season}
+
+    last_error: Exception | None = None
+    for attempt in range(max_retries + 1):
+        rate_limiter.acquire()
+        try:
+            response = client.get(url, params=params, timeout=timeout)
+        except httpx.HTTPError as exc:
+            last_error = exc
+            sleep(min(2**attempt, 30))
+            continue
+
+        if response.status_code == 429:
+            retry_after = response.headers.get("Retry-After")
+            wait = float(retry_after) if retry_after else min(2**attempt, 30)
+            last_error = ProviderError(f"Rate limited (429) on round {round_number}")
+            sleep(wait)
+            continue
+
+        if response.status_code != 200:
+            last_error = ProviderError(
+                f"Unexpected status {response.status_code} for round {round_number}"
+            )
+            sleep(min(2**attempt, 30))
+            continue
+
+        return _parse_events(response.text, round_number, series)
+
+    raise ProviderError(f"Exhausted retries fetching round {round_number}: {last_error}") from last_error
