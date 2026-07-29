@@ -362,3 +362,23 @@ def current_lease_holder(conn: sqlite3.Connection, *, now: float | None = None) 
     if row is None or _parse_iso(row["expires_at"]) <= now:
         return None
     return row["holder"]
+
+
+def backup_database(source_path: Path, dest_path: Path) -> None:
+    """Create a fully consistent copy of a live (possibly WAL-mode) database.
+
+    Any existing file at dest_path is removed first: SQLite's backup API
+    requires the destination to be empty or a valid SQLite file — writing
+    over pre-existing non-SQLite bytes raises "file is not a database".
+    """
+    for path in (dest_path, Path(f"{dest_path}-wal"), Path(f"{dest_path}-shm")):
+        if path.exists():
+            path.unlink()
+
+    source_conn = sqlite3.connect(source_path)
+    dest_conn = sqlite3.connect(dest_path)
+    try:
+        source_conn.backup(dest_conn)
+    finally:
+        dest_conn.close()
+        source_conn.close()
