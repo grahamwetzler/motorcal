@@ -611,3 +611,28 @@ def delete_published_event(conn: sqlite3.Connection, uid: str) -> None:
 
 def purge_synthetic_event(conn: sqlite3.Connection, uid: str) -> None:
     conn.execute("DELETE FROM synthetic_events WHERE uid = ?", (uid,))
+
+
+def list_published_events_by_series(conn: sqlite3.Connection, series: str) -> list[sqlite3.Row]:
+    return conn.execute(
+        "SELECT * FROM published_events WHERE series = ?", (series,)
+    ).fetchall()
+
+
+def get_feed_revision(conn: sqlite3.Connection, series: str) -> sqlite3.Row | None:
+    return conn.execute(
+        "SELECT * FROM feed_revision WHERE series = ?", (series,)
+    ).fetchone()
+
+
+def upsert_feed_revision(conn: sqlite3.Connection, series: str, revision: str, updated_at: str) -> None:
+    conn.execute(
+        """
+        INSERT INTO feed_revision (series, revision, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT (series) DO UPDATE SET
+            revision = excluded.revision,
+            updated_at = excluded.updated_at
+        """,
+        (series, revision, updated_at),
+    )
