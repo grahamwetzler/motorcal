@@ -532,3 +532,60 @@ def ingest_snapshot(
         upsert_snapshot_meta(conn, provider, series, season, now, len(snapshot.events))
 
     return IngestResult(committed=True, reason=None, events_written=len(snapshot.events))
+
+
+def upsert_synthetic_event(
+    conn: sqlite3.Connection,
+    *,
+    uid: str,
+    series: str,
+    summary: str,
+    start: str | None,
+    date: str | None,
+    duration_seconds: int | None,
+    location: str | None,
+    status: str,
+    note: str | None,
+    alarms_json: str,
+) -> None:
+    """Insert or fully replace a synthetic event by uid. Reactivates if previously removed."""
+    conn.execute(
+        """
+        INSERT INTO synthetic_events
+            (uid, series, summary, start, date, duration_seconds, location, status, note,
+             alarms_json, present_in_config, cancelled_at, purged)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NULL, 0)
+        ON CONFLICT (uid) DO UPDATE SET
+            series = excluded.series,
+            summary = excluded.summary,
+            start = excluded.start,
+            date = excluded.date,
+            duration_seconds = excluded.duration_seconds,
+            location = excluded.location,
+            status = excluded.status,
+            note = excluded.note,
+            alarms_json = excluded.alarms_json,
+            present_in_config = 1,
+            cancelled_at = NULL
+        """,
+        (uid, series, summary, start, date, duration_seconds, location, status, note, alarms_json),
+    )
+
+
+def get_synthetic_event(conn: sqlite3.Connection, uid: str) -> sqlite3.Row | None:
+    return conn.execute("SELECT * FROM synthetic_events WHERE uid = ?", (uid,)).fetchone()
+
+
+def list_synthetic_events(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    return conn.execute("SELECT * FROM synthetic_events").fetchall()
+
+
+def mark_synthetic_event_removed(conn: sqlite3.Connection, uid: str, removed_at: str) -> None:
+    conn.execute(
+        """
+        UPDATE synthetic_events
+        SET present_in_config = 0, cancelled_at = ?
+        WHERE uid = ? AND cancelled_at IS NULL
+        """,
+        (removed_at, uid),
+    )
