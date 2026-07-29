@@ -681,3 +681,25 @@ def upsert_refresh_diagnostics(
         (updated_at, patch_errors_json, unknown_events_json,
          events_published, events_cancelled, events_pruned),
     )
+
+
+def force_advance_all_sequences(
+    conn: sqlite3.Connection, now_unix_minute: int, now_iso: str
+) -> int:
+    """Advance every published event's sequence to at least now_unix_minute.
+
+    Used by the `republish --force-version` recovery operation: after
+    restoring an older backup, this guarantees no restored sequence number is
+    lower than one a client may have already observed. Rows already at or
+    above now_unix_minute are left untouched.
+    """
+    count = 0
+    with transaction(conn):
+        for row in list_published_events(conn):
+            if row["sequence"] < now_unix_minute:
+                conn.execute(
+                    "UPDATE published_events SET sequence = ?, last_modified = ? WHERE uid = ?",
+                    (now_unix_minute, now_iso, row["uid"]),
+                )
+                count += 1
+    return count

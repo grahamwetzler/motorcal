@@ -12,7 +12,7 @@ import uvicorn
 
 from motorcal.config import ConfigError, load_config, load_overrides
 from motorcal.refresh import build_scheduler, check_and_reload_config, run_refresh_cycle
-from motorcal.store import backup_database, check_integrity, connect, init_schema
+from motorcal.store import backup_database, check_integrity, connect, force_advance_all_sequences, init_schema
 from motorcal.web import create_app
 
 
@@ -116,6 +116,28 @@ def _cmd_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_validate_config(args: argparse.Namespace) -> int:
+    try:
+        load_config(Path(args.config))
+        load_overrides(Path(args.overrides))
+    except ConfigError as exc:
+        print(f"Invalid configuration: {exc}", file=sys.stderr)
+        return 1
+    print("Configuration is valid.")
+    return 0
+
+
+def _cmd_republish(args: argparse.Namespace) -> int:
+    db_path = Path(args.db)
+    conn = connect(db_path)
+    now = datetime.now(timezone.utc)
+    now_unix_minute = int(now.timestamp() // 60)
+    count = force_advance_all_sequences(conn, now_unix_minute, now.isoformat())
+    conn.close()
+    print(f"Advanced sequence for {count} published event(s) to at least {now_unix_minute}.")
+    return 0
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="motorcal")
     subparsers = parser.add_subparsers(dest="command")
@@ -140,6 +162,22 @@ def _build_parser() -> argparse.ArgumentParser:
     serve_parser.add_argument("--config", required=True, help="Path to config.yaml")
     serve_parser.add_argument("--overrides", required=True, help="Path to overrides.yaml")
     serve_parser.set_defaults(func=_cmd_serve)
+
+    validate_config_parser = subparsers.add_parser(
+        "validate-config", help="Validate config.yaml + overrides.yaml without activating them"
+    )
+    validate_config_parser.add_argument("--config", required=True, help="Path to config.yaml")
+    validate_config_parser.add_argument("--overrides", required=True, help="Path to overrides.yaml")
+    validate_config_parser.set_defaults(func=_cmd_validate_config)
+
+    republish_parser = subparsers.add_parser(
+        "republish", parents=[db_parent], help="Recovery: force-advance published event sequences"
+    )
+    republish_parser.add_argument(
+        "--force-version", action="store_true", required=True,
+        help="Advance every retained event's sequence to at least the current UTC Unix minute",
+    )
+    republish_parser.set_defaults(func=_cmd_republish)
 
     return parser
 
