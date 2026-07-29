@@ -195,7 +195,7 @@ def test_rebuild_prunes_a_long_past_non_cancelled_event(tmp_path):
         uid_domain=UID_DOMAIN, now=datetime(2026, 1, 1, tzinfo=timezone.utc),
     )
 
-    far_future = datetime(2026, 7, 1, tzinfo=timezone.utc)  # >180 days after 2026-01-01
+    far_future = datetime(2026, 8, 1, tzinfo=timezone.utc)  # >180 days after 2026-01-01
     report = rebuild_publication(
         conn, root_config=_root_config(), overrides=OverridesConfig(),
         uid_domain=UID_DOMAIN, now=far_future,
