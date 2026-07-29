@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+*.db
+*.db-wal
+*.db-shm
+.env
+config/config.yaml
+config/overrides.yaml
+.worktrees/
