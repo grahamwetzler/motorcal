@@ -151,3 +151,63 @@ def fetch_round(
         return _parse_events(response.text, round_number, series)
 
     raise ProviderError(f"Exhausted retries fetching round {round_number}: {last_error}") from last_error
+
+
+@dataclass
+class SnapshotResult:
+    """The outcome of scanning every planned round for one {series, season}."""
+
+    complete: bool
+    events: list[ProviderEvent]
+    diagnostics: list[str]
+    rounds_attempted: int
+
+
+def scan_series_season(
+    client: httpx.Client,
+    api_key: str,
+    league_id: int,
+    season: str,
+    max_round: int,
+    *,
+    series: str,
+    include_non_championship: bool,
+    rate_limiter: RateLimiter,
+    timeout: float = 10.0,
+    max_retries: int = 3,
+    sleep: Callable[[float], None] = time.sleep,
+) -> SnapshotResult:
+    """Scan rounds 1..max_round (plus 500 if include_non_championship) for one series/season."""
+    rounds = list(range(1, max_round + 1))
+    if include_non_championship:
+        rounds.append(500)
+
+    events: list[ProviderEvent] = []
+    diagnostics: list[str] = []
+    complete = True
+
+    for round_number in rounds:
+        try:
+            round_events = fetch_round(
+                client,
+                api_key,
+                league_id,
+                season,
+                round_number,
+                series=series,
+                rate_limiter=rate_limiter,
+                timeout=timeout,
+                max_retries=max_retries,
+                sleep=sleep,
+            )
+            events.extend(round_events)
+        except ProviderError as exc:
+            complete = False
+            diagnostics.append(f"round {round_number}: {exc}")
+
+    return SnapshotResult(
+        complete=complete,
+        events=events,
+        diagnostics=diagnostics,
+        rounds_attempted=len(rounds),
+    )
