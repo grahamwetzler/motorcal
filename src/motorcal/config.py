@@ -133,3 +133,94 @@ def load_config(path: Path) -> RootConfig:
         return RootConfig.model_validate(raw)
     except ValidationError as exc:
         raise ConfigError(f"Invalid configuration in {path}: {exc}") from exc
+
+
+class PatchMatcher(BaseModel):
+    series: str
+    date: str
+    contains: str
+
+
+class PatchConfig(BaseModel):
+    id_event: str | None = None
+    match: PatchMatcher | None = None
+    start: str | None = None
+    time_confirmed: bool | None = None
+    duration: str | None = None
+    summary: str | None = None
+    location: str | None = None
+    status: str | None = None
+    note: str | None = None
+
+    @field_validator("duration")
+    @classmethod
+    def validate_duration_format(cls, value: str | None) -> str | None:
+        if value is not None and not _DURATION_RE.match(value):
+            raise ValueError(f"Invalid duration string: {value!r}")
+        return value
+
+    @model_validator(mode="after")
+    def validate_exactly_one_matcher(self) -> "PatchConfig":
+        if bool(self.id_event) == bool(self.match):
+            raise ValueError("A patch must set exactly one of id_event or match")
+        return self
+
+
+class SyntheticEventConfig(BaseModel):
+    uid: str
+    series: str
+    summary: str
+    start: str | None = None
+    date: str | None = None
+    duration: str | None = None
+    location: str | None = None
+    status: str | None = None
+    note: str | None = None
+    alarms: list[str] = []
+
+    @field_validator("duration")
+    @classmethod
+    def validate_duration_format(cls, value: str | None) -> str | None:
+        if value is not None and not _DURATION_RE.match(value):
+            raise ValueError(f"Invalid duration string: {value!r}")
+        return value
+
+    @field_validator("alarms")
+    @classmethod
+    def validate_alarms(cls, value: list[str]) -> list[str]:
+        for offset in value:
+            if not _ALARM_OFFSET_RE.match(offset):
+                raise ValueError(f"Invalid alarm offset {offset!r}")
+        return value
+
+    @model_validator(mode="after")
+    def validate_exactly_one_of_start_or_date(self) -> "SyntheticEventConfig":
+        if bool(self.start) == bool(self.date):
+            raise ValueError("A synthetic event must set exactly one of start or date")
+        return self
+
+
+class OverridesConfig(BaseModel):
+    patches: list[PatchConfig] = []
+    events: list[SyntheticEventConfig] = []
+
+
+def load_overrides(path: Path) -> OverridesConfig:
+    """Load and validate an overrides.yaml bundle. Raises ConfigError on any failure."""
+    try:
+        raw_text = Path(path).read_text()
+    except OSError as exc:
+        raise ConfigError(f"Could not read overrides file {path}: {exc}") from exc
+
+    try:
+        raw: Any = yaml.safe_load(raw_text)
+    except yaml.YAMLError as exc:
+        raise ConfigError(f"Invalid YAML in {path}: {exc}") from exc
+
+    if not isinstance(raw, dict):
+        raise ConfigError(f"Overrides file {path} did not parse to a mapping")
+
+    try:
+        return OverridesConfig.model_validate(raw)
+    except ValidationError as exc:
+        raise ConfigError(f"Invalid overrides in {path}: {exc}") from exc
