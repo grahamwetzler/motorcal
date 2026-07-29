@@ -2,12 +2,13 @@
 fingerprinting, sequencing, duration/alarm resolution, and cancellation lifecycle."""
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 from dataclasses import dataclass
 
-from motorcal.config import PatchConfig, SyntheticEventConfig, parse_duration
-from motorcal.models import SourceEvent
+from motorcal.config import PatchConfig, RootConfig, SeriesConfig, SyntheticEventConfig, parse_duration
+from motorcal.models import SessionType, SourceEvent
 from motorcal.store import (
     list_synthetic_events,
     mark_synthetic_event_removed,
@@ -100,3 +101,75 @@ def reconcile_synthetic_events(
         for row in list_synthetic_events(conn):
             if row["uid"] not in configured_uids and row["cancelled_at"] is None:
                 mark_synthetic_event_removed(conn, row["uid"], now)
+
+
+def compute_fingerprint(
+    *,
+    summary: str,
+    description: str,
+    location: str | None,
+    status: str,
+    start: str | None,
+    all_day_date: str | None,
+    duration_seconds: int | None,
+    alarms: list[str],
+) -> str:
+    """A stable digest over every client-visible VEVENT field. Alarm order never matters."""
+    payload = {
+        "summary": summary,
+        "description": description,
+        "location": location,
+        "status": status,
+        "start": start,
+        "all_day_date": all_day_date,
+        "duration_seconds": duration_seconds,
+        "alarms": sorted(alarms),
+    }
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def next_sequence(previous_sequence: int | None, now_unix_minute: int) -> int:
+    """A new event may start at the current minute; an existing one must never regress."""
+    if previous_sequence is None:
+        return now_unix_minute
+    return max(previous_sequence + 1, now_unix_minute)
+
+
+def resolve_duration(
+    session_type: SessionType,
+    *,
+    own_duration_seconds: int | None,
+    series_config: SeriesConfig,
+    root_config: RootConfig,
+) -> int | None:
+    """4-tier duration priority: own > per-series default > global default > None."""
+    if own_duration_seconds is not None:
+        return own_duration_seconds
+
+    if series_config.durations is not None:
+        series_value = getattr(series_config.durations, session_type.value, None)
+        if series_value is not None:
+            return parse_duration(series_value)
+
+    global_value = getattr(root_config.defaults.durations, session_type.value, None)
+    if global_value is not None:
+        return parse_duration(global_value)
+
+    return None
+
+
+def resolve_alarms(
+    session_type: SessionType,
+    *,
+    is_synthetic: bool,
+    own_alarms: list[str] | None,
+    time_confirmed: bool,
+    root_config: RootConfig,
+) -> list[str]:
+    """Alarms only apply to confirmed, non-testing, non-unknown sessions."""
+    if not time_confirmed or session_type in (SessionType.UNKNOWN, SessionType.TESTING):
+        return []
+    if is_synthetic:
+        return list(own_alarms) if own_alarms is not None else []
+    return list(root_config.defaults.alerts.get(session_type.value, []))

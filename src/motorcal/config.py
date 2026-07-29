@@ -159,6 +159,7 @@ class SeriesConfig(_StrictModel):
     name: str
     max_round: int
     race_only: bool = False
+    durations: DurationDefaults | None = None
 
 
 class RootConfig(_StrictModel):
