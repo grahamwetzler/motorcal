@@ -1,0 +1,29 @@
+uid_domain: motorcal.wetzler.dev
+source:
+  rate_limit_per_min: 28
+  refresh_cron: 17 */6 * * *
+  next_season_from: 10-01
+retention:
+  historical_days: 180
+  cancelled_after_event_days: 90
+defaults:
+  durations:
+    practice: 1h
+    qualifying: 1h
+    sprint: 45m
+  alerts:
+    race:
+    - -1d
+    - -30m
+    qualifying:
+    - -15m
+    hyperpole:
+    - -15m
+    sprint:
+    - -15m
+    sprint_qualifying:
+    - -15m
+    practice: []
+unknown_time:
+  summary_suffix: ' (time TBC)'
+include_non_championship: false
