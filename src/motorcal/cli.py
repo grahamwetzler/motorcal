@@ -6,11 +6,13 @@ import logging
 import os
 import sqlite3
 import sys
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
 import uvicorn
 
+from motorcal.admin import create_admin_app
 from motorcal.config import ConfigError, load_config, load_overrides
 from motorcal.refresh import (
     build_scheduler,
@@ -154,6 +156,11 @@ def _cmd_serve(args: argparse.Namespace) -> int:
 
     scheduler = build_scheduler(refresh_job, root_config.source.refresh_cron, reload_job)
     scheduler.start()
+
+    admin_app = create_admin_app(db_path, overrides_path, app)
+    threading.Thread(
+        target=uvicorn.run, args=(admin_app,), kwargs={"host": "0.0.0.0", "port": 8001}, daemon=True,
+    ).start()
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
     return 0

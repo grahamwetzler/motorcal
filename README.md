@@ -8,6 +8,11 @@ series that you can subscribe to from any calendar app.
 Feeds are served over a token-gated URL and exposed to the internet via a
 Cloudflare Tunnel, so nothing needs to be port-forwarded.
 
+A separate admin web UI (port 8001) lets you view events and edit/add
+overrides without hand-editing YAML. It's LAN-reachable but intentionally
+**not** exposed through the Cloudflare Tunnel (the tunnel only ever forwards
+port 8000) and has no login of its own — keep it off untrusted networks.
+
 ## Quick start
 
 1. Copy the example env file and fill it in:
@@ -32,6 +37,10 @@ Cloudflare Tunnel, so nothing needs to be port-forwarded.
 4. Subscribe to a feed at `https://<your-domain>/c/<one-of-your-tokens>/<series>.ics`
    (series keys come from `config.yaml`, e.g. `f1`, `wec`, `indycar`, `imsa`).
 
+5. Open `http://<host-on-your-lan>:8001/` to view events and edit or add
+   overrides. Changes are picked up by the running app within ~30 seconds,
+   same as editing `overrides.yaml` by hand.
+
 ## Environment variables
 
 Set these in a `.env` file next to `compose.yaml` (see `.env.example`). All
@@ -45,8 +54,12 @@ three are required — `compose.yaml` fails fast at startup if any are unset.
 
 ## Config files
 
-`compose.yaml` mounts `./config` read-only into the container, so these live
-on the host, not in the image:
+`compose.yaml` mounts `./config` into the container, so these live on the
+host, not in the image. It's mounted read-write because the admin UI writes
+to `overrides.yaml`; the host `./config` directory must be writable by the
+container's user (uid 1000) -- e.g. `chown -R 1000:1000 config` if you don't
+need host-side write access as yourself, or `chmod -R g+w config` plus adding
+yourself to a group with uid 1000.
 
 - `config/config.yaml` — server/source/retention/series settings. Start from
   `config/config.example.yaml`.

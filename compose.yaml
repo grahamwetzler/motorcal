@@ -7,11 +7,20 @@ services:
     environment:
       THESPORTSDB_API_KEY: "${THESPORTSDB_API_KEY:?THESPORTSDB_API_KEY must be set}"
       MOTORCAL_TOKENS: "${MOTORCAL_TOKENS:?MOTORCAL_TOKENS must be set}"
+    ports:
+      - "8001:8001" # admin UI: LAN-reachable, intentionally not proxied by cloudflared
     volumes:
-      - ./config:/config:ro
-      - motorcal-data:/data
+      - ./config:/config
+      - ./motorcal-data:/data
+    container_name: app
     healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/livez', timeout=3).status == 200 else 1)"]
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/livez', timeout=3).status == 200 else 1)",
+        ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -25,6 +34,3 @@ services:
       TUNNEL_TOKEN: "${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN must be set}"
     depends_on:
       - app
-
-volumes:
-  motorcal-data:
