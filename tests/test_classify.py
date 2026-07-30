@@ -92,5 +92,14 @@ def test_imsa_is_race_only_series():
     assert classify_event("imsa", "Acura Grand Prix of Long Beach", 3) is SessionType.RACE
 
 
+def test_race_only_series_still_recognizes_a_manually_added_qualifying_event():
+    """The provider never sends qualifying for these series, but a manually added
+    event named "... Qualifying" should still classify as qualifying, not race."""
+    assert (
+        classify_event("indycar", "OnlyBulls Grand Prix of Portland Qualifying", 13)
+        is SessionType.QUALIFYING
+    )
+
+
 def test_unconfigured_series_is_always_unknown():
     assert classify_event("some_future_series", "Anything", 1) is SessionType.UNKNOWN

@@ -104,6 +104,7 @@ def build_description(
     *,
     event: EventConfig,
     race_only: bool,
+    session_type: SessionType,
     time_confirmed: bool,
 ) -> str:
     """Build the human-readable DESCRIPTION text for one published event."""
@@ -117,7 +118,7 @@ def build_description(
         lines.append(f"Round: {event.round}")
 
     lines.append("Source: TheSportsDB" if source else "Source: local event")
-    if race_only:
+    if race_only and session_type == SessionType.RACE:
         lines.append("This series' feed includes race sessions only.")
 
     if source is None:
@@ -204,7 +205,8 @@ def build_published_event(
     )
 
     description = build_description(
-        event=event, race_only=series_config.race_only, time_confirmed=time_confirmed
+        event=event, race_only=series_config.race_only, session_type=session_type,
+        time_confirmed=time_confirmed,
     )
     fingerprint = compute_fingerprint(
         summary=summary, description=description, location=event.location, status=status.value,

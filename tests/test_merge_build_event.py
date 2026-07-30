@@ -115,6 +115,18 @@ def test_race_only_series_says_so_in_the_description():
     assert "race sessions only" in _build(source_event("1"), series_config=series_config).description
 
 
+def test_race_only_series_note_is_absent_from_a_manual_qualifying_event():
+    """A manually added qualifying event in a race-only series shouldn't claim the
+    feed only has races -- that would contradict the event it's attached to."""
+    series_config = make_series(race_only=True)
+    event = manual_event("indycar-2026-portland-qualifying", summary="Portland Qualifying")
+
+    built = _build(event, series="indycar", series_config=series_config)
+
+    assert built.session_type == SessionType.QUALIFYING
+    assert "race sessions only" not in built.description
+
+
 def test_a_disappeared_future_event_is_cancelled():
     event = source_event("1", time="13:00:00", disappeared_at="t1")
 

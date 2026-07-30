@@ -30,8 +30,11 @@ _SERIES_RULES: dict[str, list[tuple[re.Pattern[str], SessionType]]] = {
 
 # Series that expose only race-level events from the provider (no practice/qualifying
 # breakdown exists in the source data). Every event in one of these series is a race,
-# except round 500 (still testing, checked first, unconditionally).
+# except round 500 (still testing, checked first, unconditionally) and any manually
+# added qualifying event (named "... Qualifying", since the provider never sends one).
 _RACE_ONLY_SERIES = {"indycar", "imsa"}
+
+_QUALIFYING_RE = re.compile(r"qualifying", re.IGNORECASE)
 
 
 def classify_event(series: str, name: str, round_number: int) -> SessionType:
@@ -40,7 +43,7 @@ def classify_event(series: str, name: str, round_number: int) -> SessionType:
         return SessionType.TESTING
 
     if series in _RACE_ONLY_SERIES:
-        return SessionType.RACE
+        return SessionType.QUALIFYING if _QUALIFYING_RE.search(name) else SessionType.RACE
 
     rules = _SERIES_RULES.get(series)
     if rules is None:
