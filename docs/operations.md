@@ -93,10 +93,11 @@ the old copies expire.
 
 ## Unclassified events
 
-`GET :8001/status` lists `unknown_events`: UIDs whose session name didn't match
-any of that series' classification rules (`src/motorcal/classify.py`). They are
-still published — just without an inferred alarm or duration. An entry here
-usually means TheSportsDB introduced a new session-name format.
+Container logs carry an `Unclassified events:` warning listing UIDs whose
+session name didn't match any of that series' classification rules
+(`src/motorcal/classify.py`). They are still published — just without an
+inferred alarm or duration. An entry here usually means TheSportsDB introduced
+a new session-name format.
 
 Two fixes, depending on scope. For a one-off, set that event's `duration:` and
 `alarms:` directly in the series file. For a naming pattern that will recur,
@@ -105,23 +106,19 @@ not configuration.
 
 ## Interpreting stale, incomplete, and suspicious-empty refreshes
 
-`GET :8001/status` reports per-series freshness and always returns HTTP 200 while
-the process is alive — deliberate, since it is also the container healthcheck and
-an upstream outage should not restart-loop an app serving its last-known-good
-feeds correctly. Read the body:
+There's no status endpoint; diagnose freshness from container logs.
 
-- **Stale** (`stale: true`, `last_complete_at` set but old): the last *complete*
-  snapshot for that series is older than 12 hours. Usually repeated refresh
-  failures — network issues, TheSportsDB rate-limiting or outage — so check
-  container logs for `Provider scan:` and `Config reload rejected:` warnings. The
-  previously published calendar keeps serving; nothing is silently emptied.
-- **Never refreshed** (`last_complete_at: null`): either the app started recently
-  and hasn't had a scheduled tick, or every attempt for that series has been
-  *incomplete* (a round request failed) or *suspicious-empty* (a complete scan
-  returned zero events for a scope that previously had data, or for the current
-  season at all). Both are discarded in full by design — see `sync_snapshot` in
-  `src/motorcal/sync.py` — rather than overwriting good data with a partial or
-  suspicious result. The next tick tries again.
+- **Stale**: repeated refresh failures — network issues, TheSportsDB
+  rate-limiting or outage — show up as `Provider scan:` and
+  `Config reload rejected:` warnings. The previously published calendar keeps
+  serving; nothing is silently emptied.
+- **Never refreshed / incomplete / suspicious-empty**: every attempt for that
+  series has been *incomplete* (a round request failed) or *suspicious-empty*
+  (a complete scan returned zero events for a scope that previously had data,
+  or for the current season at all), logged as `Refresh published nothing:`
+  or `Refresh skipped:`. Both are discarded in full by design — see
+  `sync_snapshot` in `src/motorcal/sync.py` — rather than overwriting good
+  data with a partial or suspicious result. The next tick tries again.
 - **Incomplete snapshot**: not its own status field, but it looks like "never
   refreshed" persisting longer than expected. Across many consecutive ticks,
   suspect something systemic: the round-scan `deadline_seconds`, the token-bucket

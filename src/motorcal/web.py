@@ -3,8 +3,6 @@
 Nothing here reads state or renders anything. The refresh and reload jobs push
 already-rendered bytes onto `app.state.feeds`, so a GET is a dict lookup -- it
 can never mutate state, block on a fetch, or race a rebuild.
-
-Health and status live on the admin app (port 8001), not here.
 """
 from __future__ import annotations
 
@@ -20,9 +18,13 @@ _access_logger = logging.getLogger("motorcal.access")
 
 
 def create_app(config: Config) -> FastAPI:
-    app = FastAPI()
+    app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     app.state.config = config
     app.state.feeds = {}
+
+    @app.get("/healthz")
+    def healthz():
+        return {"ok": True}
 
     @app.get("/{series}.ics")
     def get_calendar(series: str, request: Request):

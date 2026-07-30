@@ -5,14 +5,12 @@ import argparse
 import logging
 import os
 import sys
-import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
 import uvicorn
 
 from motorcal import state as state_module
-from motorcal.admin import create_admin_app
 from motorcal.config import Config, ConfigError, load_config, save_series
 from motorcal.ics import render_calendar_bytes
 from motorcal.merge import rebuild_publication
@@ -20,7 +18,6 @@ from motorcal.refresh import (
     build_scheduler,
     check_and_reload_config,
     config_bundle_hash,
-    diagnostics_from_report,
     reschedule_refresh_job,
     run_refresh_cycle,
 )
@@ -81,7 +78,8 @@ def _cmd_serve(args: argparse.Namespace) -> int:
     app.state.data = state
     app.state.published = published
     app.state.feeds = _render_feeds(config, published)
-    app.state.diagnostics = diagnostics_from_report(report, now)
+    if report.unknown_events:
+        _logger.warning("Unclassified events: %s", report.unknown_events)
     app.state.bundle_hash = config_bundle_hash(config_dir)
     app.state.config_dir = config_dir
 
@@ -111,8 +109,8 @@ def _cmd_serve(args: argparse.Namespace) -> int:
         result = run_refresh_cycle(working_config, working_state, api_key=api_key, now=now)
         for error in result.scan_errors:
             _logger.warning("Provider scan: %s", error)
-        if result.diagnostics is not None:
-            app.state.diagnostics = result.diagnostics
+        if result.diagnostics is not None and result.diagnostics["unknown_events"]:
+            _logger.warning("Unclassified events: %s", result.diagnostics["unknown_events"])
         if result.published is None:
             _logger.warning("Refresh published nothing: %s", result.series_season_outcomes)
             return  # the working copies are discarded unpersisted
@@ -139,8 +137,8 @@ def _cmd_serve(args: argparse.Namespace) -> int:
             config_dir, working_state, app.state.bundle_hash, app.state.config, now
         )
         app.state.bundle_hash = result.bundle_hash
-        if result.diagnostics is not None:
-            app.state.diagnostics = result.diagnostics
+        if result.diagnostics is not None and result.diagnostics["unknown_events"]:
+            _logger.warning("Unclassified events: %s", result.diagnostics["unknown_events"])
         if not result.reloaded:
             if result.error is not None:
                 _logger.warning("Config reload rejected: %s", result.error)
@@ -159,11 +157,6 @@ def _cmd_serve(args: argparse.Namespace) -> int:
 
     scheduler = build_scheduler(refresh_job, config.globals.source.refresh_cron, reload_job)
     scheduler.start()
-
-    admin_app = create_admin_app(config_dir, app)
-    threading.Thread(
-        target=uvicorn.run, args=(admin_app,), kwargs={"host": "0.0.0.0", "port": 8001}, daemon=True,
-    ).start()
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
     return 0
@@ -185,7 +178,7 @@ def _build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command")
 
     serve_parser = subparsers.add_parser(
-        "serve", help="Run the scheduler and HTTP servers (feeds on :8000, admin on :8001)"
+        "serve", help="Run the scheduler and HTTP server (feeds on :8000)"
     )
     serve_parser.add_argument("--config", required=True, help="Path to the config directory")
     serve_parser.add_argument("--state", required=True, help="Path to state.yaml")

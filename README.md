@@ -15,11 +15,6 @@ be port-forwarded. They are **not** access-controlled — anyone who knows your
 hostname can fetch `/f1.ics`. That's fine for public race schedules; don't put
 anything else in there.
 
-A separate admin app (port 8001) serves a web UI for viewing and editing events,
-plus the `/status` endpoint. It's LAN-reachable but intentionally **not** exposed
-through the tunnel (which only ever forwards port 8000) and has no login of its
-own — keep it off untrusted networks.
-
 ## Quick start
 
 1. Copy the example env file and fill it in:
@@ -45,8 +40,8 @@ own — keep it off untrusted networks.
 
 4. Subscribe at `https://<your-domain>/<series>.ics`.
 
-5. Open `http://<host-on-your-lan>:8001/` to browse and edit events. Changes are
-   picked up within ~30 seconds, same as editing the YAML by hand.
+5. Edit events by hand in the series YAML files under `config/`. Changes are
+   picked up within ~30 seconds.
 
 ## The config directory
 
@@ -60,8 +55,8 @@ config/
 ```
 
 `compose.yaml` mounts `./config` into the container read-write, because the
-refresh cycle and the admin UI both write to it. The host directory must be
-writable by the container's user (uid 1000) — e.g. `chown -R 1000:1000 config`.
+refresh cycle writes back into it. The host directory must be writable by the
+container's user (uid 1000) — e.g. `chown -R 1000:1000 config`.
 
 ### One event
 
@@ -144,14 +139,6 @@ uid_domain binding, per-scope fetch times, and the version ledger that keeps
 calendar clients from re-notifying subscribers on every refresh. You never need
 to read it; `cp` is a valid backup. See `docs/operations.md` for what losing it
 costs.
-
-## Status
-
-`GET :8001/status` reports per-series event counts and freshness. It always
-returns HTTP 200 while the process is alive — stale upstream data shows up as
-`healthy: false` in the body, so a provider outage doesn't restart-loop a
-container that's serving its last-known-good feeds. It's also the Docker
-healthcheck target.
 
 ## More
 
