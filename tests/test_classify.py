@@ -75,6 +75,10 @@ def test_wec_unrecognized_name_is_unknown_not_race():
     assert classify_event("wec", "Drivers Parade", 1) is SessionType.UNKNOWN
 
 
+def test_wec_lone_star_le_mans_is_race():
+    assert classify_event("wec", "Lone Star Le Mans", 5) is SessionType.RACE
+
+
 def test_indycar_is_race_only_series():
     assert (
         classify_event("indycar", "Firestone Grand Prix of St. Petersburg", 1)

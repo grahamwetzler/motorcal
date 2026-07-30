@@ -20,6 +20,7 @@ _WEC_RULES: list[tuple[re.Pattern[str], SessionType]] = [
     (re.compile(r"qualifying", re.IGNORECASE), SessionType.QUALIFYING),
     (re.compile(r"practice", re.IGNORECASE), SessionType.PRACTICE),
     (re.compile(r"^\d+ hours? of .+$", re.IGNORECASE), SessionType.RACE),
+    (re.compile(r"^lone star le mans$", re.IGNORECASE), SessionType.RACE),
 ]
 
 _SERIES_RULES: dict[str, list[tuple[re.Pattern[str], SessionType]]] = {
