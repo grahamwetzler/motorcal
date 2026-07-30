@@ -121,7 +121,8 @@ def test_resolve_duration_returns_none_when_nothing_configured():
 def test_resolve_alarms_returns_empty_for_unconfirmed_time():
     globals_ = _globals(alerts={"race": ["-1d"]})
     result = resolve_alarms(
-        SessionType.RACE, own_alarms=None, time_confirmed=False, globals_=globals_
+        SessionType.RACE, own_alarms=None, time_confirmed=False,
+        series_config=make_series(), globals_=globals_,
     )
     assert result == []
 
@@ -129,7 +130,8 @@ def test_resolve_alarms_returns_empty_for_unconfirmed_time():
 def test_resolve_alarms_returns_empty_for_unknown_session_type():
     globals_ = _globals(alerts={"race": ["-1d"]})
     result = resolve_alarms(
-        SessionType.UNKNOWN, own_alarms=None, time_confirmed=True, globals_=globals_
+        SessionType.UNKNOWN, own_alarms=None, time_confirmed=True,
+        series_config=make_series(), globals_=globals_,
     )
     assert result == []
 
@@ -137,7 +139,8 @@ def test_resolve_alarms_returns_empty_for_unknown_session_type():
 def test_resolve_alarms_returns_empty_for_testing_session_type():
     globals_ = _globals(alerts={"race": ["-1d"]})
     result = resolve_alarms(
-        SessionType.TESTING, own_alarms=None, time_confirmed=True, globals_=globals_
+        SessionType.TESTING, own_alarms=None, time_confirmed=True,
+        series_config=make_series(), globals_=globals_,
     )
     assert result == []
 
@@ -145,16 +148,27 @@ def test_resolve_alarms_returns_empty_for_testing_session_type():
 def test_resolve_alarms_uses_synthetic_own_alarms_when_synthetic():
     globals_ = _globals(alerts={"race": ["-1d"]})
     result = resolve_alarms(
-        SessionType.RACE, own_alarms=["-2d", "-1h"],
-        time_confirmed=True, globals_=globals_,
+        SessionType.RACE, own_alarms=["-2d", "-1h"], time_confirmed=True,
+        series_config=make_series(alerts={"race": ["-15m"]}), globals_=globals_,
     )
     assert result == ["-2d", "-1h"]
+
+
+def test_resolve_alarms_falls_back_to_series_override():
+    globals_ = _globals(alerts={"race": ["-1d", "-30m"]})
+    series = make_series(alerts={"race": ["-15m"]})
+    result = resolve_alarms(
+        SessionType.RACE, own_alarms=None, time_confirmed=True,
+        series_config=series, globals_=globals_,
+    )
+    assert result == ["-15m"]
 
 
 def test_resolve_alarms_uses_global_defaults_for_source_backed_event():
     globals_ = _globals(alerts={"race": ["-1d", "-30m"]})
     result = resolve_alarms(
-        SessionType.RACE, own_alarms=None, time_confirmed=True, globals_=globals_
+        SessionType.RACE, own_alarms=None, time_confirmed=True,
+        series_config=make_series(), globals_=globals_,
     )
     assert result == ["-1d", "-30m"]
 
@@ -162,6 +176,7 @@ def test_resolve_alarms_uses_global_defaults_for_source_backed_event():
 def test_resolve_alarms_empty_list_is_a_valid_deliberate_configuration():
     globals_ = _globals(alerts={"race": ["-1d"], "practice": []})
     result = resolve_alarms(
-        SessionType.PRACTICE, own_alarms=None, time_confirmed=True, globals_=globals_
+        SessionType.PRACTICE, own_alarms=None, time_confirmed=True,
+        series_config=make_series(), globals_=globals_,
     )
     assert result == []

@@ -48,11 +48,11 @@ def make_globals(
 
 def make_series(
     *, league_id: int = 4413, name: str = "WEC", max_round: int = 20,
-    race_only: bool = False, durations=None, events=None,
+    race_only: bool = False, durations=None, alerts=None, events=None,
 ) -> SeriesConfig:
     return SeriesConfig(
         league_id=league_id, name=name, max_round=max_round, race_only=race_only,
-        durations=durations, events=list(events or []),
+        durations=durations, alerts=alerts, events=list(events or []),
     )
 
 

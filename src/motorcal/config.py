@@ -53,6 +53,18 @@ def _validate_alarm_list(value: list[str] | None) -> list[str] | None:
     return value
 
 
+def _validate_alerts_dict(value: dict[str, list[str]]) -> dict[str, list[str]]:
+    unknown = set(value) - _VALID_SESSION_NAMES
+    if unknown:
+        raise ValueError(f"Unknown session type(s) in alerts: {sorted(unknown)}")
+    for session, offsets in value.items():
+        try:
+            _validate_alarm_list(offsets)
+        except ValueError as exc:
+            raise ValueError(f"{exc} for session {session!r}") from exc
+    return value
+
+
 def parse_duration(value: str) -> int:
     """Parse a duration string like '1h' or '45m' into whole seconds."""
     match = _DURATION_RE.match(value)
@@ -144,15 +156,7 @@ class DefaultsConfig(StrictModel):
     @field_validator("alerts")
     @classmethod
     def validate_alerts(cls, value: dict[str, list[str]]) -> dict[str, list[str]]:
-        unknown = set(value) - _VALID_SESSION_NAMES
-        if unknown:
-            raise ValueError(f"Unknown session type(s) in alerts: {sorted(unknown)}")
-        for session, offsets in value.items():
-            try:
-                _validate_alarm_list(offsets)
-            except ValueError as exc:
-                raise ValueError(f"{exc} for session {session!r}") from exc
-        return value
+        return _validate_alerts_dict(value)
 
 
 class GlobalConfig(StrictModel):
@@ -248,7 +252,13 @@ class SeriesConfig(StrictModel):
     max_round: int
     race_only: bool = False
     durations: DurationDefaults | None = None
+    alerts: dict[str, list[str]] | None = None
     events: list[EventConfig] = []
+
+    @field_validator("alerts")
+    @classmethod
+    def validate_alerts(cls, value: dict[str, list[str]] | None) -> dict[str, list[str]] | None:
+        return _validate_alerts_dict(value) if value is not None else None
 
     @model_validator(mode="after")
     def validate_unique_event_keys(self) -> "SeriesConfig":

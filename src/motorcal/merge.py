@@ -82,17 +82,21 @@ def resolve_alarms(
     *,
     own_alarms: list[str] | None,
     time_confirmed: bool,
+    series_config: SeriesConfig,
     globals_: GlobalConfig,
 ) -> list[str]:
     """Alarms only apply to confirmed, non-testing, non-unknown sessions.
 
-    An explicit list on the event always wins, including an explicit empty one --
-    that is how you silence a single race without touching the series defaults.
+    3-tier priority: the event's own > per-series > global. An explicit list on
+    the event always wins, including an explicit empty one -- that is how you
+    silence a single race without touching the series or global defaults.
     """
     if not time_confirmed or session_type in (SessionType.UNKNOWN, SessionType.TESTING):
         return []
     if own_alarms is not None:
         return list(own_alarms)
+    if series_config.alerts is not None and session_type.value in series_config.alerts:
+        return list(series_config.alerts[session_type.value])
     return list(globals_.defaults.alerts.get(session_type.value, []))
 
 
@@ -184,7 +188,8 @@ def build_published_event(
             series_config=series_config, globals_=globals_,
         )
         alarms = resolve_alarms(
-            session_type, own_alarms=event.alarms, time_confirmed=True, globals_=globals_
+            session_type, own_alarms=event.alarms, time_confirmed=True,
+            series_config=series_config, globals_=globals_,
         )
     else:
         start, all_day_date = None, event.date
