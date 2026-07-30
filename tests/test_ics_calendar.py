@@ -6,7 +6,7 @@ from motorcal.ics import build_calendar, build_vevent
 
 def _event(uid, start_hour=13):
     return build_vevent(
-        uid=uid, summary=f"Event {uid}", status="CONFIRMED",
+        uid=uid, summary=f"Event {uid}", series_name="WEC", status="CONFIRMED",
         start=datetime(2026, 4, 19, start_hour, 0, tzinfo=timezone.utc), all_day_date=None,
         duration_seconds=3600, dtstamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
         last_modified=datetime(2026, 1, 1, tzinfo=timezone.utc), sequence=1,

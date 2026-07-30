@@ -16,6 +16,7 @@ def build_vevent(
     *,
     uid: str,
     summary: str,
+    series_name: str,
     status: str,
     start: datetime | None,
     all_day_date: str | None,
@@ -31,6 +32,7 @@ def build_vevent(
     event = Event()
     event.add("uid", uid)
 
+    summary = f"{series_name}: {summary}"
     rendered_summary = f"[Postponed] {summary}" if status == "TENTATIVE" else summary
     event.add("summary", rendered_summary)
 
@@ -81,10 +83,11 @@ def build_calendar(series_config: SeriesConfig, vevents: list[Event]) -> Calenda
     return calendar
 
 
-def _to_vevent(event: PublishedEvent) -> Event:
+def _to_vevent(event: PublishedEvent, series_name: str) -> Event:
     return build_vevent(
         uid=event.uid,
         summary=event.summary,
+        series_name=series_name,
         status=event.status.value,
         start=event.start,
         all_day_date=event.all_day_date,
@@ -102,7 +105,9 @@ def render_calendar_bytes(
     series_config: SeriesConfig, events: list[PublishedEvent]
 ) -> bytes:
     """Render the deterministic ICS bytes for one series' published events."""
-    return build_calendar(series_config, [_to_vevent(e) for e in events]).to_ical()
+    return build_calendar(
+        series_config, [_to_vevent(e, series_config.name) for e in events]
+    ).to_ical()
 
 
 def compute_content_hash(ics_bytes: bytes) -> str:
