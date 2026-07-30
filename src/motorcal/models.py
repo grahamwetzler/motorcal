@@ -1,9 +1,13 @@
-"""Canonical data models shared by every phase of motorcal."""
+"""Canonical data models shared across motorcal."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from motorcal.config import EventConfig
 
 
 class SessionType(str, Enum):
@@ -23,30 +27,6 @@ class EventStatus(str, Enum):
     CANCELLED = "CANCELLED"
 
 
-@dataclass(frozen=True)
-class SourceEventKey:
-    """Identity of an event as seen by a provider: {provider, id_event}."""
-
-    provider: str
-    id_event: str
-
-
-@dataclass
-class SourceEvent:
-    """A normalized event as reported by a provider, before classification or merge."""
-
-    key: SourceEventKey
-    series: str
-    season: str
-    round: int
-    name: str
-    date: str  # "YYYY-MM-DD" as returned by the provider
-    time: str | None  # "HH:MM:SS", or None if the provider omitted it
-    venue: str | None
-    country: str | None
-    raw: dict = field(default_factory=dict)
-
-
 @dataclass
 class PublishedEvent:
     """A fully resolved event ready for ICS rendering."""
@@ -55,7 +35,7 @@ class PublishedEvent:
     series: str
     session_type: SessionType
     summary: str
-    start: datetime | None  # None when unconfirmed (all-day) or omitted
+    start: datetime | None  # None when the time is unconfirmed (rendered all-day)
     all_day_date: str | None  # "YYYY-MM-DD" when rendered as an all-day event
     time_confirmed: bool
     duration_seconds: int | None
@@ -67,15 +47,16 @@ class PublishedEvent:
     last_modified: datetime
     fingerprint: str
     alarms: list[str] = field(default_factory=list)
-    source_id_event: str | None = None
-    synthetic_uid: str | None = None
+    event_key: str = ""  # the id_event/uid this was built from, for config lookups
 
 
-def source_uid(id_event: str, uid_domain: str) -> str:
-    """Build the stable ICS UID for a provider-sourced event."""
-    return f"thesportsdb-{id_event}@{uid_domain}"
+def event_uid(event: "EventConfig", uid_domain: str) -> str:
+    """The stable ICS UID for a configured event.
 
-
-def synthetic_event_uid(configured_uid: str, uid_domain: str) -> str:
-    """Build the stable ICS UID for a locally configured synthetic event."""
-    return f"local-{configured_uid}@{uid_domain}"
+    Provider-backed and manual events keep distinct prefixes so a manual event can
+    never collide with a provider id, and so the UID a subscriber already has does
+    not change if an event later gains or loses provider backing.
+    """
+    if event.id_event is not None:
+        return f"thesportsdb-{event.id_event}@{uid_domain}"
+    return f"local-{event.uid}@{uid_domain}"

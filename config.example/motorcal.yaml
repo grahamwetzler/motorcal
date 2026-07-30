@@ -1,0 +1,35 @@
+# Settings that don't belong to any single series.
+# Every other *.yaml in this directory is one series, keyed by its filename.
+
+uid_domain: racing.example.com
+
+source:
+  rate_limit_per_min: 28
+  refresh_cron: "17 */6 * * *"
+  next_season_from: "10-01"   # start fetching next season from this date
+
+retention:
+  historical_days: 180
+  cancelled_after_event_days: 90
+
+defaults:
+  # Fallback session lengths, used when an event has no `duration:` of its own
+  # and its series has no override.
+  durations:
+    practice: "1h"
+    qualifying: "1h"
+    sprint: "45m"
+  # Fallback alarms per session type. An event's own `alarms:` always wins,
+  # including an explicit empty list.
+  alerts:
+    race: ["-1d", "-30m"]
+    qualifying: ["-15m"]
+    hyperpole: ["-15m"]
+    sprint: ["-15m"]
+    sprint_qualifying: ["-15m"]
+    practice: []
+
+unknown_time:
+  summary_suffix: " (time TBC)"
+
+include_non_championship: false

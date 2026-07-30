@@ -1,97 +1,72 @@
+from tests.conftest import UID_DOMAIN, make_config, make_series, source_event, write_config_dir
+
+from motorcal import state as state_module
 from motorcal.cli import main
-from motorcal.store import bind_uid_domain, check_integrity, connect, init_schema
+from motorcal.state import State
 
 
-def test_init_db_creates_and_initializes_database(tmp_path, capsys):
-    db_path = tmp_path / "new.db"
-    exit_code = main(["init-db", "--db", str(db_path)])
-    assert exit_code == 0
-    assert db_path.exists()
-    captured = capsys.readouterr()
-    assert str(db_path) in captured.out
-
-    conn = connect(db_path)
-    assert check_integrity(conn) is True
-
-
-def test_backup_command_copies_database(tmp_path, capsys):
-    db_path = tmp_path / "source.db"
-    dest_path = tmp_path / "backup.db"
-    main(["init-db", "--db", str(db_path)])
-
-    exit_code = main(["backup", "--db", str(db_path), "--dest", str(dest_path)])
-    assert exit_code == 0
-    assert dest_path.exists()
-    captured = capsys.readouterr()
-    assert "Backed up" in captured.out
-
-
-def test_backup_command_refuses_to_back_up_corrupt_database(tmp_path, capsys):
-    db_path = tmp_path / "corrupt.db"
-    dest_path = tmp_path / "backup.db"
-    main(["init-db", "--db", str(db_path)])
-
-    with open(db_path, "r+b") as f:
-        f.seek(100)
-        f.write(b"\xff" * 200)
-
-    exit_code = main(["backup", "--db", str(db_path), "--dest", str(dest_path)])
-    assert exit_code == 1
-    assert not dest_path.exists()
-    captured = capsys.readouterr()
-    assert captured.err != ""
-
-
-def test_backup_command_reports_missing_source(tmp_path, capsys):
-    exit_code = main(["backup", "--db", str(tmp_path / "missing.db"), "--dest", str(tmp_path / "backup.db")])
-    assert exit_code == 1
-    assert not (tmp_path / "backup.db").exists()
-    captured = capsys.readouterr()
-    assert captured.err != ""
-
-
-def test_backup_command_handles_header_corruption_without_crashing(tmp_path, capsys):
-    db_path = tmp_path / "corrupt.db"
-    dest_path = tmp_path / "backup.db"
-    main(["init-db", "--db", str(db_path)])
-
-    with open(db_path, "r+b") as f:
-        f.seek(0)
-        f.write(b"\xff" * 50)  # corrupt the file header itself, not just page data
-
-    exit_code = main(["backup", "--db", str(db_path), "--dest", str(dest_path)])
-    assert exit_code == 1
-    assert not dest_path.exists()
-    captured = capsys.readouterr()
-    assert captured.err != ""
+def _config_dir(tmp_path):
+    return write_config_dir(
+        tmp_path, make_config(series={"wec": make_series(events=[source_event("1", time="13:00:00")])})
+    )
 
 
 def test_main_with_no_subcommand_returns_1(capsys):
-    exit_code = main([])
-    assert exit_code == 1
-    captured = capsys.readouterr()
-    assert captured.err != ""
+    assert main([]) == 1
+    assert capsys.readouterr().err != ""
+
+
+def test_validate_config_accepts_a_valid_directory(tmp_path, capsys):
+    exit_code = main(["validate-config", "--config", str(_config_dir(tmp_path))])
+
+    assert exit_code == 0
+    out = capsys.readouterr().out
+    assert "valid" in out
+    assert "1 series, 1 events" in out
+
+
+def test_validate_config_rejects_an_invalid_directory(tmp_path, capsys):
+    config_dir = _config_dir(tmp_path)
+    (config_dir / "wec.yaml").write_text("league_id: not_a_number\nname: X\nmax_round: 1\n")
+
+    assert main(["validate-config", "--config", str(config_dir)]) == 1
+    assert capsys.readouterr().err != ""
+
+
+def test_validate_config_rejects_a_missing_directory(tmp_path, capsys):
+    assert main(["validate-config", "--config", str(tmp_path / "nope")]) == 1
+    assert capsys.readouterr().err != ""
+
+
+def test_validate_config_rejects_a_directory_with_no_series(tmp_path, capsys):
+    config_dir = _config_dir(tmp_path)
+    (config_dir / "wec.yaml").unlink()
+
+    assert main(["validate-config", "--config", str(config_dir)]) == 1
+    assert "No series files" in capsys.readouterr().err
 
 
 def test_serve_refuses_to_start_when_uid_domain_has_changed(tmp_path, capsys, monkeypatch):
-    db_path = tmp_path / "test.db"
-    conn = connect(db_path)
-    init_schema(conn)
-    bind_uid_domain(conn, "old.example.com")
-    conn.close()
-
+    config_dir = _config_dir(tmp_path)
+    state_path = tmp_path / "state.yaml"
+    state_module.save(state_path, State(uid_domain="old.example.com"))
     monkeypatch.setenv("THESPORTSDB_API_KEY", "key")
-    monkeypatch.setenv("MOTORCAL_TOKENS", "tok")
 
-    # config.example.yaml's uid_domain is "racing.example.com", which differs from
-    # the domain already bound above -- this must be refused before ever starting
-    # the scheduler or HTTP server (uvicorn.run would otherwise block forever).
+    # The config says racing.example.com, which differs from the domain already
+    # bound above -- this must be refused before starting the scheduler or the
+    # HTTP server (uvicorn.run would otherwise block forever).
+    exit_code = main(["serve", "--config", str(config_dir), "--state", str(state_path)])
+
+    assert exit_code == 1
+    assert "uid_domain" in capsys.readouterr().err
+
+
+def test_serve_requires_the_api_key(tmp_path, capsys, monkeypatch):
+    monkeypatch.delenv("THESPORTSDB_API_KEY", raising=False)
+
     exit_code = main([
-        "serve", "--db", str(db_path),
-        "--config", "config/config.example.yaml",
-        "--overrides", "config/overrides.example.yaml",
+        "serve", "--config", str(_config_dir(tmp_path)), "--state", str(tmp_path / "state.yaml"),
     ])
 
     assert exit_code == 1
-    captured = capsys.readouterr()
-    assert "uid_domain" in captured.err
+    assert "THESPORTSDB_API_KEY" in capsys.readouterr().err

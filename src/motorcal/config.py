@@ -1,7 +1,18 @@
-"""Configuration schema and loader for motorcal's config.yaml."""
+"""Configuration schema and loader.
+
+The config directory is the source of truth. `motorcal.yaml` holds the settings
+that can't belong to any one series; every other `*.yaml` file is one series,
+keyed by its filename stem, holding that series' settings and its full event list.
+
+The refresh cycle writes series files back (see `sync.py`), so loading and saving
+are both here. Comments inside a series file do not survive a rewrite -- the
+per-event `note:` field is the durable place for annotations.
+"""
 from __future__ import annotations
 
+import os
 import re
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +21,8 @@ from apscheduler.triggers.cron import CronTrigger
 from pydantic import BaseModel, ConfigDict, ValidationError, field_validator, model_validator
 
 from motorcal.models import EventStatus, SessionType
+
+GLOBAL_FILENAME = "motorcal.yaml"
 
 _DURATION_RE = re.compile(r"^([1-9]\d*)(h|m)$")
 _ALARM_OFFSET_RE = re.compile(r"^-[1-9]\d*[dhm]$")
@@ -21,16 +34,22 @@ class ConfigError(Exception):
     """Raised for any invalid or unreadable configuration."""
 
 
-class _StrictModel(BaseModel):
-    """Base class for all config/overrides models: rejects unknown keys."""
+class StrictModel(BaseModel):
+    """Base class for every config model: rejects unknown keys."""
 
     model_config = ConfigDict(extra="forbid")
 
 
 def _validate_duration_string(value: str | None) -> str | None:
-    """Shared field-validator body for duration-string fields."""
     if value is not None and not _DURATION_RE.match(value):
         raise ValueError(f"Invalid duration string: {value!r}")
+    return value
+
+
+def _validate_alarm_list(value: list[str] | None) -> list[str] | None:
+    for offset in value or []:
+        if not _ALARM_OFFSET_RE.match(offset):
+            raise ValueError(f"Invalid alarm offset {offset!r} (expected e.g. '-1d', '-30m')")
     return value
 
 
@@ -40,26 +59,15 @@ def parse_duration(value: str) -> int:
     if not match:
         raise ConfigError(f"Invalid duration string: {value!r} (expected e.g. '1h', '45m')")
     amount, unit = match.groups()
-    amount = int(amount)
-    return amount * 3600 if unit == "h" else amount * 60
+    return int(amount) * (3600 if unit == "h" else 60)
 
 
 def parse_alarm_offset(value: str) -> int:
     """Parse an alarm-offset string like '-1d' or '-30m' into whole seconds (negative)."""
-    match = _ALARM_OFFSET_RE.match(value)
-    if not match:
-        raise ConfigError(
-            f"Invalid alarm offset: {value!r} (expected e.g. '-1d', '-30m', '-15m')"
-        )
-    amount = int(value[1:-1])
-    unit = value[-1]
-    if unit == "d":
-        seconds = amount * 86400
-    elif unit == "h":
-        seconds = amount * 3600
-    else:
-        seconds = amount * 60
-    return -seconds
+    if not _ALARM_OFFSET_RE.match(value):
+        raise ConfigError(f"Invalid alarm offset: {value!r} (expected e.g. '-1d', '-30m')")
+    amount, unit = int(value[1:-1]), value[-1]
+    return -(amount * {"d": 86400, "h": 3600, "m": 60}[unit])
 
 
 def _load_yaml_mapping(path: Path, kind: str) -> Any:
@@ -80,12 +88,10 @@ def _load_yaml_mapping(path: Path, kind: str) -> Any:
     return raw
 
 
-class ServerConfig(_StrictModel):
-    base_url: str
-    uid_domain: str
+# --------------------------------------------------------------------------- globals
 
 
-class SourceSettings(_StrictModel):
+class SourceSettings(StrictModel):
     rate_limit_per_min: int = 28
     refresh_cron: str
     next_season_from: str = "10-01"
@@ -93,9 +99,9 @@ class SourceSettings(_StrictModel):
     @field_validator("refresh_cron")
     @classmethod
     def validate_refresh_cron(cls, value: str) -> str:
-        """Reject a malformed cron expression here, at config-validation time --
-        catching it later, only when APScheduler builds a CronTrigger from it during
-        a hot reload, would mean the new bundle was already partially activated."""
+        """Reject a malformed cron expression at config-validation time -- catching it
+        later, when APScheduler builds a CronTrigger during a hot reload, would mean
+        the new bundle was already partially activated."""
         try:
             CronTrigger.from_crontab(value)
         except ValueError as exc:
@@ -103,12 +109,12 @@ class SourceSettings(_StrictModel):
         return value
 
 
-class RetentionConfig(_StrictModel):
+class RetentionConfig(StrictModel):
     historical_days: int = 180
     cancelled_after_event_days: int = 90
 
 
-class DurationDefaults(_StrictModel):
+class DurationDefaults(StrictModel):
     practice: str | None = None
     qualifying: str | None = None
     hyperpole: str | None = None
@@ -116,168 +122,212 @@ class DurationDefaults(_StrictModel):
     sprint: str | None = None
     race: str | None = None
 
-    @field_validator(
-        "practice", "qualifying", "hyperpole", "sprint_qualifying", "sprint", "race"
-    )
+    @field_validator("*")
     @classmethod
     def validate_duration_format(cls, value: str | None) -> str | None:
         return _validate_duration_string(value)
 
 
-class UnknownTimeConfig(_StrictModel):
-    mode: str = "all_day"
+class UnknownTimeConfig(StrictModel):
     summary_suffix: str = " (time TBC)"
 
-    @field_validator("mode")
-    @classmethod
-    def validate_mode(cls, value: str) -> str:
-        if value != "all_day":
-            raise ValueError(
-                f"Invalid unknown_time.mode: {value!r} (only 'all_day' is currently supported)"
-            )
-        return value
 
-
-class DefaultsConfig(_StrictModel):
-    durations: DurationDefaults
-    alerts: dict[str, list[str]]
-    include_sessions: list[str]
-
-    @field_validator("include_sessions")
-    @classmethod
-    def validate_include_sessions(cls, value: list[str]) -> list[str]:
-        unknown = set(value) - _VALID_SESSION_NAMES
-        if unknown:
-            raise ValueError(f"Unknown session type(s) in include_sessions: {sorted(unknown)}")
-        return value
+class DefaultsConfig(StrictModel):
+    durations: DurationDefaults = DurationDefaults()
+    alerts: dict[str, list[str]] = {}
 
     @field_validator("alerts")
     @classmethod
     def validate_alerts(cls, value: dict[str, list[str]]) -> dict[str, list[str]]:
-        unknown_keys = set(value) - _VALID_SESSION_NAMES
-        if unknown_keys:
-            raise ValueError(f"Unknown session type(s) in alerts: {sorted(unknown_keys)}")
+        unknown = set(value) - _VALID_SESSION_NAMES
+        if unknown:
+            raise ValueError(f"Unknown session type(s) in alerts: {sorted(unknown)}")
         for session, offsets in value.items():
-            for offset in offsets:
-                if not _ALARM_OFFSET_RE.match(offset):
-                    raise ValueError(
-                        f"Invalid alarm offset {offset!r} for session {session!r} "
-                        "(expected e.g. '-1d', '-30m', '-15m')"
-                    )
+            try:
+                _validate_alarm_list(offsets)
+            except ValueError as exc:
+                raise ValueError(f"{exc} for session {session!r}") from exc
         return value
 
 
-class SeriesConfig(_StrictModel):
+class GlobalConfig(StrictModel):
+    """Everything in config/motorcal.yaml -- the settings no single series owns."""
+
+    uid_domain: str
+    source: SourceSettings
+    retention: RetentionConfig = RetentionConfig()
+    defaults: DefaultsConfig = DefaultsConfig()
+    unknown_time: UnknownTimeConfig = UnknownTimeConfig()
+    include_non_championship: bool = False
+
+
+# --------------------------------------------------------------------------- events
+
+
+class SourceSnapshot(StrictModel):
+    """What the provider last reported for one event.
+
+    Machine-written and the baseline for the 3-way merge in `sync.py`: a field is
+    only overwritten from a new fetch if the provider actually changed it AND the
+    stored value still matches what the provider said before. Absent on manual events.
+    """
+
+    name: str
+    date: str
+    time: str | None = None
+    venue: str | None = None
+    country: str | None = None
+    round: int
+    season: str
+
+
+class EventConfig(StrictModel):
+    """One event, exactly as published (before defaults are resolved).
+
+    Provider-backed events carry `id_event` and `source`; manual events carry a
+    `uid` you choose and are never touched by a refresh.
+    """
+
+    id_event: str | None = None
+    uid: str | None = None
+    summary: str
+    start: str | None = None  # confirmed time, ISO 8601
+    date: str | None = None  # all-day, "YYYY-MM-DD" -- the time is not yet known
+    duration: str | None = None
+    location: str | None = None
+    status: str = EventStatus.CONFIRMED.value
+    note: str | None = None
+    alarms: list[str] | None = None  # None = fall back to series/global defaults
+    round: int | None = None
+    disappeared_at: str | None = None
+    source: SourceSnapshot | None = None
+
+    @field_validator("duration")
+    @classmethod
+    def validate_duration_format(cls, value: str | None) -> str | None:
+        return _validate_duration_string(value)
+
+    @field_validator("alarms")
+    @classmethod
+    def validate_alarms(cls, value: list[str] | None) -> list[str] | None:
+        return _validate_alarm_list(value)
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value: str) -> str:
+        if value not in _VALID_STATUS_NAMES:
+            raise ValueError(
+                f"Invalid status: {value!r} (expected one of {sorted(_VALID_STATUS_NAMES)})"
+            )
+        return value
+
+    @model_validator(mode="after")
+    def validate_identity_and_timing(self) -> "EventConfig":
+        if bool(self.id_event) == bool(self.uid):
+            raise ValueError("An event must set exactly one of id_event or uid")
+        if bool(self.start) == bool(self.date):
+            raise ValueError("An event must set exactly one of start or date")
+        return self
+
+    @property
+    def key(self) -> str:
+        """The identity this event is matched on within its series file."""
+        return self.id_event or self.uid  # type: ignore[return-value]
+
+
+class SeriesConfig(StrictModel):
+    """One config/<series>.yaml. The series key is the filename stem."""
+
     league_id: int
     name: str
     max_round: int
     race_only: bool = False
     durations: DurationDefaults | None = None
+    events: list[EventConfig] = []
+
+    @model_validator(mode="after")
+    def validate_unique_event_keys(self) -> "SeriesConfig":
+        seen: set[str] = set()
+        for event in self.events:
+            if event.key in seen:
+                raise ValueError(f"Duplicate event id_event/uid in this series: {event.key!r}")
+            seen.add(event.key)
+        return self
 
 
-class RootConfig(_StrictModel):
-    server: ServerConfig
-    source: SourceSettings
-    retention: RetentionConfig
-    defaults: DefaultsConfig
-    include_non_championship: bool = False
-    unknown_time: UnknownTimeConfig
+# --------------------------------------------------------------------------- loading
+
+
+class Config(StrictModel):
+    """The whole config directory: globals plus every series, keyed by filename stem."""
+
+    globals: GlobalConfig
     series: dict[str, SeriesConfig]
 
+    def events_for(self, series: str) -> list[EventConfig]:
+        return self.series[series].events
 
-def load_config(path: Path) -> RootConfig:
-    """Load and validate a config.yaml bundle. Raises ConfigError on any failure."""
-    raw = _load_yaml_mapping(path, "config")
+
+_SERIES_KEY_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+
+
+def load_config(config_dir: Path) -> Config:
+    """Load and validate a whole config directory. Raises ConfigError on any failure."""
+    config_dir = Path(config_dir)
+    if not config_dir.is_dir():
+        raise ConfigError(f"Config directory not found: {config_dir}")
+
+    global_path = config_dir / GLOBAL_FILENAME
+    raw_globals = _load_yaml_mapping(global_path, "config")
     try:
-        return RootConfig.model_validate(raw)
+        globals_ = GlobalConfig.model_validate(raw_globals)
     except ValidationError as exc:
-        raise ConfigError(f"Invalid configuration in {path}: {exc}") from exc
+        raise ConfigError(f"Invalid configuration in {global_path}: {exc}") from exc
+
+    series: dict[str, SeriesConfig] = {}
+    for path in sorted(config_dir.glob("*.yaml")):
+        if path.name == GLOBAL_FILENAME or path.name.startswith("."):
+            continue
+        key = path.stem
+        if not _SERIES_KEY_RE.match(key):
+            raise ConfigError(
+                f"Invalid series filename {path.name!r}: the stem becomes the series key "
+                "and must be lowercase letters, digits, '-' or '_'"
+            )
+        raw = _load_yaml_mapping(path, "series")
+        try:
+            series[key] = SeriesConfig.model_validate(raw)
+        except ValidationError as exc:
+            raise ConfigError(f"Invalid series configuration in {path}: {exc}") from exc
+
+    if not series:
+        raise ConfigError(f"No series files found in {config_dir} (expected e.g. f1.yaml)")
+
+    return Config(globals=globals_, series=series)
 
 
-class PatchMatcher(_StrictModel):
-    series: str
-    date: str
-    contains: str
+def series_path(config_dir: Path, series: str) -> Path:
+    return Path(config_dir) / f"{series}.yaml"
 
 
-class PatchConfig(_StrictModel):
-    id_event: str | None = None
-    match: PatchMatcher | None = None
-    start: str | None = None
-    time_confirmed: bool | None = None
-    duration: str | None = None
-    summary: str | None = None
-    location: str | None = None
-    status: str | None = None
-    note: str | None = None
+def save_series(config_dir: Path, series: str, config: SeriesConfig) -> None:
+    """Rewrite one series file atomically, preserving field order and dropping nothing.
 
-    @field_validator("duration")
-    @classmethod
-    def validate_duration_format(cls, value: str | None) -> str | None:
-        return _validate_duration_string(value)
+    Events are written in the order they appear in `config.events`; `sync.py` keeps
+    that list sorted by date so the file stays readable and diffs stay small.
+    """
+    path = series_path(config_dir, series)
+    payload = config.model_dump(exclude_none=True, exclude_defaults=False)
+    # Events carry a lot of optional fields; drop the empty ones per-event so a
+    # hand-written file doesn't grow a wall of `null`s the first time it's rewritten.
+    payload["events"] = [event.model_dump(exclude_none=True) for event in config.events]
 
-    @field_validator("status")
-    @classmethod
-    def validate_status(cls, value: str | None) -> str | None:
-        if value is not None and value not in _VALID_STATUS_NAMES:
-            raise ValueError(f"Invalid status: {value!r} (expected one of {sorted(_VALID_STATUS_NAMES)})")
-        return value
-
-    @model_validator(mode="after")
-    def validate_exactly_one_matcher(self) -> "PatchConfig":
-        if bool(self.id_event) == bool(self.match):
-            raise ValueError("A patch must set exactly one of id_event or match")
-        return self
-
-
-class SyntheticEventConfig(_StrictModel):
-    uid: str
-    series: str
-    summary: str
-    start: str | None = None
-    date: str | None = None
-    duration: str | None = None
-    location: str | None = None
-    status: str | None = None
-    note: str | None = None
-    alarms: list[str] = []
-
-    @field_validator("duration")
-    @classmethod
-    def validate_duration_format(cls, value: str | None) -> str | None:
-        return _validate_duration_string(value)
-
-    @field_validator("status")
-    @classmethod
-    def validate_status(cls, value: str | None) -> str | None:
-        if value is not None and value not in _VALID_STATUS_NAMES:
-            raise ValueError(f"Invalid status: {value!r} (expected one of {sorted(_VALID_STATUS_NAMES)})")
-        return value
-
-    @field_validator("alarms")
-    @classmethod
-    def validate_alarms(cls, value: list[str]) -> list[str]:
-        for offset in value:
-            if not _ALARM_OFFSET_RE.match(offset):
-                raise ValueError(f"Invalid alarm offset {offset!r}")
-        return value
-
-    @model_validator(mode="after")
-    def validate_exactly_one_of_start_or_date(self) -> "SyntheticEventConfig":
-        if bool(self.start) == bool(self.date):
-            raise ValueError("A synthetic event must set exactly one of start or date")
-        return self
-
-
-class OverridesConfig(_StrictModel):
-    patches: list[PatchConfig] = []
-    events: list[SyntheticEventConfig] = []
-
-
-def load_overrides(path: Path) -> OverridesConfig:
-    """Load and validate an overrides.yaml bundle. Raises ConfigError on any failure."""
-    raw = _load_yaml_mapping(path, "overrides")
+    fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{series}-", suffix=".tmp")
     try:
-        return OverridesConfig.model_validate(raw)
-    except ValidationError as exc:
-        raise ConfigError(f"Invalid overrides in {path}: {exc}") from exc
+        with os.fdopen(fd, "w") as f:
+            yaml.safe_dump(payload, f, sort_keys=False, default_flow_style=False, width=100)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_name, path)
+    finally:
+        Path(tmp_name).unlink(missing_ok=True)

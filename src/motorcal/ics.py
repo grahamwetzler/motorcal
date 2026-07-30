@@ -1,21 +1,13 @@
-"""Deterministic ICS generation from published_events state."""
+"""Deterministic ICS generation from built PublishedEvents."""
 from __future__ import annotations
 
 import hashlib
-import json
-import sqlite3
-from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
 from icalendar import Alarm, Calendar, Event
 
 from motorcal.config import SeriesConfig, parse_alarm_offset
-from motorcal.store import (
-    get_feed_revision,
-    list_published_events_by_series,
-    transaction,
-    upsert_feed_revision,
-)
+from motorcal.models import PublishedEvent
 
 PRODID = "-//motorcal//motorsports-calendar//EN"
 
@@ -89,51 +81,30 @@ def build_calendar(series_config: SeriesConfig, vevents: list[Event]) -> Calenda
     return calendar
 
 
-def _row_to_vevent(row: sqlite3.Row) -> Event:
+def _to_vevent(event: PublishedEvent) -> Event:
     return build_vevent(
-        uid=row["uid"],
-        summary=row["summary"],
-        status=row["status"],
-        start=datetime.fromisoformat(row["start"]) if row["start"] else None,
-        all_day_date=row["all_day_date"],
-        duration_seconds=row["duration_seconds"],
-        dtstamp=datetime.fromisoformat(row["dtstamp"]),
-        last_modified=datetime.fromisoformat(row["last_modified"]),
-        sequence=row["sequence"],
-        description=row["description"],
-        location=row["location"],
-        alarms=json.loads(row["alarms_json"]),
+        uid=event.uid,
+        summary=event.summary,
+        status=event.status.value,
+        start=event.start,
+        all_day_date=event.all_day_date,
+        duration_seconds=event.duration_seconds,
+        dtstamp=event.dtstamp,
+        last_modified=event.last_modified,
+        sequence=event.sequence,
+        description=event.description,
+        location=event.location,
+        alarms=event.alarms,
     )
 
 
 def render_calendar_bytes(
-    conn: sqlite3.Connection, series: str, series_config: SeriesConfig
+    series_config: SeriesConfig, events: list[PublishedEvent]
 ) -> bytes:
-    """Render the current, deterministic ICS bytes for one series from stored state."""
-    rows = list_published_events_by_series(conn, series)
-    vevents = [_row_to_vevent(row) for row in rows]
-    return build_calendar(series_config, vevents).to_ical()
+    """Render the deterministic ICS bytes for one series' published events."""
+    return build_calendar(series_config, [_to_vevent(e) for e in events]).to_ical()
 
 
 def compute_content_hash(ics_bytes: bytes) -> str:
+    """The feed's ETag: identical bytes always yield an identical revision."""
     return hashlib.sha256(ics_bytes).hexdigest()
-
-
-@dataclass
-class FeedRevisionState:
-    revision: str
-    updated_at: str
-
-
-def sync_feed_revision(
-    conn: sqlite3.Connection, series: str, ics_bytes: bytes, now: str
-) -> FeedRevisionState:
-    """Advance the stored feed revision only if the content actually changed."""
-    new_revision = compute_content_hash(ics_bytes)
-    existing = get_feed_revision(conn, series)
-    if existing is not None and existing["revision"] == new_revision:
-        return FeedRevisionState(revision=existing["revision"], updated_at=existing["updated_at"])
-
-    with transaction(conn):
-        upsert_feed_revision(conn, series, new_revision, now)
-    return FeedRevisionState(revision=new_revision, updated_at=now)

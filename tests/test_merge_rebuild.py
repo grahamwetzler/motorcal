@@ -1,277 +1,166 @@
-import json
 from datetime import datetime, timezone
 
-import pytest
-
-from motorcal.config import (
-    DefaultsConfig,
-    OverridesConfig,
-    PatchConfig,
-    RetentionConfig,
-    RootConfig,
-    SeriesConfig,
-    SyntheticEventConfig,
-    UnknownTimeConfig,
-)
-from motorcal.merge import PublicationBlockedError, rebuild_publication, reconcile_synthetic_events
-from motorcal.models import source_uid, synthetic_event_uid
-from motorcal.store import (
-    connect,
-    get_published_event,
-    get_source_event,
-    init_schema,
-    transaction,
-    upsert_source_event,
+from tests.conftest import (
+    UID_DOMAIN,
+    make_config,
+    make_series,
+    make_state,
+    manual_event,
+    source_event,
 )
 
-UID_DOMAIN = "x.example.com"
+from motorcal.merge import rebuild_publication
+from motorcal.state import VersionState
+
+NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 
-def _root_config(series=None):
-    return RootConfig(
-        server={"base_url": f"https://{UID_DOMAIN}", "uid_domain": UID_DOMAIN},
-        source={"refresh_cron": "0 * * * *"},
-        retention=RetentionConfig(historical_days=180, cancelled_after_event_days=90),
-        defaults=DefaultsConfig(
-            durations={},
-            alerts={"race": ["-1d"]},
-            include_sessions=["race"],
-        ),
-        unknown_time=UnknownTimeConfig(),
-        series=series or {"wec": SeriesConfig(league_id=4413, name="WEC", max_round=20)},
+def _config(wec_events=None, imsa_events=None, **kwargs):
+    return make_config(
+        series={
+            "wec": make_series(events=wec_events or []),
+            "imsa": make_series(
+                league_id=4488, name="IMSA", max_round=30, race_only=True,
+                events=imsa_events or [],
+            ),
+        },
+        **kwargs,
     )
 
 
-def _fresh_conn(tmp_path):
-    conn = connect(tmp_path / "test.db")
-    init_schema(conn)
-    return conn
+def _find(published, uid):
+    return next((e for events in published.values() for e in events if e.uid == uid), None)
 
 
-def test_rebuild_publishes_a_confirmed_source_event(tmp_path):
-    conn = _fresh_conn(tmp_path)
-    with transaction(conn):
-        upsert_source_event(
-            conn, provider="thesportsdb", id_event="1", series="wec", season="2026",
-            round=1, name="6 Hours of Imola", date="2026-04-19", time="13:00:00",
-            venue="Imola", country="Italy", raw_json="{}", seen_at="t0",
-        )
+def test_rebuild_publishes_every_configured_event():
+    config = _config(wec_events=[source_event("1", time="13:00:00")])
+    state = make_state()
 
-    report = rebuild_publication(
-        conn, root_config=_root_config(), overrides=OverridesConfig(),
-        uid_domain=UID_DOMAIN, now=datetime(2026, 1, 1, tzinfo=timezone.utc),
-    )
+    published, report = rebuild_publication(config, state, now=NOW)
 
     assert report.events_published == 1
-    uid = source_uid("1", UID_DOMAIN)
-    row = get_published_event(conn, uid)
-    assert row is not None
-    assert row["status"] == "CONFIRMED"
+    assert _find(published, f"thesportsdb-1@{UID_DOMAIN}") is not None
 
 
-def test_rebuild_applies_a_matched_patch(tmp_path):
-    conn = _fresh_conn(tmp_path)
-    with transaction(conn):
-        upsert_source_event(
-            conn, provider="thesportsdb", id_event="1", series="wec", season="2026",
-            round=1, name="6 Hours of Imola", date="2026-04-19", time="00:00:00",
-            venue="Imola", country="Italy", raw_json="{}", seen_at="t0",
-        )
-    overrides = OverridesConfig(
-        patches=[PatchConfig(id_event="1", start="2026-04-19T13:00:00Z", duration="6h")]
+def test_rebuild_groups_events_by_series():
+    config = _config(
+        wec_events=[source_event("1", time="13:00:00")],
+        imsa_events=[source_event("2", time="13:00:00")],
     )
 
-    report = rebuild_publication(
-        conn, root_config=_root_config(), overrides=overrides,
-        uid_domain=UID_DOMAIN, now=datetime(2026, 1, 1, tzinfo=timezone.utc),
+    published, _ = rebuild_publication(config, make_state(), now=NOW)
+
+    assert len(published["wec"]) == 1
+    assert len(published["imsa"]) == 1
+
+
+def test_a_series_with_no_events_yields_an_empty_list_not_a_missing_key():
+    published, _ = rebuild_publication(_config(), make_state(), now=NOW)
+
+    assert published["wec"] == []
+    assert published["imsa"] == []
+
+
+def test_rebuild_records_the_version_ledger():
+    config = _config(wec_events=[source_event("1", time="13:00:00")])
+    state = make_state()
+
+    published, _ = rebuild_publication(config, state, now=NOW)
+
+    built = published["wec"][0]
+    assert state.versions[built.uid] == VersionState(
+        fingerprint=built.fingerprint, sequence=built.sequence,
+        dtstamp=built.dtstamp.isoformat(), last_modified=built.last_modified.isoformat(),
+        status=built.status.value,
     )
 
-    assert report.patch_errors == []
-    row = get_published_event(conn, source_uid("1", UID_DOMAIN))
-    assert row["time_confirmed"] == 1
-    assert row["duration_seconds"] == 6 * 3600
+
+def test_rebuild_publishes_manual_events_alongside_provider_ones():
+    config = _config(wec_events=[source_event("1", time="13:00:00"), manual_event("mine")])
+
+    published, report = rebuild_publication(config, make_state(), now=NOW)
+
+    assert report.events_published == 2
+    assert _find(published, f"local-mine@{UID_DOMAIN}") is not None
 
 
-def test_rebuild_raises_on_an_unmatched_patch_without_writing_anything(tmp_path):
-    conn = _fresh_conn(tmp_path)
-    overrides = OverridesConfig(patches=[PatchConfig(id_event="does-not-exist")])
+def test_rebuild_reports_unknown_classified_events():
+    config = _config(wec_events=[source_event("1", name="Drivers Parade", time="13:00:00")])
 
-    with pytest.raises(PublicationBlockedError) as exc_info:
-        rebuild_publication(
-            conn, root_config=_root_config(), overrides=overrides,
-            uid_domain=UID_DOMAIN, now=datetime(2026, 1, 1, tzinfo=timezone.utc),
-        )
-
-    assert len(exc_info.value.patch_errors) == 1
-    assert exc_info.value.patch_errors[0].reason == "no_match"
-
-
-def test_rebuild_preserves_previously_published_state_when_a_later_patch_fails_to_match(tmp_path):
-    conn = _fresh_conn(tmp_path)
-    with transaction(conn):
-        upsert_source_event(
-            conn, provider="thesportsdb", id_event="1", series="wec", season="2026", round=1,
-            name="6 Hours of Imola", date="2026-04-19", time="13:00:00", venue="Imola",
-            country="Italy", raw_json="{}", seen_at="t0",
-        )
-
-    good_report = rebuild_publication(
-        conn, root_config=_root_config(), overrides=OverridesConfig(),
-        uid_domain=UID_DOMAIN, now=datetime(2026, 1, 1, tzinfo=timezone.utc),
-    )
-    assert good_report.events_published == 1
-    previously_published = get_published_event(conn, source_uid("1", UID_DOMAIN))
-    assert previously_published is not None
-
-    broken_overrides = OverridesConfig(patches=[PatchConfig(id_event="does-not-exist")])
-    with pytest.raises(PublicationBlockedError) as exc_info:
-        rebuild_publication(
-            conn, root_config=_root_config(), overrides=broken_overrides,
-            uid_domain=UID_DOMAIN, now=datetime(2026, 1, 2, tzinfo=timezone.utc),
-        )
-
-    assert len(exc_info.value.patch_errors) == 1
-    still_published = get_published_event(conn, source_uid("1", UID_DOMAIN))
-    assert still_published is not None
-    assert dict(still_published) == dict(previously_published)  # entirely untouched
-
-
-def test_rebuild_cancels_a_disappeared_future_event(tmp_path):
-    conn = _fresh_conn(tmp_path)
-    with transaction(conn):
-        upsert_source_event(
-            conn, provider="thesportsdb", id_event="1", series="wec", season="2026",
-            round=1, name="6 Hours of Imola", date="2026-04-19", time="13:00:00",
-            venue="Imola", country="Italy", raw_json="{}", seen_at="t0",
-        )
-    rebuild_publication(
-        conn, root_config=_root_config(), overrides=OverridesConfig(),
-        uid_domain=UID_DOMAIN, now=datetime(2026, 1, 1, tzinfo=timezone.utc),
-    )
-
-    with transaction(conn):
-        from motorcal.store import mark_source_event_disappeared
-        mark_source_event_disappeared(conn, "thesportsdb", "1", "t1")
-
-    report = rebuild_publication(
-        conn, root_config=_root_config(), overrides=OverridesConfig(),
-        uid_domain=UID_DOMAIN, now=datetime(2026, 1, 2, tzinfo=timezone.utc),  # still before the event
-    )
-
-    assert report.events_cancelled == 1
-    row = get_published_event(conn, source_uid("1", UID_DOMAIN))
-    assert row["status"] == "CANCELLED"
-
-
-def test_rebuild_publishes_a_synthetic_event(tmp_path):
-    conn = _fresh_conn(tmp_path)
-    cfg = SyntheticEventConfig(
-        uid="imsa-2026-rolex-24", series="imsa", summary="Rolex 24 at Daytona",
-        start="2026-01-25T18:40:00Z", duration="24h",
-    )
-    with transaction(conn):
-        reconcile_synthetic_events(conn, [cfg], now="t0")
-
-    report = rebuild_publication(
-        conn, root_config=_root_config(), overrides=OverridesConfig(events=[cfg]),
-        uid_domain=UID_DOMAIN, now=datetime(2026, 1, 1, tzinfo=timezone.utc),
-    )
-
-    assert report.events_published == 1
-    uid = synthetic_event_uid("imsa-2026-rolex-24", UID_DOMAIN)
-    row = get_published_event(conn, uid)
-    assert row is not None
-    assert row["duration_seconds"] == 24 * 3600
-
-
-def test_rebuild_honors_a_configured_tentative_synthetic_status(tmp_path):
-    conn = _fresh_conn(tmp_path)
-    cfg = SyntheticEventConfig(
-        uid="imsa-2026-rolex-24", series="imsa", summary="Rolex 24 at Daytona",
-        start="2026-01-25T18:40:00Z", duration="24h", status="TENTATIVE",
-    )
-    with transaction(conn):
-        reconcile_synthetic_events(conn, [cfg], now="t0")
-
-    report = rebuild_publication(
-        conn, root_config=_root_config(), overrides=OverridesConfig(events=[cfg]),
-        uid_domain=UID_DOMAIN, now=datetime(2026, 1, 1, tzinfo=timezone.utc),
-    )
-
-    assert report.events_published == 1
-    uid = synthetic_event_uid("imsa-2026-rolex-24", UID_DOMAIN)
-    row = get_published_event(conn, uid)
-    assert row["status"] == "TENTATIVE"
-
-
-def test_rebuild_prunes_a_long_cancelled_event(tmp_path):
-    conn = _fresh_conn(tmp_path)
-    with transaction(conn):
-        upsert_source_event(
-            conn, provider="thesportsdb", id_event="1", series="wec", season="2026",
-            round=1, name="6 Hours of Imola", date="2026-01-01", time="13:00:00",
-            venue="Imola", country="Italy", raw_json="{}", seen_at="t0",
-        )
-    rebuild_publication(
-        conn, root_config=_root_config(), overrides=OverridesConfig(),
-        uid_domain=UID_DOMAIN, now=datetime(2025, 12, 1, tzinfo=timezone.utc),
-    )
-    with transaction(conn):
-        from motorcal.store import mark_source_event_disappeared
-        mark_source_event_disappeared(conn, "thesportsdb", "1", "t1")
-    rebuild_publication(  # this rebuild cancels it (event was still in the future relative to this `now`)
-        conn, root_config=_root_config(), overrides=OverridesConfig(),
-        uid_domain=UID_DOMAIN, now=datetime(2025, 12, 2, tzinfo=timezone.utc),
-    )
-
-    # Now simulate 91+ days after the (cancelled) event's own scheduled end (cancelled_after_event_days=90)
-    far_future = datetime(2026, 4, 15, tzinfo=timezone.utc)  # >90 days after 2026-01-01
-    report = rebuild_publication(
-        conn, root_config=_root_config(), overrides=OverridesConfig(),
-        uid_domain=UID_DOMAIN, now=far_future,
-    )
-
-    assert report.events_pruned >= 1
-    assert get_published_event(conn, source_uid("1", UID_DOMAIN)) is None
-
-
-def test_rebuild_prunes_a_long_past_non_cancelled_event(tmp_path):
-    conn = _fresh_conn(tmp_path)
-    with transaction(conn):
-        upsert_source_event(
-            conn, provider="thesportsdb", id_event="1", series="wec", season="2026",
-            round=1, name="6 Hours of Imola", date="2026-01-01", time="13:00:00",
-            venue="Imola", country="Italy", raw_json="{}", seen_at="t0",
-        )
-    rebuild_publication(
-        conn, root_config=_root_config(), overrides=OverridesConfig(),
-        uid_domain=UID_DOMAIN, now=datetime(2026, 1, 1, tzinfo=timezone.utc),
-    )
-
-    far_future = datetime(2026, 8, 1, tzinfo=timezone.utc)  # >180 days after 2026-01-01
-    report = rebuild_publication(
-        conn, root_config=_root_config(), overrides=OverridesConfig(),
-        uid_domain=UID_DOMAIN, now=far_future,
-    )
-
-    assert report.events_pruned >= 1
-    assert get_published_event(conn, source_uid("1", UID_DOMAIN)) is None
-    assert get_source_event(conn, "thesportsdb", "1") is None
-
-
-def test_rebuild_reports_unknown_classified_events(tmp_path):
-    conn = _fresh_conn(tmp_path)
-    with transaction(conn):
-        upsert_source_event(
-            conn, provider="thesportsdb", id_event="1", series="wec", season="2026",
-            round=1, name="Drivers Parade", date="2026-04-19", time="13:00:00",
-            venue="Imola", country="Italy", raw_json="{}", seen_at="t0",
-        )
-
-    report = rebuild_publication(
-        conn, root_config=_root_config(), overrides=OverridesConfig(),
-        uid_domain=UID_DOMAIN, now=datetime(2026, 1, 1, tzinfo=timezone.utc),
-    )
+    published, report = rebuild_publication(config, make_state(), now=NOW)
 
     assert len(report.unknown_events) == 1
-    assert report.events_published == 1  # still published — unknown is visible, not dropped
+    assert report.events_published == 1  # still published, not dropped
+
+
+def test_rebuild_counts_cancelled_events():
+    config = _config(wec_events=[source_event("1", time="13:00:00", disappeared_at="t1")])
+
+    _, report = rebuild_publication(config, make_state(), now=NOW)
+
+    assert report.events_cancelled == 1
+
+
+def test_rebuild_is_idempotent_for_unchanged_input():
+    config = _config(wec_events=[source_event("1", time="13:00:00")])
+    state = make_state()
+    first, _ = rebuild_publication(config, state, now=NOW)
+
+    second, _ = rebuild_publication(config, state, now=datetime(2026, 6, 1, tzinfo=timezone.utc))
+
+    assert second["wec"][0].sequence == first["wec"][0].sequence
+    assert second["wec"][0].dtstamp == first["wec"][0].dtstamp
+
+
+def test_a_long_past_event_is_pruned_from_the_config_and_the_ledger():
+    config = _config(wec_events=[source_event("1", date="2026-01-01", time="13:00:00")])
+    state = make_state()
+    rebuild_publication(config, state, now=NOW)
+
+    # >180 days (historical_days) after the event
+    published, report = rebuild_publication(
+        config, state, now=datetime(2026, 8, 1, tzinfo=timezone.utc)
+    )
+
+    assert report.events_pruned == 1
+    assert published["wec"] == []
+    assert config.series["wec"].events == []
+    assert state.versions == {}
+
+
+def test_a_long_cancelled_event_is_pruned_on_the_shorter_window():
+    config = _config(
+        wec_events=[source_event("1", date="2026-01-01", time="13:00:00", disappeared_at="t1")]
+    )
+    state = make_state()
+    rebuild_publication(config, state, now=datetime(2025, 12, 1, tzinfo=timezone.utc))
+
+    # >90 days (cancelled_after_event_days), but < the 180-day historical window
+    _, report = rebuild_publication(config, state, now=datetime(2026, 4, 15, tzinfo=timezone.utc))
+
+    assert report.events_pruned == 1
+    assert config.series["wec"].events == []
+
+
+def test_a_future_event_is_never_pruned():
+    config = _config(wec_events=[source_event("1", date="2099-01-01", time="13:00:00")])
+    state = make_state()
+
+    _, report = rebuild_publication(config, state, now=NOW)
+
+    assert report.events_pruned == 0
+    assert len(config.series["wec"].events) == 1
+
+
+def test_pruning_one_series_leaves_another_untouched():
+    config = _config(
+        wec_events=[source_event("1", date="2026-01-01", time="13:00:00")],
+        imsa_events=[source_event("2", date="2099-01-01", time="13:00:00")],
+    )
+    state = make_state()
+    rebuild_publication(config, state, now=NOW)
+
+    rebuild_publication(config, state, now=datetime(2026, 8, 1, tzinfo=timezone.utc))
+
+    assert config.series["wec"].events == []
+    assert len(config.series["imsa"].events) == 1

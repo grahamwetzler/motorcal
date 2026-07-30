@@ -18,6 +18,6 @@ COPY pyproject.toml ./
 ENV PATH="/app/.venv/bin:$PATH"
 RUN mkdir -p /data /config && chown motorcal:motorcal /data
 USER motorcal
-EXPOSE 8000
+EXPOSE 8000 8001
 ENTRYPOINT ["motorcal"]
-CMD ["serve", "--db", "/data/motorcal.db", "--config", "/config/config.yaml", "--overrides", "/config/overrides.yaml"]
+CMD ["serve", "--config", "/config", "--state", "/data/state.yaml"]

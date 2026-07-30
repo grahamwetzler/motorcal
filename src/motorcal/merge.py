@@ -1,129 +1,27 @@
-"""Publication rebuild logic: patch matching (this phase) and, in a later phase,
-fingerprinting, sequencing, duration/alarm resolution, and cancellation lifecycle."""
+"""Turn configured events into published events, ready for ICS rendering.
+
+Pure functions over a `Config` and the version ledger. `rebuild_publication`
+mutates `state.versions` in place but touches no file, so callers get
+all-or-nothing by rebuilding against a deep copy and persisting only on success.
+"""
 from __future__ import annotations
 
 import hashlib
 import json
-import sqlite3
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from motorcal.classify import classify_event
 from motorcal.config import (
-    OverridesConfig,
-    PatchConfig,
-    RootConfig,
+    Config,
+    EventConfig,
+    GlobalConfig,
+    RetentionConfig,
     SeriesConfig,
-    SyntheticEventConfig,
     parse_duration,
 )
-from motorcal.models import (
-    EventStatus,
-    PublishedEvent,
-    SessionType,
-    SourceEvent,
-    SourceEventKey,
-    source_uid,
-    synthetic_event_uid,
-)
-from motorcal.store import (
-    delete_published_event,
-    delete_source_event,
-    get_published_event,
-    list_all_source_events,
-    list_published_events,
-    list_synthetic_events,
-    mark_synthetic_event_removed,
-    transaction,
-    upsert_published_event,
-    upsert_synthetic_event,
-)
-
-
-@dataclass
-class PatchMatchError:
-    """A patch that did not match exactly one source event."""
-
-    patch: PatchConfig
-    reason: str  # "no_match" or "multiple_matches"
-    candidate_count: int
-
-
-@dataclass
-class MatchedPatch:
-    """A patch successfully paired with the single source event it modifies."""
-
-    patch: PatchConfig
-    source_event: SourceEvent
-
-
-def _find_candidates(patch: PatchConfig, source_events: list[SourceEvent]) -> list[SourceEvent]:
-    if patch.id_event is not None:
-        return [e for e in source_events if e.key.id_event == patch.id_event]
-
-    matcher = patch.match
-    assert matcher is not None  # config-schema validation (Phase 1) guarantees exactly one is set
-    needle = matcher.contains.lower()
-    return [
-        e
-        for e in source_events
-        if e.series == matcher.series and e.date == matcher.date and needle in e.name.lower()
-    ]
-
-
-def match_all_patches(
-    patches: list[PatchConfig], source_events: list[SourceEvent]
-) -> tuple[list[MatchedPatch], list[PatchMatchError]]:
-    """Match every patch against source_events, requiring exactly one candidate each."""
-    matches: list[MatchedPatch] = []
-    errors: list[PatchMatchError] = []
-
-    for patch in patches:
-        candidates = _find_candidates(patch, source_events)
-        if len(candidates) == 1:
-            matches.append(MatchedPatch(patch=patch, source_event=candidates[0]))
-        elif len(candidates) == 0:
-            errors.append(PatchMatchError(patch=patch, reason="no_match", candidate_count=0))
-        else:
-            errors.append(
-                PatchMatchError(
-                    patch=patch, reason="multiple_matches", candidate_count=len(candidates)
-                )
-            )
-
-    return matches, errors
-
-
-def reconcile_synthetic_events(
-    conn: sqlite3.Connection, synthetic_configs: list[SyntheticEventConfig], now: str
-) -> None:
-    """Sync configured synthetic events into storage, marking removed ones.
-
-    Every event currently in synthetic_configs is upserted (reactivating it if it
-    was previously removed). Every stored synthetic event whose uid is NOT in
-    synthetic_configs, and that is not already cancelled, is marked removed at `now`.
-    """
-    configured_uids = {cfg.uid for cfg in synthetic_configs}
-
-    with transaction(conn):
-        for cfg in synthetic_configs:
-            upsert_synthetic_event(
-                conn,
-                uid=cfg.uid,
-                series=cfg.series,
-                summary=cfg.summary,
-                start=cfg.start,
-                date=cfg.date,
-                duration_seconds=parse_duration(cfg.duration) if cfg.duration else None,
-                location=cfg.location,
-                status=cfg.status or "CONFIRMED",
-                note=cfg.note,
-                alarms_json=json.dumps(cfg.alarms),
-            )
-
-        for row in list_synthetic_events(conn):
-            if row["uid"] not in configured_uids and row["cancelled_at"] is None:
-                mark_synthetic_event_removed(conn, row["uid"], now)
+from motorcal.models import EventStatus, PublishedEvent, SessionType, event_uid
+from motorcal.state import State, VersionState
 
 
 def compute_fingerprint(
@@ -162,97 +60,89 @@ def next_sequence(previous_sequence: int | None, now_unix_minute: int) -> int:
 def resolve_duration(
     session_type: SessionType,
     *,
-    own_duration_seconds: int | None,
+    own_duration: str | None,
     series_config: SeriesConfig,
-    root_config: RootConfig,
+    globals_: GlobalConfig,
 ) -> int | None:
-    """4-tier duration priority: own > per-series default > global default > None."""
-    if own_duration_seconds is not None:
-        return own_duration_seconds
+    """4-tier duration priority: the event's own > per-series > global > none."""
+    if own_duration is not None:
+        return parse_duration(own_duration)
 
     if series_config.durations is not None:
         series_value = getattr(series_config.durations, session_type.value, None)
         if series_value is not None:
             return parse_duration(series_value)
 
-    global_value = getattr(root_config.defaults.durations, session_type.value, None)
-    if global_value is not None:
-        return parse_duration(global_value)
-
-    return None
+    global_value = getattr(globals_.defaults.durations, session_type.value, None)
+    return parse_duration(global_value) if global_value is not None else None
 
 
 def resolve_alarms(
     session_type: SessionType,
     *,
-    is_synthetic: bool,
     own_alarms: list[str] | None,
     time_confirmed: bool,
-    root_config: RootConfig,
+    globals_: GlobalConfig,
 ) -> list[str]:
-    """Alarms only apply to confirmed, non-testing, non-unknown sessions."""
+    """Alarms only apply to confirmed, non-testing, non-unknown sessions.
+
+    An explicit list on the event always wins, including an explicit empty one --
+    that is how you silence a single race without touching the series defaults.
+    """
     if not time_confirmed or session_type in (SessionType.UNKNOWN, SessionType.TESTING):
         return []
-    if is_synthetic:
-        return list(own_alarms) if own_alarms is not None else []
-    return list(root_config.defaults.alerts.get(session_type.value, []))
-
-
-@dataclass
-class PreviousPublishedState:
-    """A lightweight snapshot of what was previously published for one UID.
-
-    Kept independent of sqlite3.Row so build_published_event_* stay pure and
-    testable without a database — the caller (Task 4's orchestration) converts
-    a fetched published_events row into this shape before calling in.
-    """
-
-    fingerprint: str
-    sequence: int
-    dtstamp: str
-    last_modified: str
-    status: str
+    if own_alarms is not None:
+        return list(own_alarms)
+    return list(globals_.defaults.alerts.get(session_type.value, []))
 
 
 def build_description(
     *,
-    venue: str | None,
-    country: str | None,
-    round_number: int | None,
+    event: EventConfig,
     race_only: bool,
     time_confirmed: bool,
-    time_source: str,
-    note: str | None,
 ) -> str:
     """Build the human-readable DESCRIPTION text for one published event."""
+    source = event.source
     lines: list[str] = []
-    if venue:
-        lines.append(f"Venue: {venue}")
-    if country:
-        lines.append(f"Country: {country}")
-    if round_number is not None:
-        lines.append(f"Round: {round_number}")
-    lines.append("Source: TheSportsDB" if time_source != "synthetic" else "Source: local synthetic event")
+    if source and source.venue:
+        lines.append(f"Venue: {source.venue}")
+    if source and source.country:
+        lines.append(f"Country: {source.country}")
+    if event.round is not None:
+        lines.append(f"Round: {event.round}")
+
+    lines.append("Source: TheSportsDB" if source else "Source: local event")
     if race_only:
         lines.append("This series' feed includes race sessions only.")
-    if time_source == "patch":
-        lines.append("Time confirmed by local override.")
-    elif time_source == "synthetic":
-        lines.append("Time supplied by local synthetic event definition.")
+
+    if source is None:
+        lines.append("Time supplied by local event definition.")
     elif not time_confirmed:
         lines.append("Time not yet confirmed by the source (TBC).")
     else:
         lines.append("Time confirmed by source.")
-    if note:
-        lines.append(f"Note: {note}")
+
+    if event.note:
+        lines.append(f"Note: {event.note}")
     return "\n".join(lines)
+
+
+def _event_effective_end(
+    start: datetime | None, all_day_date: str | None, duration_seconds: int | None
+) -> datetime:
+    """The last instant this event is 'happening', for retention/cancellation decisions."""
+    if start is not None:
+        return start + timedelta(seconds=duration_seconds) if duration_seconds else start
+    day = datetime.fromisoformat(all_day_date).replace(tzinfo=timezone.utc)
+    return day + timedelta(days=1)
 
 
 def _resolve_status(
     *,
     is_disappeared: bool,
     is_future_or_active: bool,
-    patch_status: str | None,
+    configured_status: EventStatus,
     previous_status: EventStatus | None,
 ) -> EventStatus:
     """Cancellation is sticky: once CANCELLED, stay CANCELLED regardless of later rebuilds."""
@@ -261,89 +151,58 @@ def _resolve_status(
             return EventStatus.CANCELLED
         if is_future_or_active:
             return EventStatus.CANCELLED
-        # A past event disappearing for the first time remains last-known-good, unchanged.
-        return previous_status if previous_status is not None else EventStatus.CONFIRMED
-    if patch_status is not None:
-        return EventStatus(patch_status)
-    return EventStatus.CONFIRMED
+        # A past event disappearing for the first time stays last-known-good.
+        return previous_status if previous_status is not None else configured_status
+    return configured_status
 
 
-def build_published_event_from_source(
+def build_published_event(
+    event: EventConfig,
     *,
-    source_event: SourceEvent,
-    session_type: SessionType,
-    is_disappeared: bool,
-    matched_patch: PatchConfig | None,
-    uid_domain: str,
-    race_only: bool,
+    series: str,
     series_config: SeriesConfig,
-    root_config: RootConfig,
-    previous: PreviousPublishedState | None,
+    globals_: GlobalConfig,
+    previous: VersionState | None,
     now: datetime,
 ) -> PublishedEvent:
-    """Build (or rebuild) the published state for one source-backed event."""
-    uid = source_uid(source_event.key.id_event, uid_domain)
+    """Build (or rebuild) the published state for one configured event."""
+    uid = event_uid(event, globals_.uid_domain)
+    session_type = classify_event(series, event.summary, event.round or 0)
+    time_confirmed = event.start is not None
 
-    patched_start = matched_patch.start if matched_patch else None
-    if patched_start:
-        start_dt = datetime.fromisoformat(patched_start.replace("Z", "+00:00"))
-        time_confirmed = (
-            matched_patch.time_confirmed if matched_patch.time_confirmed is not None else True
-        )
-        time_source = "patch"
-    else:
-        if source_event.time is None or source_event.time == "00:00:00":
-            time_confirmed = False
-            start_dt = None
-        else:
-            start_dt = datetime.fromisoformat(f"{source_event.date}T{source_event.time}+00:00")
-            time_confirmed = True
-        time_source = "provider"
+    summary = event.summary
+    if not time_confirmed and event.source is not None:
+        # The provider hasn't announced a time. A manual all-day event is
+        # deliberate, so it never gets the suffix.
+        summary += globals_.unknown_time.summary_suffix
 
-    summary = (matched_patch.summary if matched_patch and matched_patch.summary else source_event.name)
-    location = (
-        matched_patch.location
-        if matched_patch and matched_patch.location
-        else f"{source_event.venue}, {source_event.country}"
-        if source_event.venue and source_event.country
-        else source_event.venue or source_event.country
-    )
-
-    if not time_confirmed:
-        summary = summary + root_config.unknown_time.summary_suffix
-        all_day_date: str | None = source_event.date
-        start: datetime | None = None
-        duration_seconds: int | None = None
-        alarms: list[str] = []
-    else:
-        all_day_date = None
-        start = start_dt
-        own_duration = parse_duration(matched_patch.duration) if matched_patch and matched_patch.duration else None
+    if time_confirmed:
+        start: datetime | None = datetime.fromisoformat(event.start.replace("Z", "+00:00"))
+        all_day_date: str | None = None
         duration_seconds = resolve_duration(
-            session_type, own_duration_seconds=own_duration,
-            series_config=series_config, root_config=root_config,
+            session_type, own_duration=event.duration,
+            series_config=series_config, globals_=globals_,
         )
         alarms = resolve_alarms(
-            session_type, is_synthetic=False, own_alarms=None,
-            time_confirmed=True, root_config=root_config,
+            session_type, own_alarms=event.alarms, time_confirmed=True, globals_=globals_
         )
+    else:
+        start, all_day_date = None, event.date
+        duration_seconds, alarms = None, []
 
     is_future_or_active = _event_effective_end(start, all_day_date, duration_seconds) >= now
-    patch_status = matched_patch.status if matched_patch else None
-    previous_status = EventStatus(previous.status) if previous else None
     status = _resolve_status(
-        is_disappeared=is_disappeared, is_future_or_active=is_future_or_active,
-        patch_status=patch_status, previous_status=previous_status,
+        is_disappeared=event.disappeared_at is not None,
+        is_future_or_active=is_future_or_active,
+        configured_status=EventStatus(event.status),
+        previous_status=EventStatus(previous.status) if previous else None,
     )
 
     description = build_description(
-        venue=source_event.venue, country=source_event.country, round_number=source_event.round,
-        race_only=race_only, time_confirmed=time_confirmed, time_source=time_source,
-        note=matched_patch.note if matched_patch else None,
+        event=event, race_only=series_config.race_only, time_confirmed=time_confirmed
     )
-
     fingerprint = compute_fingerprint(
-        summary=summary, description=description, location=location, status=status.value,
+        summary=summary, description=description, location=event.location, status=status.value,
         start=start.isoformat() if start else None, all_day_date=all_day_date,
         duration_seconds=duration_seconds, alarms=alarms,
     )
@@ -355,93 +214,15 @@ def build_published_event_from_source(
         last_modified = datetime.fromisoformat(previous.last_modified)
     else:
         sequence = next_sequence(previous.sequence if previous else None, now_unix_minute)
-        dtstamp = now
-        last_modified = now
+        dtstamp = last_modified = now
 
     return PublishedEvent(
-        uid=uid, series=source_event.series, session_type=session_type, summary=summary,
+        uid=uid, series=series, session_type=session_type, summary=summary,
         start=start, all_day_date=all_day_date, time_confirmed=time_confirmed,
-        duration_seconds=duration_seconds, location=location, description=description,
+        duration_seconds=duration_seconds, location=event.location, description=description,
         status=status, sequence=sequence, dtstamp=dtstamp, last_modified=last_modified,
-        fingerprint=fingerprint, alarms=alarms, source_id_event=source_event.key.id_event,
-        synthetic_uid=None,
+        fingerprint=fingerprint, alarms=alarms, event_key=event.key,
     )
-
-
-def build_published_event_from_synthetic(
-    *,
-    uid: str,
-    series: str,
-    summary: str,
-    start: str | None,
-    date: str | None,
-    duration_seconds: int | None,
-    location: str | None,
-    note: str | None,
-    alarms: list[str],
-    configured_status: str,
-    is_removed: bool,
-    uid_domain: str,
-    root_config: RootConfig,
-    previous: PreviousPublishedState | None,
-    now: datetime,
-) -> PublishedEvent:
-    """Build (or rebuild) the published state for one synthetic event."""
-    full_uid = synthetic_event_uid(uid, uid_domain)
-
-    if start:
-        start_dt: datetime | None = datetime.fromisoformat(start.replace("Z", "+00:00"))
-        all_day_date: str | None = None
-    else:
-        start_dt = None
-        all_day_date = date
-
-    # Removal from config is a sticky cancellation regardless of the last configured
-    # status; otherwise the configured status (CONFIRMED/TENTATIVE/CANCELLED) applies.
-    status = EventStatus.CANCELLED if is_removed else EventStatus(configured_status)
-
-    description = build_description(
-        venue=None, country=None, round_number=None, race_only=False,
-        time_confirmed=True, time_source="synthetic", note=note,
-    )
-
-    fingerprint = compute_fingerprint(
-        summary=summary, description=description, location=location, status=status.value,
-        start=start_dt.isoformat() if start_dt else None, all_day_date=all_day_date,
-        duration_seconds=duration_seconds, alarms=alarms,
-    )
-
-    now_unix_minute = int(now.timestamp() // 60)
-    if previous is not None and previous.fingerprint == fingerprint:
-        sequence = previous.sequence
-        dtstamp = datetime.fromisoformat(previous.dtstamp)
-        last_modified = datetime.fromisoformat(previous.last_modified)
-    else:
-        sequence = next_sequence(previous.sequence if previous else None, now_unix_minute)
-        dtstamp = now
-        last_modified = now
-
-    return PublishedEvent(
-        uid=full_uid, series=series, session_type=SessionType.RACE, summary=summary,
-        start=start_dt, all_day_date=all_day_date, time_confirmed=True,
-        duration_seconds=duration_seconds, location=location, description=description,
-        status=status, sequence=sequence, dtstamp=dtstamp, last_modified=last_modified,
-        fingerprint=fingerprint, alarms=alarms, source_id_event=None, synthetic_uid=uid,
-    )
-
-
-def _event_effective_end(
-    start: datetime | None, all_day_date: str | None, duration_seconds: int | None
-) -> datetime:
-    """The last instant this event is considered 'happening', for retention/cancellation decisions."""
-    from datetime import timedelta
-
-    if start is not None:
-        if duration_seconds:
-            return start + timedelta(seconds=duration_seconds)
-        return start
-    day = datetime.fromisoformat(all_day_date).replace(tzinfo=timezone.utc)
-    return day + timedelta(days=1)
 
 
 @dataclass
@@ -449,157 +230,91 @@ class RebuildReport:
     events_published: int
     events_cancelled: int
     events_pruned: int
-    patch_errors: list[PatchMatchError]
     unknown_events: list[str]
 
 
-class PublicationBlockedError(Exception):
-    """Raised by rebuild_publication when any patch fails to match exactly one
-    source event, before any write is attempted.
-
-    Every patch must match exactly one source event; zero or multiple matches
-    must leave the previously valid published configuration entirely active --
-    not just the affected event, the whole rebuild. Raising (rather than
-    returning a report) lets the caller's enclosing transaction() roll back in
-    full, including any source ingestion staged alongside this rebuild, so a
-    crash can never leave new source state paired with an old publication.
-    """
-
-    def __init__(self, patch_errors: list[PatchMatchError], unknown_events: list[str]):
-        self.patch_errors = patch_errors
-        self.unknown_events = unknown_events
-        super().__init__(
-            f"{len(patch_errors)} patch(es) failed to match exactly one source event"
-        )
-
-
-def _row_to_source_event(row: sqlite3.Row) -> SourceEvent:
-    return SourceEvent(
-        key=SourceEventKey(provider=row["provider"], id_event=row["id_event"]),
-        series=row["series"], season=row["season"], round=row["round"], name=row["name"],
-        date=row["date"], time=row["time"], venue=row["venue"], country=row["country"],
-        raw=json.loads(row["raw_json"]),
-    )
-
-
-def _previous_state(row: sqlite3.Row | None) -> PreviousPublishedState | None:
-    if row is None:
-        return None
-    return PreviousPublishedState(
-        fingerprint=row["fingerprint"], sequence=row["sequence"],
-        dtstamp=row["dtstamp"], last_modified=row["last_modified"], status=row["status"],
-    )
-
-
-def _write_published_event(conn: sqlite3.Connection, event: PublishedEvent) -> None:
-    upsert_published_event(
-        conn, uid=event.uid, series=event.series, session_type=event.session_type.value,
-        summary=event.summary, start=event.start.isoformat() if event.start else None,
-        all_day_date=event.all_day_date, time_confirmed=event.time_confirmed,
-        duration_seconds=event.duration_seconds, location=event.location,
-        description=event.description, status=event.status.value, sequence=event.sequence,
-        dtstamp=event.dtstamp.isoformat(), last_modified=event.last_modified.isoformat(),
-        fingerprint=event.fingerprint, alarms_json=json.dumps(event.alarms),
-        source_provider="thesportsdb" if event.source_id_event else None,
-        source_id_event=event.source_id_event, synthetic_uid=event.synthetic_uid,
-        cancelled_at=None, retain_until=None,
-    )
-
-
 def rebuild_publication(
-    conn: sqlite3.Connection,
-    *,
-    root_config: RootConfig,
-    overrides: OverridesConfig,
-    uid_domain: str,
-    now: datetime,
-) -> RebuildReport:
-    """Rebuild every published event from current source/synthetic state, atomically."""
-    source_rows = list_all_source_events(conn)
-    source_events = [_row_to_source_event(row) for row in source_rows]
-    matches, patch_errors = match_all_patches(overrides.patches, source_events)
+    config: Config, state: State, *, now: datetime
+) -> tuple[dict[str, list[PublishedEvent]], RebuildReport]:
+    """Rebuild every published event from the config directory and the version ledger.
 
-    if patch_errors:
-        unknown_events = [
-            source_uid(e.key.id_event, uid_domain) for e in source_events
-            if classify_event(e.series, e.name, e.round) == SessionType.UNKNOWN
-        ]
-        raise PublicationBlockedError(patch_errors, unknown_events)
-
-    patch_by_id_event = {m.source_event.key.id_event: m.patch for m in matches}
-
-    events_published = 0
-    events_cancelled = 0
+    Mutates `state.versions` (and prunes expired entries from both the config and
+    the ledger) but writes nothing to disk.
+    """
+    published: dict[str, list[PublishedEvent]] = {}
     unknown_events: list[str] = []
 
-    with transaction(conn):
-        for row, source_event in zip(source_rows, source_events):
-            session_type = classify_event(source_event.series, source_event.name, source_event.round)
-            series_config = root_config.series[source_event.series]
-            matched_patch = patch_by_id_event.get(source_event.key.id_event)
-            previous_row = get_published_event(conn, source_uid(source_event.key.id_event, uid_domain))
-
-            event = build_published_event_from_source(
-                source_event=source_event, session_type=session_type,
-                is_disappeared=row["disappeared_at"] is not None, matched_patch=matched_patch,
-                uid_domain=uid_domain, race_only=series_config.race_only,
-                series_config=series_config, root_config=root_config,
-                previous=_previous_state(previous_row), now=now,
+    for series, series_config in config.series.items():
+        published[series] = []
+        for event in series_config.events:
+            built = build_published_event(
+                event, series=series, series_config=series_config, globals_=config.globals,
+                previous=state.versions.get(event_uid(event, config.globals.uid_domain)),
+                now=now,
             )
-            _write_published_event(conn, event)
-            events_published += 1
-            if event.status == EventStatus.CANCELLED:
-                events_cancelled += 1
-            if session_type == SessionType.UNKNOWN:
-                unknown_events.append(event.uid)
+            published[series].append(built)
+            if built.session_type == SessionType.UNKNOWN:
+                unknown_events.append(built.uid)
 
-        for row in list_synthetic_events(conn):
-            uid = synthetic_event_uid(row["uid"], uid_domain)
-            previous_row = get_published_event(conn, uid)
-            alarms = json.loads(row["alarms_json"])
-            event = build_published_event_from_synthetic(
-                uid=row["uid"], series=row["series"], summary=row["summary"], start=row["start"],
-                date=row["date"], duration_seconds=row["duration_seconds"], location=row["location"],
-                note=row["note"], alarms=alarms, configured_status=row["status"],
-                is_removed=row["cancelled_at"] is not None,
-                uid_domain=uid_domain, root_config=root_config,
-                previous=_previous_state(previous_row), now=now,
+    for events in published.values():
+        for built in events:
+            state.versions[built.uid] = VersionState(
+                fingerprint=built.fingerprint, sequence=built.sequence,
+                dtstamp=built.dtstamp.isoformat(),
+                last_modified=built.last_modified.isoformat(), status=built.status.value,
             )
-            _write_published_event(conn, event)
-            events_published += 1
-            if event.status == EventStatus.CANCELLED:
-                events_cancelled += 1
 
-        events_pruned = _prune_expired(
-            conn, retention=root_config.retention, now=now,
-        )
+    events_pruned = _prune_expired(config, state, published, now=now)
 
-    return RebuildReport(
-        events_published=events_published, events_cancelled=events_cancelled,
-        events_pruned=events_pruned, patch_errors=patch_errors, unknown_events=unknown_events,
+    all_events = [e for events in published.values() for e in events]
+    report = RebuildReport(
+        events_published=len(all_events),
+        events_cancelled=sum(1 for e in all_events if e.status == EventStatus.CANCELLED),
+        events_pruned=events_pruned,
+        unknown_events=unknown_events,
     )
+    return published, report
 
 
-def _prune_expired(conn: sqlite3.Connection, *, retention, now: datetime) -> int:
-    """Delete published (and, where applicable, source) events past their retention window."""
-    from datetime import timedelta
-
+def _prune_expired(
+    config: Config,
+    state: State,
+    published: dict[str, list[PublishedEvent]],
+    *,
+    now: datetime,
+) -> int:
+    """Drop events past their retention window from the config, the ledger, and the feed."""
+    retention: RetentionConfig = config.globals.retention
     pruned = 0
-    for row in list_published_events(conn):
-        start = datetime.fromisoformat(row["start"]) if row["start"] else None
-        effective_end = _event_effective_end(start, row["all_day_date"], row["duration_seconds"])
-        if effective_end >= now:
-            continue  # still current/future -- never prune
 
-        if row["status"] == "CANCELLED":
-            cutoff = effective_end + timedelta(days=retention.cancelled_after_event_days)
-        else:
-            cutoff = effective_end + timedelta(days=retention.historical_days)
+    for series, events in published.items():
+        expired_uids: set[str] = set()
+        expired_keys: set[str] = set()
+        for built in events:
+            effective_end = _event_effective_end(
+                built.start, built.all_day_date, built.duration_seconds
+            )
+            if effective_end >= now:
+                continue  # still current/future -- never prune
 
-        if now > cutoff:
-            delete_published_event(conn, row["uid"])
-            if row["source_id_event"] is not None:
-                delete_source_event(conn, row["source_provider"], row["source_id_event"])
-            pruned += 1
+            days = (
+                retention.cancelled_after_event_days
+                if built.status == EventStatus.CANCELLED
+                else retention.historical_days
+            )
+            if now > effective_end + timedelta(days=days):
+                expired_uids.add(built.uid)
+                expired_keys.add(built.event_key)
+
+        if not expired_uids:
+            continue
+
+        published[series] = [e for e in events if e.uid not in expired_uids]
+        config.series[series].events = [
+            e for e in config.series[series].events if e.key not in expired_keys
+        ]
+        for uid in expired_uids:
+            state.versions.pop(uid, None)
+        pruned += len(expired_uids)
 
     return pruned

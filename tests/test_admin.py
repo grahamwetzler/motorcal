@@ -1,67 +1,49 @@
+from datetime import datetime, timezone
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from tests.conftest import (
+    UID_DOMAIN,
+    make_config,
+    make_series,
+    make_state,
+    manual_event,
+    source_event,
+    write_config_dir,
+)
 
 from motorcal.admin import create_admin_app
-from motorcal.config import (
-    DefaultsConfig,
-    DurationDefaults,
-    RetentionConfig,
-    RootConfig,
-    SeriesConfig,
-    UnknownTimeConfig,
-    load_overrides,
-)
-from motorcal.store import connect, init_schema, upsert_published_event
+from motorcal.config import load_config
+from motorcal.merge import rebuild_publication
+from motorcal.state import SnapshotState, scope_key
+
+NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
+SOURCE_UID = f"thesportsdb-1@{UID_DOMAIN}"
+MANUAL_UID = f"local-mine@{UID_DOMAIN}"
 
 
-def _root_config():
-    return RootConfig(
-        server={"base_url": "https://x.example.com", "uid_domain": "x.example.com"},
-        source={"refresh_cron": "0 * * * *"},
-        retention=RetentionConfig(),
-        defaults=DefaultsConfig(durations=DurationDefaults(), alerts={}, include_sessions=["race"]),
-        unknown_time=UnknownTimeConfig(),
-        series={"wec": SeriesConfig(league_id=4413, name="WEC", max_round=20)},
+def _setup(tmp_path, events=None, state=None, diagnostics=None):
+    config = make_config(
+        series={"wec": make_series(events=events if events is not None else [])}
     )
+    config_dir = write_config_dir(tmp_path, config)
+    state = state or make_state()
+    published, _ = rebuild_publication(config, state, now=NOW)
 
-
-def _insert_source_backed(conn, uid="thesportsdb-1@x.example.com"):
-    upsert_published_event(
-        conn, uid=uid, series="wec", session_type="race", summary="6 Hours of Imola",
-        start="2026-04-19T13:00:00+00:00", all_day_date=None, time_confirmed=True,
-        duration_seconds=6 * 3600, location="Imola, Italy", description="D", status="CONFIRMED",
-        sequence=1, dtstamp="2026-01-01T00:00:00+00:00", last_modified="2026-01-01T00:00:00+00:00",
-        fingerprint="fp", alarms_json="[]", source_provider="thesportsdb", source_id_event="1",
-        synthetic_uid=None, cancelled_at=None, retain_until=None,
-    )
-
-
-def _insert_synthetic(conn, uid="local-my-event@x.example.com", synthetic_uid="my-event"):
-    upsert_published_event(
-        conn, uid=uid, series="wec", session_type="unknown", summary="Test Day",
-        start="2026-05-01T10:00:00+00:00", all_day_date=None, time_confirmed=True,
-        duration_seconds=2 * 3600, location=None, description="D", status="CONFIRMED",
-        sequence=1, dtstamp="2026-01-01T00:00:00+00:00", last_modified="2026-01-01T00:00:00+00:00",
-        fingerprint="fp", alarms_json="[]", source_provider=None, source_id_event=None,
-        synthetic_uid=synthetic_uid, cancelled_at=None, retain_until=None,
-    )
-
-
-def _setup(tmp_path):
-    conn = connect(tmp_path / "test.db")
-    init_schema(conn)
-    overrides_path = tmp_path / "overrides.yaml"
-    overrides_path.write_text("patches: []\nevents: []\n")
     main_app = FastAPI()
-    main_app.state.root_config = _root_config()
-    admin_app = create_admin_app(tmp_path / "test.db", overrides_path, main_app)
-    return conn, overrides_path, TestClient(admin_app)
+    main_app.state.config = config
+    main_app.state.published = published
+    main_app.state.data = state
+    main_app.state.diagnostics = diagnostics or {}
+    return config_dir, TestClient(create_admin_app(config_dir, main_app))
+
+
+def _events(config_dir):
+    return load_config(config_dir).series["wec"].events
 
 
 def test_list_route_shows_events(tmp_path):
-    conn, _, client = _setup(tmp_path)
-    _insert_source_backed(conn)
-    conn.close()
+    _, client = _setup(tmp_path, [source_event("1", time="13:00:00")])
 
     response = client.get("/")
 
@@ -69,98 +51,190 @@ def test_list_route_shows_events(tmp_path):
     assert "6 Hours of Imola" in response.text
 
 
-def test_edit_source_backed_event_creates_then_replaces_patch(tmp_path):
-    conn, overrides_path, client = _setup(tmp_path)
-    _insert_source_backed(conn)
-    conn.close()
+def test_editing_a_provider_event_writes_the_series_file(tmp_path):
+    config_dir, client = _setup(tmp_path, [source_event("1", time="13:00:00")])
 
-    uid = "thesportsdb-1@x.example.com"
     response = client.post(
-        "/events/edit",
-        follow_redirects=False,
+        "/events/edit", follow_redirects=False,
         data={
-            "published_uid": uid, "start": "2026-04-19T14:00:00Z", "duration": "6h",
-            "summary": "6 Hours of Imola (delayed)", "location": "Imola, Italy",
-            "status": "CONFIRMED", "note": "rain delay",
+            "published_uid": SOURCE_UID, "summary": "6 Hours of Imola (delayed)",
+            "start": "2026-04-19T15:00:00+00:00", "duration": "6h",
+            "location": "Imola, Italy", "status": "CONFIRMED", "note": "rain delay",
         },
     )
+
     assert response.status_code == 303
+    event = _events(config_dir)[0]
+    assert event.summary == "6 Hours of Imola (delayed)"
+    assert event.start == "2026-04-19T15:00:00+00:00"
+    assert event.note == "rain delay"
 
-    overrides = load_overrides(overrides_path)
-    assert len(overrides.patches) == 1
-    assert overrides.patches[0].id_event == "1"
-    assert overrides.patches[0].start == "2026-04-19T14:00:00Z"
-    assert overrides.patches[0].note == "rain delay"
 
-    # Editing again replaces, rather than duplicates, the same patch.
+def test_editing_preserves_the_provider_identity_and_source_baseline(tmp_path):
+    """id_event and source: are the provider's -- a form must never rewrite them."""
+    config_dir, client = _setup(tmp_path, [source_event("1", time="13:00:00")])
+    original_source = _events(config_dir)[0].source
+
+    client.post(
+        "/events/edit", follow_redirects=False,
+        data={"published_uid": SOURCE_UID, "summary": "Renamed", "start": "2026-04-19T13:00:00+00:00"},
+    )
+
+    event = _events(config_dir)[0]
+    assert event.id_event == "1"
+    assert event.source == original_source
+
+
+def test_editing_twice_replaces_rather_than_duplicates(tmp_path):
+    config_dir, client = _setup(tmp_path, [source_event("1", time="13:00:00")])
+
+    for summary in ("First", "Second"):
+        client.post(
+            "/events/edit", follow_redirects=False,
+            data={
+                "published_uid": SOURCE_UID, "summary": summary,
+                "start": "2026-04-19T13:00:00+00:00",
+            },
+        )
+
+    events = _events(config_dir)
+    assert len(events) == 1
+    assert events[0].summary == "Second"
+
+
+def test_creating_a_manual_event(tmp_path):
+    config_dir, client = _setup(tmp_path)
+
     response = client.post(
-        "/events/edit",
-        follow_redirects=False,
+        "/events/edit", follow_redirects=False,
         data={
-            "published_uid": uid, "start": "2026-04-19T15:00:00Z", "duration": "6h",
-            "summary": "6 Hours of Imola (delayed)", "location": "Imola, Italy",
-            "status": "CONFIRMED", "note": "rain delay, take two",
+            "published_uid": "", "uid": "mine", "series": "wec", "summary": "Test Day",
+            "start": "2026-05-01T10:00:00+00:00", "duration": "2h", "status": "CONFIRMED",
         },
     )
+
     assert response.status_code == 303
+    event = _events(config_dir)[0]
+    assert event.uid == "mine"
+    assert event.id_event is None
+    assert event.source is None
 
-    overrides = load_overrides(overrides_path)
-    assert len(overrides.patches) == 1
-    assert overrides.patches[0].start == "2026-04-19T15:00:00Z"
-    assert overrides.patches[0].note == "rain delay, take two"
 
-
-def test_create_synthetic_event_then_edit_it(tmp_path):
-    conn, overrides_path, client = _setup(tmp_path)
+def test_creating_a_duplicate_uid_is_rejected(tmp_path):
+    config_dir, client = _setup(tmp_path, [manual_event("mine")])
+    before = (config_dir / "wec.yaml").read_text()
 
     response = client.post(
-        "/events/edit",
-        follow_redirects=False,
+        "/events/edit", follow_redirects=False,
         data={
-            "published_uid": "", "uid": "my-event", "series": "wec",
-            "start": "2026-05-01T10:00:00Z", "duration": "2h",
-            "summary": "Test Day", "status": "CONFIRMED",
-        },
-    )
-    assert response.status_code == 303
-
-    overrides = load_overrides(overrides_path)
-    assert len(overrides.events) == 1
-    assert overrides.events[0].uid == "my-event"
-
-    # Simulate a refresh cycle having since published this synthetic event.
-    _insert_synthetic(conn)
-    conn.close()
-
-    response = client.post(
-        "/events/edit",
-        follow_redirects=False,
-        data={
-            "published_uid": "local-my-event@x.example.com", "start": "2026-05-01T11:00:00Z",
-            "duration": "3h", "summary": "Test Day (updated)", "status": "CONFIRMED",
-        },
-    )
-    assert response.status_code == 303
-
-    overrides = load_overrides(overrides_path)
-    assert len(overrides.events) == 1
-    assert overrides.events[0].start == "2026-05-01T11:00:00Z"
-    assert overrides.events[0].summary == "Test Day (updated)"
-
-
-def test_invalid_submission_leaves_overrides_file_unchanged(tmp_path):
-    conn, overrides_path, client = _setup(tmp_path)
-    conn.close()
-    before = overrides_path.read_text()
-
-    response = client.post(
-        "/events/edit",
-        follow_redirects=False,
-        data={
-            "published_uid": "", "uid": "bad-event", "series": "not-a-real-series",
-            "start": "2026-05-01T10:00:00Z", "summary": "Nope",
+            "published_uid": "", "uid": "mine", "series": "wec", "summary": "Clash",
+            "date": "2026-06-01",
         },
     )
 
     assert response.status_code == 400
-    assert overrides_path.read_text() == before
+    assert "already exists" in response.text
+    assert (config_dir / "wec.yaml").read_text() == before
+
+
+def test_an_unknown_series_is_rejected(tmp_path):
+    config_dir, client = _setup(tmp_path)
+
+    response = client.post(
+        "/events/edit", follow_redirects=False,
+        data={
+            "published_uid": "", "uid": "x", "series": "not-a-series",
+            "summary": "Nope", "date": "2026-06-01",
+        },
+    )
+
+    assert response.status_code == 400
+    assert "Unknown series" in response.text
+
+
+def test_an_invalid_submission_leaves_the_file_unchanged(tmp_path):
+    config_dir, client = _setup(tmp_path, [source_event("1", time="13:00:00")])
+    before = (config_dir / "wec.yaml").read_text()
+
+    # Neither start nor date violates the "exactly one" rule.
+    response = client.post(
+        "/events/edit", follow_redirects=False,
+        data={"published_uid": SOURCE_UID, "summary": "No timing", "start": "", "date": ""},
+    )
+
+    assert response.status_code == 400
+    assert (config_dir / "wec.yaml").read_text() == before
+
+
+def test_a_save_does_not_drop_events_added_since_the_page_loaded(tmp_path):
+    """The form re-reads from disk, so a concurrent refresh's writes survive."""
+    config_dir, client = _setup(tmp_path, [source_event("1", time="13:00:00")])
+
+    # Simulate a refresh cycle appending an event while the edit form was open.
+    from motorcal.config import save_series
+    on_disk = load_config(config_dir).series["wec"]
+    on_disk.events.append(source_event("2", time="14:00:00"))
+    save_series(config_dir, "wec", on_disk)
+
+    client.post(
+        "/events/edit", follow_redirects=False,
+        data={"published_uid": SOURCE_UID, "summary": "Edited", "start": "2026-04-19T13:00:00+00:00"},
+    )
+
+    assert {e.key for e in _events(config_dir)} == {"1", "2"}
+
+
+def test_editing_an_unknown_uid_returns_404(tmp_path):
+    _, client = _setup(tmp_path)
+
+    assert client.get("/events/edit?uid=nope").status_code == 404
+
+
+def test_status_reports_ready_and_healthy_for_a_fresh_series(tmp_path):
+    season = str(datetime.now(timezone.utc).year)
+    state = make_state(snapshots={
+        scope_key("wec", season): SnapshotState(
+            last_complete_at=datetime.now(timezone.utc).isoformat(), count=1
+        )
+    })
+    _, client = _setup(tmp_path, [source_event("1", time="13:00:00")], state=state)
+
+    body = client.get("/status").json()
+
+    assert body["ready"] is True
+    assert body["healthy"] is True
+    assert body["series"]["wec"]["events"] == 1
+    assert body["series"]["wec"]["stale"] is False
+
+
+def test_status_reports_stale_without_failing(tmp_path):
+    season = str(datetime.now(timezone.utc).year)
+    state = make_state(snapshots={
+        scope_key("wec", season): SnapshotState(
+            last_complete_at="2020-01-01T00:00:00+00:00", count=1
+        )
+    })
+    _, client = _setup(tmp_path, [source_event("1", time="13:00:00")], state=state)
+
+    response = client.get("/status")
+
+    # Always 200: this is the container healthcheck, and an upstream outage must
+    # not restart-loop a process serving its last-known-good feeds.
+    assert response.status_code == 200
+    assert response.json()["healthy"] is False
+    assert response.json()["series"]["wec"]["stale"] is True
+
+
+def test_status_reports_never_refreshed_as_not_ready(tmp_path):
+    _, client = _setup(tmp_path)
+
+    body = client.get("/status").json()
+
+    assert body["ready"] is False
+    assert body["series"]["wec"]["last_complete_at"] is None
+
+
+def test_status_surfaces_unknown_events(tmp_path):
+    _, client = _setup(tmp_path, diagnostics={"unknown_events": ["u1"]})
+
+    assert client.get("/status").json()["unknown_events"] == ["u1"]

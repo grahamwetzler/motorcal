@@ -2,221 +2,166 @@ import json
 from datetime import datetime, timezone
 
 import httpx
+from tests.conftest import UID_DOMAIN, make_config, make_series, make_state, manual_event
 
-from motorcal.config import (
-    DefaultsConfig,
-    DurationDefaults,
-    OverridesConfig,
-    PatchConfig,
-    RetentionConfig,
-    RootConfig,
-    SeriesConfig,
-    UnknownTimeConfig,
-)
 from motorcal.refresh import run_refresh_cycle
-from motorcal.store import (
-    connect,
-    get_feed_revision,
-    get_published_event,
-    get_refresh_diagnostics,
-    get_source_event,
-    init_schema,
-)
-from motorcal.models import source_uid
+from motorcal.state import scope_key
 
-UID_DOMAIN = "x.example.com"
+NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 
-def _root_config(series=None, next_season_from="10-01"):
-    return RootConfig(
-        server={"base_url": f"https://{UID_DOMAIN}", "uid_domain": UID_DOMAIN},
-        source={"refresh_cron": "0 * * * *", "next_season_from": next_season_from,
-                "rate_limit_per_min": 6000},
-        retention=RetentionConfig(),
-        defaults=DefaultsConfig(
-            durations=DurationDefaults(), alerts={"race": ["-1d"]}, include_sessions=["race"],
-        ),
-        unknown_time=UnknownTimeConfig(),
-        series=series or {"wec": SeriesConfig(league_id=4413, name="WEC", max_round=1)},
+def _config(**kwargs):
+    return make_config(
+        series={
+            "wec": make_series(league_id=4413, name="WEC", max_round=1),
+            "imsa": make_series(league_id=4488, name="IMSA", max_round=1, race_only=True),
+        },
+        alerts={"race": ["-1d"]},
+        **kwargs,
     )
 
 
-def _fresh_conn(tmp_path):
-    conn = connect(tmp_path / "test.db")
-    init_schema(conn)
-    return conn
-
-
-def _single_race_handler(request: httpx.Request) -> httpx.Response:
-    round_number = int(request.url.params["r"])
-    if round_number == 1:
-        body = {
-            "events": [
-                {
-                    "idEvent": "2421035", "idLeague": "4413", "strSeason": request.url.params["s"],
-                    "dateEvent": "2026-04-19", "strTime": "13:00:00", "strEvent": "6 Hours of Imola",
-                    "strVenue": "Imola", "strCountry": "Italy",
-                }
-            ]
-        }
+def _wec_handler(request: httpx.Request) -> httpx.Response:
+    if int(request.url.params["r"]) == 1 and request.url.params["id"] == "4413":
+        body = {"events": [{
+            "idEvent": "2421035", "idLeague": "4413", "strSeason": request.url.params["s"],
+            "dateEvent": "2026-04-19", "strTime": "13:00:00", "strEvent": "6 Hours of Imola",
+            "strVenue": "Imola", "strCountry": "Italy",
+        }]}
     else:
         body = {"events": None}
     return httpx.Response(200, text=json.dumps(body))
 
 
-def _patched_client(monkeypatch):
-    def fake_build_client():
-        return httpx.Client(transport=httpx.MockTransport(_single_race_handler))
-
-    monkeypatch.setattr("motorcal.refresh.build_client", fake_build_client)
-
-
-def test_refresh_cycle_ingests_and_publishes(tmp_path, monkeypatch):
-    _patched_client(monkeypatch)
-    conn = _fresh_conn(tmp_path)
-    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
-
-    result = run_refresh_cycle(
-        conn, root_config=_root_config(), overrides=OverridesConfig(), api_key="3",
-        uid_domain=UID_DOMAIN, lease_holder="worker-a", lease_ttl_seconds=300, now=now,
+def _patched_client(monkeypatch, handler=_wec_handler):
+    monkeypatch.setattr(
+        "motorcal.refresh.build_client",
+        lambda: httpx.Client(transport=httpx.MockTransport(handler)),
     )
 
-    assert result.lease_acquired is True
+
+def _run(config, state=None, now=NOW):
+    return run_refresh_cycle(config, state or make_state(), api_key="3", now=now)
+
+
+def test_refresh_cycle_fetches_and_publishes(monkeypatch):
+    _patched_client(monkeypatch)
+    config = _config()
+
+    result = _run(config)
+
     assert result.series_season_outcomes["wec"]["2026"] == "committed"
-    assert get_source_event(conn, "thesportsdb", "2421035") is not None
-    assert get_published_event(conn, source_uid("2421035", UID_DOMAIN)) is not None
-    assert result.rebuild_report.events_published == 1
+    assert [e.id_event for e in config.series["wec"].events] == ["2421035"]
+    assert result.published["wec"][0].uid == f"thesportsdb-2421035@{UID_DOMAIN}"
+    assert result.diagnostics["events_published"] == 1
 
 
-def test_refresh_cycle_syncs_feed_revision_for_every_series(tmp_path, monkeypatch):
+def test_refresh_cycle_records_the_snapshot_for_freshness(monkeypatch):
     _patched_client(monkeypatch)
-    conn = _fresh_conn(tmp_path)
-    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    state = make_state()
 
-    run_refresh_cycle(
-        conn, root_config=_root_config(), overrides=OverridesConfig(), api_key="3",
-        uid_domain=UID_DOMAIN, lease_holder="worker-a", lease_ttl_seconds=300, now=now,
-    )
+    _run(_config(), state)
 
-    revision = get_feed_revision(conn, "wec")
-    assert revision is not None
-    assert revision["revision"] != ""
+    assert state.snapshots[scope_key("wec", "2026")].count == 1
+    assert state.snapshots[scope_key("wec", "2026")].last_complete_at == NOW.isoformat()
 
 
-def test_refresh_cycle_persists_diagnostics(tmp_path, monkeypatch):
+def test_refresh_cycle_reports_which_series_it_touched(monkeypatch):
     _patched_client(monkeypatch)
-    conn = _fresh_conn(tmp_path)
-    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
-    run_refresh_cycle(
-        conn, root_config=_root_config(), overrides=OverridesConfig(), api_key="3",
-        uid_domain=UID_DOMAIN, lease_holder="worker-a", lease_ttl_seconds=300, now=now,
-    )
+    result = _run(_config())
 
-    diagnostics = get_refresh_diagnostics(conn)
-    assert diagnostics is not None
-    assert diagnostics["events_published"] == 1
-    assert json.loads(diagnostics["unknown_events_json"]) == []
+    # imsa returned nothing for the current season, which is suspicious and rejected,
+    # so only wec's file needs rewriting.
+    assert result.synced_series == {"wec"}
+    assert result.series_season_outcomes["imsa"]["2026"] == "suspicious_empty_current_season"
 
 
-def test_refresh_cycle_skips_entirely_when_lease_already_held(tmp_path, monkeypatch):
+def test_refresh_cycle_preserves_a_hand_edited_field(monkeypatch):
     _patched_client(monkeypatch)
-    conn = _fresh_conn(tmp_path)
-    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    config = _config()
+    state = make_state()
+    _run(config, state)
 
-    from motorcal.store import acquire_lease
-    acquire_lease(conn, "other-worker", ttl_seconds=300, now=now.timestamp())
+    event = config.series["wec"].events[0]
+    event.summary = "6 Hours of Imola (my title)"
+    event.duration = "6h"
 
-    result = run_refresh_cycle(
-        conn, root_config=_root_config(), overrides=OverridesConfig(), api_key="3",
-        uid_domain=UID_DOMAIN, lease_holder="worker-a", lease_ttl_seconds=300, now=now,
-    )
+    _run(config, state, now=datetime(2026, 1, 2, tzinfo=timezone.utc))
 
-    assert result.lease_acquired is False
-    assert get_source_event(conn, "thesportsdb", "2421035") is None  # nothing was fetched
+    event = config.series["wec"].events[0]
+    assert event.summary == "6 Hours of Imola (my title)"
+    assert event.duration == "6h"
 
 
-def test_refresh_cycle_reconciles_synthetic_events(tmp_path, monkeypatch):
+def test_refresh_cycle_leaves_manual_events_alone(monkeypatch):
     _patched_client(monkeypatch)
-    conn = _fresh_conn(tmp_path)
-    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    config = _config()
+    config.series["wec"].events.append(manual_event("mine"))
 
-    from motorcal.config import SyntheticEventConfig
-    from motorcal.models import synthetic_event_uid
+    _run(config)
 
-    synthetic_cfg = SyntheticEventConfig(
-        uid="imsa-2026-rolex-24", series="imsa", summary="Rolex 24 at Daytona",
-        start="2026-01-25T18:40:00Z", duration="24h",
-    )
-    overrides = OverridesConfig(events=[synthetic_cfg])
-
-    run_refresh_cycle(
-        conn, root_config=_root_config(), overrides=overrides, api_key="3",
-        uid_domain=UID_DOMAIN, lease_holder="worker-a", lease_ttl_seconds=300, now=now,
-    )
-
-    row = get_published_event(conn, synthetic_event_uid("imsa-2026-rolex-24", UID_DOMAIN))
-    assert row is not None
+    mine = next(e for e in config.series["wec"].events if e.key == "mine")
+    assert mine.summary == "Test Day"
+    assert mine.disappeared_at is None
 
 
-def test_refresh_cycle_fetches_next_season_after_cutoff(tmp_path, monkeypatch):
+def test_refresh_cycle_fetches_next_season_after_the_cutoff(monkeypatch):
     _patched_client(monkeypatch)
-    conn = _fresh_conn(tmp_path)
-    now = datetime(2026, 12, 15, tzinfo=timezone.utc)  # after the "10-01" cutoff
 
-    result = run_refresh_cycle(
-        conn, root_config=_root_config(next_season_from="10-01"), overrides=OverridesConfig(),
-        api_key="3", uid_domain=UID_DOMAIN, lease_holder="worker-a", lease_ttl_seconds=300, now=now,
-    )
+    result = _run(_config(), now=datetime(2026, 12, 15, tzinfo=timezone.utc))  # after "10-01"
 
     assert set(result.series_season_outcomes["wec"].keys()) == {"2026", "2027"}
 
 
-def test_refresh_cycle_rolls_back_ingest_when_a_patch_fails_to_match(tmp_path, monkeypatch):
+def test_refresh_cycle_publishes_nothing_when_every_scan_is_rejected(monkeypatch):
+    _patched_client(monkeypatch, lambda request: httpx.Response(200, text='{"events": null}'))
+
+    result = _run(_config())
+
+    assert result.published is None
+    assert result.synced_series == set()
+    assert result.series_season_outcomes["wec"]["2026"] == "suspicious_empty_current_season"
+
+
+def test_refresh_cycle_surfaces_scan_errors(monkeypatch):
+    # A malformed body fails without retrying, so this doesn't sit through backoff.
+    _patched_client(monkeypatch, lambda request: httpx.Response(200, text="not json"))
+
+    result = _run(_config())
+
+    assert result.scan_errors
+    assert result.published is None
+
+
+def test_a_refresh_merges_into_what_is_on_disk_not_a_stale_copy(monkeypatch, tmp_path):
+    """Regression: the refresh rewrites series files, so it must start from the
+    file. Merging into an in-memory snapshot silently reverts any edit made since
+    that snapshot -- and a rejected reload can keep one stale indefinitely."""
+    from tests.conftest import write_config_dir
+
+    from motorcal.config import load_config, save_series
+
     _patched_client(monkeypatch)
-    conn = _fresh_conn(tmp_path)
-    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
-    overrides = OverridesConfig(patches=[PatchConfig(id_event="does-not-exist")])
+    config_dir = write_config_dir(tmp_path, _config())
+    state = make_state()
 
-    result = run_refresh_cycle(
-        conn, root_config=_root_config(), overrides=overrides, api_key="3",
-        uid_domain=UID_DOMAIN, lease_holder="worker-a", lease_ttl_seconds=300, now=now,
-    )
+    # Cycle one populates the file, and we keep the resulting config object around
+    # to stand in for the stale `app.state.config` the bug used to reuse.
+    stale = load_config(config_dir)
+    run_refresh_cycle(stale, state, api_key="3", now=NOW)
+    save_series(config_dir, "wec", stale.series["wec"])
 
-    assert result.series_season_outcomes["wec"]["2026"] == "patch_error_blocked"
-    # The whole transaction rolled back -- the freshly scanned source event too, not
-    # just the publication -- so a crash can never leave new source paired with old
-    # publication just because an unrelated patch is broken.
-    assert get_source_event(conn, "thesportsdb", "2421035") is None
-    assert get_published_event(conn, source_uid("2421035", UID_DOMAIN)) is None
+    # Someone edits the file directly, the way a person would.
+    on_disk = load_config(config_dir)
+    on_disk.series["wec"].events[0].summary = "Edited by hand"
+    save_series(config_dir, "wec", on_disk.series["wec"])
 
-    diagnostics = get_refresh_diagnostics(conn)
-    assert diagnostics is not None
-    assert json.loads(diagnostics["patch_errors_json"])[0]["reason"] == "no_match"
+    # Cycle two, done correctly: re-read, merge, write back.
+    fresh = load_config(config_dir)
+    run_refresh_cycle(fresh, state, api_key="3", now=datetime(2026, 1, 2, tzinfo=timezone.utc))
+    save_series(config_dir, "wec", fresh.series["wec"])
 
-
-def test_refresh_cycle_stops_committing_once_the_lease_is_lost_mid_cycle(tmp_path, monkeypatch):
-    _patched_client(monkeypatch)
-    conn = _fresh_conn(tmp_path)
-    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
-
-    # Simulate a scan that ran long enough (retries/backoff) to blow past a 1-second
-    # lease TTL: the cycle's first time.monotonic() call anchors the start, the
-    # second (checked right before the first write) reports 1000s of elapsed time.
-    calls = {"n": 0}
-
-    def fake_monotonic():
-        calls["n"] += 1
-        return 0.0 if calls["n"] == 1 else 1000.0
-
-    monkeypatch.setattr("time.monotonic", fake_monotonic)
-
-    result = run_refresh_cycle(
-        conn, root_config=_root_config(), overrides=OverridesConfig(), api_key="3",
-        uid_domain=UID_DOMAIN, lease_holder="worker-a", lease_ttl_seconds=1, now=now,
-    )
-
-    assert result.lease_acquired is True
-    assert result.lease_lost is True
-    assert result.series_season_outcomes["wec"] == {}  # broke out before committing anything
-    assert get_source_event(conn, "thesportsdb", "2421035") is None
+    assert load_config(config_dir).series["wec"].events[0].summary == "Edited by hand"
+    # And the stale copy, had it been used, would indeed have clobbered it.
+    assert stale.series["wec"].events[0].summary == "6 Hours of Imola"

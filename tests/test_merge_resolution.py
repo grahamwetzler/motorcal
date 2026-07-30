@@ -1,4 +1,6 @@
-from motorcal.config import DefaultsConfig, DurationDefaults, RootConfig, SeriesConfig, UnknownTimeConfig
+from tests.conftest import make_globals, make_series
+
+from motorcal.config import DurationDefaults
 from motorcal.merge import compute_fingerprint, next_sequence, resolve_alarms, resolve_duration
 from motorcal.models import SessionType
 
@@ -73,101 +75,93 @@ def test_next_sequence_restored_backup_never_goes_backwards():
     assert next_sequence(previous_sequence=999999, now_unix_minute=100) == 1000000
 
 
-def _root_config(global_race_duration="1h", alerts=None):
-    return RootConfig(
-        server={"base_url": "https://x.example.com", "uid_domain": "x.example.com"},
-        source={"refresh_cron": "0 * * * *"},
-        retention={},
-        defaults=DefaultsConfig(
-            durations=DurationDefaults(race=global_race_duration),
-            alerts=alerts or {"race": ["-1d"]},
-            include_sessions=["race"],
-        ),
-        unknown_time=UnknownTimeConfig(),
-        series={},
+def _globals(global_race_duration="1h", alerts=None):
+    return make_globals(
+        durations=DurationDefaults(race=global_race_duration),
+        alerts=alerts if alerts is not None else {"race": ["-1d"]},
     )
 
 
 def test_resolve_duration_prefers_own_duration_over_everything():
-    root = _root_config()
-    series = SeriesConfig(league_id=1, name="X", max_round=1, durations=DurationDefaults(race="3h"))
+    globals_ = _globals()
+    series = make_series(durations=DurationDefaults(race="3h"))
     result = resolve_duration(
-        SessionType.RACE, own_duration_seconds=21600, series_config=series, root_config=root
+        SessionType.RACE, own_duration="6h", series_config=series, globals_=globals_
     )
     assert result == 21600  # own duration (6h), not the 3h series override or 1h global default
 
 
 def test_resolve_duration_falls_back_to_series_override():
-    root = _root_config(global_race_duration="1h")
-    series = SeriesConfig(league_id=1, name="X", max_round=1, durations=DurationDefaults(race="3h"))
+    globals_ = _globals(global_race_duration="1h")
+    series = make_series(durations=DurationDefaults(race="3h"))
     result = resolve_duration(
-        SessionType.RACE, own_duration_seconds=None, series_config=series, root_config=root
+        SessionType.RACE, own_duration=None, series_config=series, globals_=globals_
     )
     assert result == 3 * 3600
 
 
 def test_resolve_duration_falls_back_to_global_default():
-    root = _root_config(global_race_duration="1h")
-    series = SeriesConfig(league_id=1, name="X", max_round=1)  # no series-level override
+    globals_ = _globals(global_race_duration="1h")
+    series = make_series()  # no series-level override
     result = resolve_duration(
-        SessionType.RACE, own_duration_seconds=None, series_config=series, root_config=root
+        SessionType.RACE, own_duration=None, series_config=series, globals_=globals_
     )
     assert result == 3600
 
 
 def test_resolve_duration_returns_none_when_nothing_configured():
-    root = _root_config(global_race_duration=None)
-    series = SeriesConfig(league_id=1, name="X", max_round=1)
+    globals_ = _globals(global_race_duration=None)
+    series = make_series()
     result = resolve_duration(
-        SessionType.HYPERPOLE, own_duration_seconds=None, series_config=series, root_config=root
+        SessionType.HYPERPOLE, own_duration=None, series_config=series, globals_=globals_
     )
     assert result is None
 
 
 def test_resolve_alarms_returns_empty_for_unconfirmed_time():
-    root = _root_config(alerts={"race": ["-1d"]})
+    globals_ = _globals(alerts={"race": ["-1d"]})
     result = resolve_alarms(
-        SessionType.RACE, is_synthetic=False, own_alarms=None, time_confirmed=False, root_config=root
+        SessionType.RACE, own_alarms=None, time_confirmed=False, globals_=globals_
     )
     assert result == []
 
 
 def test_resolve_alarms_returns_empty_for_unknown_session_type():
-    root = _root_config(alerts={"race": ["-1d"]})
+    globals_ = _globals(alerts={"race": ["-1d"]})
     result = resolve_alarms(
-        SessionType.UNKNOWN, is_synthetic=False, own_alarms=None, time_confirmed=True, root_config=root
+        SessionType.UNKNOWN, own_alarms=None, time_confirmed=True, globals_=globals_
     )
     assert result == []
 
 
 def test_resolve_alarms_returns_empty_for_testing_session_type():
-    root = _root_config(alerts={"race": ["-1d"]})
+    globals_ = _globals(alerts={"race": ["-1d"]})
     result = resolve_alarms(
-        SessionType.TESTING, is_synthetic=False, own_alarms=None, time_confirmed=True, root_config=root
+        SessionType.TESTING, own_alarms=None, time_confirmed=True, globals_=globals_
     )
     assert result == []
 
 
 def test_resolve_alarms_uses_synthetic_own_alarms_when_synthetic():
-    root = _root_config(alerts={"race": ["-1d"]})
+    globals_ = _globals(alerts={"race": ["-1d"]})
     result = resolve_alarms(
-        SessionType.RACE, is_synthetic=True, own_alarms=["-2d", "-1h"],
-        time_confirmed=True, root_config=root,
+        SessionType.RACE, own_alarms=["-2d", "-1h"],
+        time_confirmed=True, globals_=globals_,
     )
     assert result == ["-2d", "-1h"]
 
 
 def test_resolve_alarms_uses_global_defaults_for_source_backed_event():
-    root = _root_config(alerts={"race": ["-1d", "-30m"]})
+    globals_ = _globals(alerts={"race": ["-1d", "-30m"]})
     result = resolve_alarms(
-        SessionType.RACE, is_synthetic=False, own_alarms=None, time_confirmed=True, root_config=root
+        SessionType.RACE, own_alarms=None, time_confirmed=True, globals_=globals_
     )
     assert result == ["-1d", "-30m"]
 
 
 def test_resolve_alarms_empty_list_is_a_valid_deliberate_configuration():
-    root = _root_config(alerts={"race": ["-1d"], "practice": []})
+    globals_ = _globals(alerts={"race": ["-1d"], "practice": []})
     result = resolve_alarms(
-        SessionType.PRACTICE, is_synthetic=False, own_alarms=None, time_confirmed=True, root_config=root
+        SessionType.PRACTICE, own_alarms=None, time_confirmed=True, globals_=globals_
     )
     assert result == []

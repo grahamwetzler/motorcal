@@ -1,10 +1,8 @@
 __pycache__/
 *.pyc
 .venv/
-*.db
-*.db-wal
-*.db-shm
+motorcal-data/
 .env
-config/config.yaml
-config/overrides.yaml
+config/
 .worktrees/
+.claude/

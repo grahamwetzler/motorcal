@@ -2,16 +2,23 @@
 
 Self-hosted per-series motorsports ICS calendar publisher. It pulls race
 weekends from TheSportsDB, classifies sessions (practice/qualifying/race/etc.),
-applies your own patches and manual events, and publishes one ICS feed per
-series that you can subscribe to from any calendar app.
+and publishes one ICS feed per series that you can subscribe to from any
+calendar app.
 
-Feeds are served over a token-gated URL and exposed to the internet via a
-Cloudflare Tunnel, so nothing needs to be port-forwarded.
+**The config directory is the source of truth.** One YAML file per series holds
+that series' settings *and* its full event list. A refresh merges TheSportsDB
+into those files without clobbering anything you changed by hand. There is no
+separate database, no patch layer, no override file — you edit the event.
 
-A separate admin web UI (port 8001) lets you view events and edit/add
-overrides without hand-editing YAML. It's LAN-reachable but intentionally
-**not** exposed through the Cloudflare Tunnel (the tunnel only ever forwards
-port 8000) and has no login of its own — keep it off untrusted networks.
+Feeds are exposed to the internet via a Cloudflare Tunnel, so nothing needs to
+be port-forwarded. They are **not** access-controlled — anyone who knows your
+hostname can fetch `/f1.ics`. That's fine for public race schedules; don't put
+anything else in there.
+
+A separate admin app (port 8001) serves a web UI for viewing and editing events,
+plus the `/status` endpoint. It's LAN-reachable but intentionally **not** exposed
+through the tunnel (which only ever forwards port 8000) and has no login of its
+own — keep it off untrusted networks.
 
 ## Quick start
 
@@ -21,12 +28,14 @@ port 8000) and has no login of its own — keep it off untrusted networks.
    cp .env.example .env
    ```
 
-2. Copy the example config and adjust series/defaults to taste:
+2. Copy the example config directory and adjust it:
 
    ```bash
-   cp config/config.example.yaml config/config.yaml
-   cp config/overrides.example.yaml config/overrides.yaml
+   cp -r config.example config
    ```
+
+   Add one file per series you want. The filename is the series key and the feed
+   path: `f1.yaml` is served at `/f1.ics`.
 
 3. Start everything:
 
@@ -34,66 +43,117 @@ port 8000) and has no login of its own — keep it off untrusted networks.
    docker compose up -d
    ```
 
-4. Subscribe to a feed at `https://<your-domain>/c/<one-of-your-tokens>/<series>.ics`
-   (series keys come from `config.yaml`, e.g. `f1`, `wec`, `indycar`, `imsa`).
+4. Subscribe at `https://<your-domain>/<series>.ics`.
 
-5. Open `http://<host-on-your-lan>:8001/` to view events and edit or add
-   overrides. Changes are picked up by the running app within ~30 seconds,
-   same as editing `overrides.yaml` by hand.
+5. Open `http://<host-on-your-lan>:8001/` to browse and edit events. Changes are
+   picked up within ~30 seconds, same as editing the YAML by hand.
+
+## The config directory
+
+```
+config/
+  motorcal.yaml     # settings no single series owns
+  f1.yaml           # everything about F1: settings + events
+  wec.yaml
+  indycar.yaml
+  imsa.yaml
+```
+
+`compose.yaml` mounts `./config` into the container read-write, because the
+refresh cycle and the admin UI both write to it. The host directory must be
+writable by the container's user (uid 1000) — e.g. `chown -R 1000:1000 config`.
+
+### One event
+
+```yaml
+events:
+  - id_event: "2421035"          # provider identity; machine-owned
+    summary: 6 Hours of Imola
+    start: '2026-04-19T13:00:00+00:00'
+    duration: 6h
+    location: Imola, Italy
+    status: CONFIRMED
+    note: start time from the official timetable
+    round: 1
+    source:                      # what TheSportsDB last said; machine-owned
+      name: 6 Hours of Imola
+      date: '2026-04-19'
+      time: null
+      venue: Imola
+      country: Italy
+      round: 1
+      season: '2026'
+```
+
+Use `start:` for a confirmed time or `date:` for an all-day entry — exactly one.
+A provider event with only `date:` is published with a "(time TBC)" suffix, since
+that means the time hasn't been announced yet.
+
+To add your own event, give it a `uid:` instead of an `id_event:` and no
+`source:`. Refreshes never touch it.
+
+```yaml
+  - uid: f1-2026-preseason-test
+    summary: Pre-season testing
+    date: '2026-02-11'
+```
+
+### How your edits survive a refresh
+
+Every six hours the refresh refetches and rewrites these files. It will not undo
+your work: `source:` records what the provider said last time, and a field is
+only overwritten when the provider **actually changed it** *and* your stored
+value still matches the old provider value. Edit a field and it's yours — even
+if TheSportsDB later changes its own.
+
+Concretely: if the provider has no time yet and you fill in `start:` from the
+official timetable, a later fetch that still has no time leaves your value alone.
+If the provider *does* announce a time, you keep yours; delete your `start:` to
+opt back into tracking upstream.
+
+Fields the provider never owns at all — `duration`, `status`, `note`, `alarms` —
+are always yours.
+
+**Comments inside a series file do not survive a rewrite.** Use an event's
+`note:` field for anything you want to keep; it's published in the calendar
+description too.
 
 ## Environment variables
 
-Set these in a `.env` file next to `compose.yaml` (see `.env.example`). All
-three are required — `compose.yaml` fails fast at startup if any are unset.
+Set these in a `.env` file next to `compose.yaml`. Both are required —
+`compose.yaml` fails fast at startup if either is unset.
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| `THESPORTSDB_API_KEY` | Yes | TheSportsDB API key. Use a real (paid or free-tier) key, not the shared public `"3"` test key, for anything other than throwaway testing. |
-| `MOTORCAL_TOKENS` | Yes | Comma-separated list of feed access tokens, e.g. `token-one,token-two`. Each token grants access to every series' feed and to `/c/{token}/status`. Multiple tokens let you rotate one out without downtime — see "Token rotation" in `docs/operations.md`. |
-| `CLOUDFLARE_TUNNEL_TOKEN` | Yes | Token for a Cloudflare Tunnel (Zero Trust dashboard → Networks → Tunnels → create a tunnel → choose the Docker connector → copy the token shown, not the certificate). Used by the `cloudflared` service to expose the app without publishing a port. |
+| Variable | Description |
+| --- | --- |
+| `THESPORTSDB_API_KEY` | TheSportsDB API key. Use a real (paid or free-tier) key, not the shared public `"3"` test key, for anything other than throwaway testing. |
+| `CLOUDFLARE_TUNNEL_TOKEN` | Token for a Cloudflare Tunnel (Zero Trust dashboard → Networks → Tunnels → create a tunnel → choose the Docker connector → copy the token shown, not the certificate). |
 
-## Config files
-
-`compose.yaml` mounts `./config` into the container, so these live on the
-host, not in the image. It's mounted read-write because the admin UI writes
-to `overrides.yaml`; the host `./config` directory must be writable by the
-container's user (uid 1000) -- e.g. `chown -R 1000:1000 config` if you don't
-need host-side write access as yourself, or `chmod -R g+w config` plus adding
-yourself to a group with uid 1000.
-
-- `config/config.yaml` — server/source/retention/series settings. Start from
-  `config/config.example.yaml`.
-- `config/overrides.yaml` — manual patches to source events and fully manual
-  events. Start from `config/overrides.example.yaml`.
-
-Before restarting the app after editing either file, validate them without
-touching the running service:
+Validate config changes before restarting:
 
 ```bash
-docker compose exec app motorcal validate-config --config /config/config.yaml --overrides /config/overrides.yaml
+docker compose exec app motorcal validate-config --config /config
 ```
 
-The running app also hot-reloads both files automatically on change and keeps
-the previous configuration active if validation fails.
+The running app also hot-reloads on change and keeps the previous configuration
+active if validation fails.
 
 ## Data
 
-The SQLite database lives in the `motorcal-data` named volume, at
-`/data/motorcal.db` inside the `app` container. Back it up regularly — see
-`docs/operations.md` for backup/restore steps, since restoring a backup
-requires a follow-up `republish --force-version` step to keep calendar
-clients from ignoring the restored data.
+`./motorcal-data/state.yaml` is the only machine-owned file. It holds the
+uid_domain binding, per-scope fetch times, and the version ledger that keeps
+calendar clients from re-notifying subscribers on every refresh. You never need
+to read it; `cp` is a valid backup. See `docs/operations.md` for what losing it
+costs.
 
-## Health checks
+## Status
 
-- `GET /livez` — process is up.
-- `GET /readyz` — database is reachable and passes its integrity check.
-- `GET /healthz` — per-series freshness summary.
-- `GET /c/{token}/status` — authenticated per-series status, including patch
-  errors and unmatched-classification warnings.
+`GET :8001/status` reports per-series event counts and freshness. It always
+returns HTTP 200 while the process is alive — stale upstream data shows up as
+`healthy: false` in the body, so a provider outage doesn't restart-loop a
+container that's serving its last-known-good feeds. It's also the Docker
+healthcheck target.
 
 ## More
 
-See `docs/operations.md` for token rotation/revocation, restoring from a
-backup, forcing a refresh cycle, and interpreting stale/incomplete/
-suspicious-empty refresh states.
+See `docs/operations.md` for backups, forcing a refresh, changing `uid_domain`,
+and interpreting stale/incomplete/suspicious-empty refresh states.
