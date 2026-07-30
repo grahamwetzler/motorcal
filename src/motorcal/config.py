@@ -25,7 +25,7 @@ from motorcal.models import EventStatus, SessionType
 GLOBAL_FILENAME = "motorcal.yaml"
 
 _DURATION_RE = re.compile(r"^([1-9]\d*)(h|m)$")
-_ALARM_OFFSET_RE = re.compile(r"^-[1-9]\d*[dhm]$")
+_ALARM_OFFSET_RE = re.compile(r"^0$|^-[1-9]\d*[dhm]$")
 _VALID_SESSION_NAMES = {member.value for member in SessionType}
 _VALID_STATUS_NAMES = {member.value for member in EventStatus}
 
@@ -49,7 +49,7 @@ def _validate_duration_string(value: str | None) -> str | None:
 def _validate_alarm_list(value: list[str] | None) -> list[str] | None:
     for offset in value or []:
         if not _ALARM_OFFSET_RE.match(offset):
-            raise ValueError(f"Invalid alarm offset {offset!r} (expected e.g. '-1d', '-30m')")
+            raise ValueError(f"Invalid alarm offset {offset!r} (expected e.g. '-1d', '-30m', '0')")
     return value
 
 
@@ -63,9 +63,14 @@ def parse_duration(value: str) -> int:
 
 
 def parse_alarm_offset(value: str) -> int:
-    """Parse an alarm-offset string like '-1d' or '-30m' into whole seconds (negative)."""
+    """Parse an alarm-offset string like '-1d' or '-30m' into whole seconds (negative).
+
+    '0' means an alert exactly at event start.
+    """
     if not _ALARM_OFFSET_RE.match(value):
-        raise ConfigError(f"Invalid alarm offset: {value!r} (expected e.g. '-1d', '-30m')")
+        raise ConfigError(f"Invalid alarm offset: {value!r} (expected e.g. '-1d', '-30m', '0')")
+    if value == "0":
+        return 0
     amount, unit = int(value[1:-1]), value[-1]
     return -(amount * {"d": 86400, "h": 3600, "m": 60}[unit])
 
