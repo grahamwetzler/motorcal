@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from tests.conftest import make_config, make_series
 
 from motorcal.models import EventStatus, PublishedEvent, SessionType
-from motorcal.web import create_app
+from motorcal.web import Publication, create_app
 
 ROOT_CONFIG = make_config(series={"wec": make_series()})
 ICS = b"BEGIN:VCALENDAR\r\nSUMMARY:6 Hours of Imola\r\nEND:VCALENDAR\r\n"
@@ -14,8 +14,9 @@ NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 def _client(feeds=None, published=None):
     app = create_app(ROOT_CONFIG)
-    app.state.feeds = feeds or {}
-    app.state.published = published or {}
+    app.state.publication = Publication(
+        config=ROOT_CONFIG, feeds=feeds or {}, published=published or {}
+    )
     return TestClient(app)
 
 

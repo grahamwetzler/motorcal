@@ -21,7 +21,7 @@ from motorcal.refresh import (
     reschedule_refresh_job,
     run_refresh_cycle,
 )
-from motorcal.web import create_app
+from motorcal.web import Publication, create_app
 
 _logger = logging.getLogger("motorcal.serve")
 
@@ -76,12 +76,14 @@ def _cmd_serve(args: argparse.Namespace) -> int:
     state_module.save(state_path, state)
 
     # app.state is the single source of truth for everything the HTTP layer and the
-    # scheduler jobs read. Jobs rebuild against copies and swap all of these at once
-    # on success, so a failed cycle leaves the app exactly as it was.
+    # scheduler jobs read. Jobs rebuild against copies and swap the whole Publication
+    # at once on success, so a failed cycle leaves the app exactly as it was, and a
+    # request mid-swap never sees config from one generation paired with another's feeds.
     app = create_app(config)
     app.state.data = state
-    app.state.published = published
-    app.state.feeds = _render_feeds(config, published)
+    app.state.publication = Publication(
+        config=config, published=published, feeds=_render_feeds(config, published)
+    )
     if report.unknown_events:
         _logger.warning("Unclassified events: %s", report.unknown_events)
     app.state.bundle_hash = config_bundle_hash(config_dir)
@@ -119,10 +121,11 @@ def _cmd_serve(args: argparse.Namespace) -> int:
             save_series(config_dir, series, working_config.series[series])
         state_module.save(state_path, working_state)
 
-        app.state.config = working_config
         app.state.data = working_state
-        app.state.published = result.published
-        app.state.feeds = _render_feeds(working_config, result.published)
+        app.state.publication = Publication(
+            config=working_config, published=result.published,
+            feeds=_render_feeds(working_config, result.published),
+        )
         # We just rewrote the config ourselves; adopt the new hash so the reload job
         # doesn't mistake our own writes for a hand edit and rebuild all over again.
         app.state.bundle_hash = config_bundle_hash(config_dir)
@@ -130,8 +133,9 @@ def _cmd_serve(args: argparse.Namespace) -> int:
     def reload_job():
         now = datetime.now(timezone.utc)
         working_state = app.state.data.model_copy(deep=True)
+        current_config = app.state.publication.config
         result = check_and_reload_config(
-            config_dir, working_state, app.state.bundle_hash, app.state.config, uid_domain, now
+            config_dir, working_state, app.state.bundle_hash, current_config, uid_domain, now
         )
         app.state.bundle_hash = result.bundle_hash
         if result.diagnostics is not None and result.diagnostics["unknown_events"]:
@@ -143,14 +147,15 @@ def _cmd_serve(args: argparse.Namespace) -> int:
 
         # Reschedule before swapping in the new config: if this raised, the old
         # (still-active) config and schedule must stay consistent with each other.
-        if result.config.globals.source.refresh_cron != app.state.config.globals.source.refresh_cron:
+        if result.config.globals.source.refresh_cron != current_config.globals.source.refresh_cron:
             reschedule_refresh_job(scheduler, result.config.globals.source.refresh_cron)
 
         state_module.save(state_path, working_state)
-        app.state.config = result.config
         app.state.data = working_state
-        app.state.published = result.published
-        app.state.feeds = _render_feeds(result.config, result.published)
+        app.state.publication = Publication(
+            config=result.config, published=result.published,
+            feeds=_render_feeds(result.config, result.published),
+        )
 
     scheduler = build_scheduler(refresh_job, config.globals.source.refresh_cron, reload_job)
     scheduler.start()

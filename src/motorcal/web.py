@@ -1,21 +1,22 @@
 """Public feed app (port 8000): serves one ICS file per series.
 
-The refresh and reload jobs push already-rendered bytes onto `app.state.feeds`,
-so the default (unfiltered) GET is a dict lookup -- it can never mutate state,
-block on a fetch, or race a rebuild. A request with `?practices=false` and/or
-`?qualifying=false` re-renders from `app.state.published` on the fly instead,
-since the pre-rendered bytes only cover the everything-included case.
+The refresh and reload jobs each build a fresh `Publication` and swap it onto
+`app.state.publication` in one assignment. A request reads that attribute
+exactly once at the top of the handler, so it always sees one consistent
+generation of config/feeds/published together -- never config from a rebuild
+paired with feeds from the one before it (or a series that generation removed).
 """
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import Response
 
 from motorcal.config import Config
 from motorcal.ics import compute_content_hash, render_calendar_bytes
-from motorcal.models import SessionType
+from motorcal.models import PublishedEvent, SessionType
 
 _access_logger = logging.getLogger("motorcal.access")
 
@@ -27,10 +28,23 @@ _QUALIFYING_TYPES = {
 }
 
 
+@dataclass(frozen=True)
+class Publication:
+    """One consistent generation of what the app serves.
+
+    Always replaced wholesale (never mutated in place) so assigning it to
+    `app.state.publication` is the one atomic handoff a concurrent request can
+    observe -- either the whole old generation or the whole new one.
+    """
+
+    config: Config
+    feeds: dict[str, bytes]
+    published: dict[str, list[PublishedEvent]]
+
+
 def create_app(config: Config) -> FastAPI:
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
-    app.state.config = config
-    app.state.feeds = {}
+    app.state.publication = Publication(config=config, feeds={}, published={})
 
     @app.get("/healthz")
     def healthz():
@@ -38,10 +52,12 @@ def create_app(config: Config) -> FastAPI:
 
     @app.get("/{series}.ics")
     def get_calendar(series: str, request: Request, practices: bool = True, qualifying: bool = True):
-        if series not in app.state.config.series:
+        publication = app.state.publication
+
+        if series not in publication.config.series:
             raise HTTPException(status_code=404)
 
-        ics_bytes = app.state.feeds.get(series)
+        ics_bytes = publication.feeds.get(series)
         if not ics_bytes:
             raise HTTPException(status_code=503, detail="no usable events for this series")
 
@@ -51,8 +67,8 @@ def create_app(config: Config) -> FastAPI:
                 excluded.add(SessionType.PRACTICE)
             if not qualifying:
                 excluded |= _QUALIFYING_TYPES
-            events = [e for e in app.state.published.get(series, []) if e.session_type not in excluded]
-            ics_bytes = render_calendar_bytes(app.state.config.series[series], events)
+            events = [e for e in publication.published.get(series, []) if e.session_type not in excluded]
+            ics_bytes = render_calendar_bytes(publication.config.series[series], events)
 
         # ETag over the exact bytes served: the only revalidation signal this feed
         # needs. A Last-Modified derived from the events would lie whenever
