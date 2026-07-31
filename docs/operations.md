@@ -2,7 +2,7 @@
 
 ## Where things live
 
-- `data/` is the source of truth: `motorcal.yaml` plus one file per series,
+- `data/` is the source of truth: `defaults.yaml` plus one file per series,
   each holding that series' settings and its full event list. Both you and the
   refresh cycle write here.
 - `data/state.yaml` is the machine-only sidecar: the uid_domain
@@ -60,7 +60,7 @@ no longer configured are simply not published — nothing is deleted.
 ## Forcing an immediate refresh
 
 There is no "refresh now" command, and restarting doesn't force one. Temporarily
-set `source.refresh_cron` in `data/motorcal.yaml` to `"* * * * *"`, wait for
+set `source.refresh_cron` in `data/defaults.yaml` to `"* * * * *"`, wait for
 the reload (~30s) and the cycle to run, then restore the original expression. No
 restart needed for either edit.
 

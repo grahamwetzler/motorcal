@@ -79,7 +79,7 @@ def test_a_directory_with_no_series_files_is_an_error(tmp_path):
 
 def test_a_missing_globals_file_is_an_error(tmp_path):
     config_dir = _dir(tmp_path)
-    (config_dir / "motorcal.yaml").unlink()
+    (config_dir / "defaults.yaml").unlink()
 
     with pytest.raises(ConfigError):
         load_config(config_dir, uid_domain=UID_DOMAIN)
@@ -87,8 +87,8 @@ def test_a_missing_globals_file_is_an_error(tmp_path):
 
 def test_an_unknown_top_level_key_is_rejected(tmp_path):
     config_dir = _dir(tmp_path)
-    (config_dir / "motorcal.yaml").write_text(
-        (config_dir / "motorcal.yaml").read_text() + "surprise: true\n"
+    (config_dir / "defaults.yaml").write_text(
+        (config_dir / "defaults.yaml").read_text() + "surprise: true\n"
     )
 
     with pytest.raises(ConfigError):
@@ -97,9 +97,9 @@ def test_an_unknown_top_level_key_is_rejected(tmp_path):
 
 def test_a_malformed_refresh_cron_is_rejected(tmp_path):
     config_dir = _dir(tmp_path)
-    raw = yaml.safe_load((config_dir / "motorcal.yaml").read_text())
+    raw = yaml.safe_load((config_dir / "defaults.yaml").read_text())
     raw["source"]["refresh_cron"] = "not a cron"
-    (config_dir / "motorcal.yaml").write_text(yaml.safe_dump(raw))
+    (config_dir / "defaults.yaml").write_text(yaml.safe_dump(raw))
 
     with pytest.raises(ConfigError):
         load_config(config_dir, uid_domain=UID_DOMAIN)
@@ -107,9 +107,9 @@ def test_a_malformed_refresh_cron_is_rejected(tmp_path):
 
 def test_a_bad_alarm_offset_is_rejected(tmp_path):
     config_dir = _dir(tmp_path)
-    raw = yaml.safe_load((config_dir / "motorcal.yaml").read_text())
+    raw = yaml.safe_load((config_dir / "defaults.yaml").read_text())
     raw["defaults"]["alerts"] = {"race": ["1 day"]}
-    (config_dir / "motorcal.yaml").write_text(yaml.safe_dump(raw))
+    (config_dir / "defaults.yaml").write_text(yaml.safe_dump(raw))
 
     with pytest.raises(ConfigError):
         load_config(config_dir, uid_domain=UID_DOMAIN)
@@ -134,8 +134,8 @@ def test_dotfiles_are_ignored(tmp_path):
 def test_uid_domain_in_motorcal_yaml_is_rejected(tmp_path):
     """uid_domain comes from the UID_DOMAIN env var, never the file."""
     config_dir = _dir(tmp_path)
-    (config_dir / "motorcal.yaml").write_text(
-        (config_dir / "motorcal.yaml").read_text() + "uid_domain: sneaky.example.com\n"
+    (config_dir / "defaults.yaml").write_text(
+        (config_dir / "defaults.yaml").read_text() + "uid_domain: sneaky.example.com\n"
     )
 
     with pytest.raises(ConfigError, match="uid_domain"):
@@ -215,4 +215,4 @@ def test_save_series_leaves_no_temporary_files(tmp_path):
     config_dir = _dir(tmp_path)
     save_series(config_dir, "wec", load_config(config_dir, uid_domain=UID_DOMAIN).series["wec"])
 
-    assert sorted(p.name for p in config_dir.iterdir()) == ["motorcal.yaml", "wec.yaml"]
+    assert sorted(p.name for p in config_dir.iterdir()) == ["defaults.yaml", "wec.yaml"]

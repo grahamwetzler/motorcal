@@ -114,7 +114,7 @@ def write_config_dir(tmp_path, config: Config):
     """Materialise a Config as a real directory, the way load_config expects it."""
     config_dir = tmp_path / "config"
     config_dir.mkdir(exist_ok=True)
-    (config_dir / "motorcal.yaml").write_text(
+    (config_dir / "defaults.yaml").write_text(
         yaml.safe_dump(
             config.globals.model_dump(mode="json", exclude={"uid_domain"}), sort_keys=False
         )

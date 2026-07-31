@@ -47,7 +47,7 @@ anything else in there.
 
 ```
 data/
-  motorcal.yaml     # settings no single series owns
+  defaults.yaml     # settings no single series owns
   f1.yaml           # everything about F1: settings + events
   wec.yaml
   indycar.yaml

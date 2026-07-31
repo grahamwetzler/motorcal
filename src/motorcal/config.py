@@ -1,6 +1,6 @@
 """Configuration schema and loader.
 
-The data directory is the source of truth. `motorcal.yaml` holds the settings
+The data directory is the source of truth. `defaults.yaml` holds the settings
 that can't belong to any one series; every other `*.yaml` file is one series,
 keyed by its filename stem, holding that series' settings and its full event list.
 
@@ -22,7 +22,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError, field_validator, mo
 
 from motorcal.models import EventStatus, SessionType
 
-GLOBAL_FILENAME = "motorcal.yaml"
+GLOBAL_FILENAME = "defaults.yaml"
 
 _DURATION_RE = re.compile(r"^([1-9]\d*)(h|m)$")
 _ALARM_OFFSET_RE = re.compile(r"^0$|^-[1-9]\d*[dhm]$")
@@ -160,7 +160,7 @@ class DefaultsConfig(StrictModel):
 
 
 class GlobalConfig(StrictModel):
-    """Everything in data/motorcal.yaml -- the settings no single series owns.
+    """Everything in data/defaults.yaml -- the settings no single series owns.
 
     `uid_domain` is the one exception: it's baked into every ICS UID, so getting
     it wrong is unusually costly (see `load_config`), and it's set via the
@@ -296,7 +296,7 @@ def load_config(config_dir: Path, *, uid_domain: str) -> Config:
 
     `uid_domain` comes from the caller (the UID_DOMAIN environment variable in
     practice), not the file -- getting it wrong silently republishes every event
-    under new UIDs, so it must never be something a stray edit to motorcal.yaml
+    under new UIDs, so it must never be something a stray edit to defaults.yaml
     can change.
     """
     config_dir = Path(config_dir)
