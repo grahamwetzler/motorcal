@@ -124,6 +124,15 @@ def test_a_series_filename_that_is_not_a_valid_key_is_rejected(tmp_path):
         load_config(config_dir, uid_domain=UID_DOMAIN)
 
 
+def test_a_series_named_all_is_rejected(tmp_path):
+    """/all.ics is the combined feed, so an all.yaml series could never be served."""
+    config_dir = _dir(tmp_path)
+    (config_dir / "wec.yaml").rename(config_dir / "all.yaml")
+
+    with pytest.raises(ConfigError, match="reserved"):
+        load_config(config_dir, uid_domain=UID_DOMAIN)
+
+
 def test_dotfiles_are_ignored(tmp_path):
     """A crashed atomic write leaves a .tmp file behind; it must not become a series."""
     config_dir = _dir(tmp_path)

@@ -31,7 +31,8 @@ anything else in there.
    ```
 
    Add one file per series you want. The filename is the series key and the feed
-   path: `f1.yaml` is served at `/f1.ics`.
+   path: `f1.yaml` is served at `/f1.ics`. `all` is reserved for the combined
+   feed, so there can be no `all.yaml`.
 
 3. Start everything:
 
@@ -39,9 +40,10 @@ anything else in there.
    docker compose up -d
    ```
 
-4. Subscribe at `https://<your-domain>/<series>.ics`. Races are always
-   included; add `?practices=false` and/or `?qualifying=false` to drop those
-   session types from the feed.
+4. Subscribe at `https://<your-domain>/<series>.ics`, or at
+   `https://<your-domain>/all.ics` for every series in one calendar. Races are
+   always included; add `?practices=false` and/or `?qualifying=false` to drop
+   those session types from the feed.
 
 5. Edit events by hand in the series YAML files under `data/`. Changes are
    picked up within ~30 seconds.

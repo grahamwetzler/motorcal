@@ -23,6 +23,8 @@ from pydantic import BaseModel, ConfigDict, ValidationError, field_validator, mo
 from motorcal.models import EventStatus, SessionType
 
 GLOBAL_FILENAME = "defaults.yaml"
+# Served at /all.ics as every series combined, so no series file may claim it.
+COMBINED_SERIES_KEY = "all"
 
 _DURATION_RE = re.compile(r"^([1-9]\d*)(h|m)$")
 _ALARM_OFFSET_RE = re.compile(r"^0$|^-[1-9]\d*[dhm]$")
@@ -363,6 +365,11 @@ def load_config(config_dir: Path, *, uid_domain: str) -> Config:
         if path.name == GLOBAL_FILENAME or path.name.startswith(".") or path.name.startswith("state"):
             continue
         key = path.stem
+        if key == COMBINED_SERIES_KEY:
+            raise ConfigError(
+                f"Invalid series filename {path.name!r}: '{COMBINED_SERIES_KEY}' is reserved "
+                f"for the combined feed at /{COMBINED_SERIES_KEY}.ics, which would shadow it"
+            )
         if not _SERIES_KEY_RE.match(key):
             raise ConfigError(
                 f"Invalid series filename {path.name!r}: the stem becomes the series key "
