@@ -1,105 +1,56 @@
-from motorcal.classify import classify_event
+from motorcal.classify import classify_session
 from motorcal.models import SessionType
 
 
-def test_round_500_is_always_testing_regardless_of_series_or_name():
-    assert classify_event("f1", "Bahrain Testing 1 Day 1", 500) is SessionType.TESTING
-    assert classify_event("wec", "Imola Prologue Morning Session", 500) is SessionType.TESTING
-    assert classify_event("imsa", "Roar Before The Rolex 24", 500) is SessionType.TESTING
-    assert classify_event("indycar", "Anything At All", 500) is SessionType.TESTING
+def test_round_500_is_always_testing_regardless_of_label():
+    assert classify_session("Day 1", 500) is SessionType.TESTING
+    assert classify_session("Morning Session", 500) is SessionType.TESTING
+    assert classify_session("", 500) is SessionType.TESTING
+    assert classify_session("Qualifying", 500) is SessionType.TESTING
 
 
-def test_f1_practice_sessions():
-    assert classify_event("f1", "Australian Grand Prix Practice 1", 1) is SessionType.PRACTICE
-    assert classify_event("f1", "Australian Grand Prix Practice 2", 1) is SessionType.PRACTICE
-    assert classify_event("f1", "Chinese Grand Prix Practice 1", 2) is SessionType.PRACTICE
+def test_empty_label_is_the_race():
+    """A session named after the event itself leaves nothing behind, and that is
+    always the race -- for every series, without a name rule per series."""
+    assert classify_session("", 1) is SessionType.RACE
+    assert classify_session("", 13) is SessionType.RACE
 
 
-def test_f1_qualifying():
-    assert classify_event("f1", "Australian Grand Prix Qualifying", 1) is SessionType.QUALIFYING
+def test_practice_labels():
+    assert classify_session("Practice 1", 1) is SessionType.PRACTICE
+    assert classify_session("Free Practice 3", 1) is SessionType.PRACTICE
 
 
-def test_f1_sprint_qualifying_before_sprint_and_qualifying():
-    assert classify_event("f1", "Chinese Grand Prix Sprint Qualifying", 2) is SessionType.SPRINT_QUALIFYING
+def test_qualifying_label():
+    assert classify_session("Qualifying", 1) is SessionType.QUALIFYING
 
 
-def test_f1_sprint():
-    assert classify_event("f1", "Chinese Grand Prix Sprint", 2) is SessionType.SPRINT
+def test_sprint_qualifying_before_sprint_and_qualifying():
+    assert classify_session("Sprint Qualifying", 2) is SessionType.SPRINT_QUALIFYING
 
 
-def test_f1_bare_name_is_race_via_positive_rule():
-    assert classify_event("f1", "Australian Grand Prix", 1) is SessionType.RACE
-    assert classify_event("f1", "Chinese Grand Prix", 2) is SessionType.RACE
+def test_sprint_label():
+    assert classify_session("Sprint", 2) is SessionType.SPRINT
 
 
-def test_f1_unrecognized_name_is_unknown_not_race():
-    assert classify_event("f1", "Drivers Parade", 1) is SessionType.UNKNOWN
+def test_hyperpole_before_qualifying():
+    assert classify_session("Hyperpole Qualifying – LMP2 & LMGT3", 3) is SessionType.HYPERPOLE
+    assert classify_session("Hyperpole 1 - Hypercar", 3) is SessionType.HYPERPOLE
 
 
-def test_wec_hyperpole_before_qualifying():
+def test_class_split_qualifying_is_plain_qualifying():
+    assert classify_session("Qualifying - LMGT3", 2) is SessionType.QUALIFYING
+    assert classify_session("Qualifying - Hypercar", 2) is SessionType.QUALIFYING
+
+
+def test_unrecognized_label_is_unknown_not_race():
+    assert classify_session("Drivers Parade", 1) is SessionType.UNKNOWN
+
+
+def test_a_whole_event_name_as_label_still_classifies():
+    """A session the provider does not name after its weekend keeps its full name as
+    the label; the session word inside it still decides the type."""
     assert (
-        classify_event("wec", "24 Hours of Le Mans Hyperpole Qualifying – LMP2 & LMGT3", 3)
-        is SessionType.HYPERPOLE
+        classify_session("Snap-on INDYCAR Weekend Qualifying", 15) is SessionType.QUALIFYING
     )
-    assert (
-        classify_event("wec", "24 Hours of Le Mans Hyperpole Qualifying – Hypercar", 3)
-        is SessionType.HYPERPOLE
-    )
-
-
-def test_wec_class_split_qualifying_is_plain_qualifying():
-    assert (
-        classify_event("wec", "6 Hours of Spa Francorchamps Qualifying - LMGT3", 2)
-        is SessionType.QUALIFYING
-    )
-    assert (
-        classify_event("wec", "6 Hours of Spa Francorchamps Qualifying - Hypercar", 2)
-        is SessionType.QUALIFYING
-    )
-    assert classify_event("wec", "6 Hours of Imola Qualifying", 1) is SessionType.QUALIFYING
-
-
-def test_wec_practice():
-    assert classify_event("wec", "6 Hours of Imola Free Practice 3", 1) is SessionType.PRACTICE
-    assert (
-        classify_event("wec", "24 Hours of Le Mans Free Practice 1", 3) is SessionType.PRACTICE
-    )
-
-
-def test_wec_bare_name_is_race_via_positive_rule():
-    assert classify_event("wec", "6 Hours of Imola", 1) is SessionType.RACE
-    assert classify_event("wec", "24 Hours of Le Mans", 3) is SessionType.RACE
-
-
-def test_wec_unrecognized_name_is_unknown_not_race():
-    assert classify_event("wec", "Drivers Parade", 1) is SessionType.UNKNOWN
-
-
-def test_wec_lone_star_le_mans_is_race():
-    assert classify_event("wec", "Lone Star Le Mans", 5) is SessionType.RACE
-
-
-def test_indycar_is_race_only_series():
-    assert (
-        classify_event("indycar", "Firestone Grand Prix of St. Petersburg", 1)
-        is SessionType.RACE
-    )
-
-
-def test_imsa_is_race_only_series():
-    assert classify_event("imsa", "Rolex 24 At DAYTONA", 1) is SessionType.RACE
-    assert classify_event("imsa", "Mobil 1 Twelve Hours of Sebring", 2) is SessionType.RACE
-    assert classify_event("imsa", "Acura Grand Prix of Long Beach", 3) is SessionType.RACE
-
-
-def test_race_only_series_still_recognizes_a_manually_added_qualifying_event():
-    """The provider never sends qualifying for these series, but a manually added
-    event named "... Qualifying" should still classify as qualifying, not race."""
-    assert (
-        classify_event("indycar", "OnlyBulls Grand Prix of Portland Qualifying", 13)
-        is SessionType.QUALIFYING
-    )
-
-
-def test_unconfigured_series_is_always_unknown():
-    assert classify_event("some_future_series", "Anything", 1) is SessionType.UNKNOWN
+    assert classify_session("Firestone Grand Prix of St. Petersburg", 1) is SessionType.UNKNOWN

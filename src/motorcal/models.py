@@ -7,7 +7,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from motorcal.config import EventConfig
+    from motorcal.config import SessionConfig
 
 
 class SessionType(str, Enum):
@@ -47,16 +47,16 @@ class PublishedEvent:
     last_modified: datetime
     fingerprint: str
     alarms: list[str] = field(default_factory=list)
-    event_key: str = ""  # the id_event/uid this was built from, for config lookups
+    session_key: str = ""  # the id_event/uid this was built from, for config lookups
 
 
-def event_uid(event: "EventConfig", uid_domain: str) -> str:
-    """The stable ICS UID for a configured event.
+def session_uid(session: "SessionConfig", uid_domain: str) -> str:
+    """The stable ICS UID for a configured session.
 
-    Provider-backed and manual events keep distinct prefixes so a manual event can
-    never collide with a provider id, and so the UID a subscriber already has does
-    not change if an event later gains or loses provider backing.
+    Provider-backed and manual sessions keep distinct prefixes so a manual session
+    can never collide with a provider id, and so the UID a subscriber already has
+    does not change if a session later gains or loses provider backing.
     """
-    if event.id_event is not None:
-        return f"thesportsdb-{event.id_event}@{uid_domain}"
-    return f"local-{event.uid}@{uid_domain}"
+    if session.id_event is not None:
+        return f"thesportsdb-{session.id_event}@{uid_domain}"
+    return f"local-{session.uid}@{uid_domain}"

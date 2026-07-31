@@ -175,8 +175,12 @@ def _cmd_validate_config(args: argparse.Namespace) -> int:
     except ConfigError as exc:
         print(f"Invalid configuration: {exc}", file=sys.stderr)
         return 1
-    total = sum(len(s.events) for s in config.series.values())
-    print(f"Configuration is valid: {len(config.series)} series, {total} events.")
+    events = sum(len(s.events) for s in config.series.values())
+    sessions = sum(len(s.iter_sessions()) for s in config.series.values())
+    print(
+        f"Configuration is valid: {len(config.series)} series, "
+        f"{events} events, {sessions} sessions."
+    )
     return 0
 
 

@@ -8,149 +8,179 @@ alerts:
   race:
   - '0'
 events:
-- id_event: '2415565'
-  summary: Mobil 1 Twelve Hours of Sebring
-  start: '2026-03-21T14:00:00+00:00'
-  duration: 720m
+- name: Mobil 1 Twelve Hours of Sebring
   location: Sebring International Raceway, United States
-  status: CONFIRMED
   round: 2
-  source:
-    name: Mobil 1 Twelve Hours of Sebring
-    date: '2026-03-21'
-    time: '14:00:00'
-    venue: Sebring International Raceway
-    country: United States
-    round: 2
-    season: '2026'
-- id_event: '2415566'
-  summary: Acura Grand Prix of Long Beach
-  start: '2026-04-18T20:05:00+00:00'
-  duration: 100m
+  sessions:
+  - id_event: '2415565'
+    label: Race
+    type: race
+    start: '2026-03-21T14:00:00+00:00'
+    duration: 720m
+    status: CONFIRMED
+    source:
+      name: Mobil 1 Twelve Hours of Sebring
+      date: '2026-03-21'
+      time: '14:00:00'
+      venue: Sebring International Raceway
+      country: United States
+      round: 2
+      season: '2026'
+- name: Acura Grand Prix of Long Beach
   location: Long Beach Street Circuit, United States
-  status: CONFIRMED
   round: 3
-  source:
-    name: Acura Grand Prix of Long Beach
-    date: '2026-04-18'
-    time: '20:05:00'
-    venue: Long Beach Street Circuit
-    country: United States
-    round: 3
-    season: '2026'
-- id_event: '2415567'
-  summary: Motul Course de Monterey
-  date: '2026-05-03'
+  sessions:
+  - id_event: '2415566'
+    label: Race
+    type: race
+    start: '2026-04-18T20:05:00+00:00'
+    duration: 100m
+    status: CONFIRMED
+    source:
+      name: Acura Grand Prix of Long Beach
+      date: '2026-04-18'
+      time: '20:05:00'
+      venue: Long Beach Street Circuit
+      country: United States
+      round: 3
+      season: '2026'
+- name: Motul Course de Monterey
   location: Laguna Seca, United States
-  status: CONFIRMED
   round: 4
-  source:
-    name: Motul Course de Monterey
+  sessions:
+  - id_event: '2415567'
+    label: Race
+    type: race
     date: '2026-05-03'
-    time: 00:00:00
-    venue: Laguna Seca
-    country: United States
-    round: 4
-    season: '2026'
-- id_event: '2415568'
-  summary: Chevrolet Detroit Grand Prix Presented By Lear
-  date: '2026-05-30'
-  duration: 100m
+    status: CONFIRMED
+    source:
+      name: Motul Course de Monterey
+      date: '2026-05-03'
+      time: 00:00:00
+      venue: Laguna Seca
+      country: United States
+      round: 4
+      season: '2026'
+- name: Chevrolet Detroit Grand Prix Presented By Lear
   location: Detroit Street Circuit, United States
-  status: CONFIRMED
   round: 5
-  source:
-    name: Chevrolet Detroit Grand Prix Presented By Lear
+  sessions:
+  - id_event: '2415568'
+    label: Race
+    type: race
     date: '2026-05-30'
-    time: 00:00:00
-    venue: Detroit Street Circuit
-    country: United States
-    round: 5
-    season: '2026'
-- id_event: '2415569'
-  summary: Sahlen's Six Hours of The Glen
-  start: '2026-06-28T16:00:00+00:00'
-  duration: 360m
+    duration: 100m
+    status: CONFIRMED
+    source:
+      name: Chevrolet Detroit Grand Prix Presented By Lear
+      date: '2026-05-30'
+      time: 00:00:00
+      venue: Detroit Street Circuit
+      country: United States
+      round: 5
+      season: '2026'
+- name: Sahlen's Six Hours of The Glen
   location: Watkins Glen International, United States
-  status: CONFIRMED
   round: 6
-  source:
-    name: Sahlen's Six Hours of The Glen
-    date: '2026-06-28'
-    time: '16:00:00'
-    venue: Watkins Glen International
-    country: United States
-    round: 6
-    season: '2026'
-- id_event: '2415570'
-  summary: Chevrolet Grand Prix
-  start: '2026-07-12T18:00:00+00:00'
+  sessions:
+  - id_event: '2415569'
+    label: Race
+    type: race
+    start: '2026-06-28T16:00:00+00:00'
+    duration: 360m
+    status: CONFIRMED
+    source:
+      name: Sahlen's Six Hours of The Glen
+      date: '2026-06-28'
+      time: '16:00:00'
+      venue: Watkins Glen International
+      country: United States
+      round: 6
+      season: '2026'
+- name: Chevrolet Grand Prix
   location: Canadian Tire Motorsport Park, Canada
-  status: CONFIRMED
   round: 7
-  source:
-    name: Chevrolet Grand Prix
-    date: '2026-07-12'
-    time: '18:00:00'
-    venue: Canadian Tire Motorsport Park
-    country: Canada
-    round: 7
-    season: '2026'
-- id_event: '2415571'
-  summary: Motul SportsCar Endurance Grand Prix
-  start: '2026-08-02T15:30:00+00:00'
-  duration: 360m
+  sessions:
+  - id_event: '2415570'
+    label: Race
+    type: race
+    start: '2026-07-12T18:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Chevrolet Grand Prix
+      date: '2026-07-12'
+      time: '18:00:00'
+      venue: Canadian Tire Motorsport Park
+      country: Canada
+      round: 7
+      season: '2026'
+- name: Motul SportsCar Endurance Grand Prix
   location: Road America, United States
-  status: CONFIRMED
   round: 8
-  source:
-    name: Motul SportsCar Endurance Grand Prix
-    date: '2026-08-02'
-    time: '15:30:00'
-    venue: Road America
-    country: United States
-    round: 8
-    season: '2026'
-- id_event: '2415572'
-  summary: Michelin GT Challenge at VIR
-  start: '2026-08-23T16:00:00+00:00'
+  sessions:
+  - id_event: '2415571'
+    label: Race
+    type: race
+    start: '2026-08-02T15:30:00+00:00'
+    duration: 360m
+    status: CONFIRMED
+    source:
+      name: Motul SportsCar Endurance Grand Prix
+      date: '2026-08-02'
+      time: '15:30:00'
+      venue: Road America
+      country: United States
+      round: 8
+      season: '2026'
+- name: Michelin GT Challenge at VIR
   location: Virginia International Raceway, United States
-  status: CONFIRMED
   round: 9
-  source:
-    name: Michelin GT Challenge at VIR
-    date: '2026-08-23'
-    time: '16:00:00'
-    venue: Virginia International Raceway
-    country: United States
-    round: 9
-    season: '2026'
-- id_event: '2415573'
-  summary: TireRack.com Battle On The Bricks
-  start: '2026-09-20T19:00:00+00:00'
+  sessions:
+  - id_event: '2415572'
+    label: Race
+    type: race
+    start: '2026-08-23T16:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Michelin GT Challenge at VIR
+      date: '2026-08-23'
+      time: '16:00:00'
+      venue: Virginia International Raceway
+      country: United States
+      round: 9
+      season: '2026'
+- name: TireRack.com Battle On The Bricks
   location: Indianapolis Motor Speedway, United States
-  status: CONFIRMED
   round: 10
-  source:
-    name: TireRack.com Battle On The Bricks
-    date: '2026-09-20'
-    time: '19:00:00'
-    venue: Indianapolis Motor Speedway
-    country: United States
-    round: 10
-    season: '2026'
-- id_event: '2415574'
-  summary: Motul Petit Le Mans
-  start: '2026-10-03T16:00:00+00:00'
-  duration: 600m
+  sessions:
+  - id_event: '2415573'
+    label: Race
+    type: race
+    start: '2026-09-20T19:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: TireRack.com Battle On The Bricks
+      date: '2026-09-20'
+      time: '19:00:00'
+      venue: Indianapolis Motor Speedway
+      country: United States
+      round: 10
+      season: '2026'
+- name: Motul Petit Le Mans
   location: Michelin Raceway Road Atlanta, United States
-  status: CONFIRMED
   round: 11
-  source:
-    name: Motul Petit Le Mans
-    date: '2026-10-03'
-    time: '16:00:00'
-    venue: Michelin Raceway Road Atlanta
-    country: United States
-    round: 11
-    season: '2026'
+  sessions:
+  - id_event: '2415574'
+    label: Race
+    type: race
+    start: '2026-10-03T16:00:00+00:00'
+    duration: 600m
+    status: CONFIRMED
+    source:
+      name: Motul Petit Le Mans
+      date: '2026-10-03'
+      time: '16:00:00'
+      venue: Michelin Raceway Road Atlanta
+      country: United States
+      round: 11
+      season: '2026'

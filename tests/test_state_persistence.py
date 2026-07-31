@@ -102,7 +102,7 @@ def test_a_failed_rebuild_never_reaches_disk(tmp_path):
 
     working = live.model_copy(deep=True)
     broken = config.model_copy(deep=True)
-    broken.series["wec"].events[0].start = "not-a-timestamp"
+    broken.series["wec"].events[0].sessions[0].start = "not-a-timestamp"
     with pytest.raises(ValueError):
         rebuild_publication(broken, working, now=NOW)
     # The caller does NOT save on failure -- that is the entire guarantee.

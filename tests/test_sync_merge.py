@@ -1,8 +1,24 @@
 """The 3-way merge: what happens to your edits when the provider refetches."""
-from tests.conftest import manual_event, provider_event, snapshot, source_event, source_snapshot
+from tests.conftest import (
+    manual_session,
+    provider_event,
+    snapshot,
+    source_event,
+    source_session,
+    source_snapshot,
+)
 
 from motorcal.config import SeriesConfig
-from motorcal.sync import derive, event_from_source, merge_event, sync_snapshot
+from motorcal.models import SessionType
+from motorcal.sync import (
+    derive_event,
+    derive_session,
+    event_from_sources,
+    event_name_from,
+    merge_event,
+    merge_session,
+    sync_snapshot,
+)
 
 
 def _series(events=None):
@@ -16,161 +32,283 @@ def _sync(series, snap, *, season="2026", now="t1", is_current=True, previous_co
     )
 
 
+def _sessions(series):
+    return {session.key: session for _, session in series.iter_sessions()}
+
+
 # ----------------------------------------------------------------- derive
 
 
-def test_derive_maps_provider_fields_onto_published_ones():
-    values = derive(source_snapshot(name="6 Hours of Imola", time="13:00:00"))
+def test_event_name_is_the_session_name_that_prefixes_the_others():
+    """The provider names the race after the weekend, and every other session after
+    the race -- so the race's own name is the weekend's name."""
+    assert event_name_from([
+        "6 Hours of Imola Free Practice 3",
+        "6 Hours of Imola Qualifying",
+        "6 Hours of Imola",
+    ]) == "6 Hours of Imola"
 
-    assert values["summary"] == "6 Hours of Imola"
-    assert values["start"] == "2026-04-19T13:00:00+00:00"
-    assert values["date"] is None
+
+def test_event_name_falls_back_to_the_shortest_when_nothing_prefixes():
+    assert event_name_from([
+        "Snap-on INDYCAR Weekend Qualifying", "Snap On Milwaukee 250",
+    ]) == "Snap On Milwaukee 250"
+
+
+def test_derive_event_takes_the_most_complete_location_of_the_weekend():
+    """The provider routinely drops the venue on some sessions of a weekend it gave
+    in full on others; the event stores the best one once."""
+    values = derive_event([
+        source_snapshot(name="6 Hours of Imola Practice 3", venue=None),
+        source_snapshot(name="6 Hours of Imola", venue="Imola", country="Italy"),
+    ])
+
+    assert values["name"] == "6 Hours of Imola"
     assert values["location"] == "Imola, Italy"
+    assert values["round"] == 1
 
 
-def test_derive_treats_a_missing_time_as_all_day():
-    values = derive(source_snapshot(time=None))
+def test_derive_event_handles_a_partial_location():
+    assert derive_event([source_snapshot(country=None)])["location"] == "Imola"
+    assert derive_event([source_snapshot(venue=None)])["location"] == "Italy"
+    assert derive_event([source_snapshot(venue=None, country=None)])["location"] is None
 
-    assert values["start"] is None
-    assert values["date"] == "2026-04-19"
+
+def test_derive_session_splits_the_label_off_the_provider_name():
+    values = derive_session(
+        source_snapshot(name="6 Hours of Imola Free Practice 3"), "6 Hours of Imola"
+    )
+
+    assert values["label"] == "Free Practice 3"
+    assert values["type"] is SessionType.PRACTICE
 
 
-def test_derive_treats_midnight_as_an_unannounced_time():
+def test_derive_session_labels_the_event_named_session_as_the_race():
+    values = derive_session(source_snapshot(name="6 Hours of Imola"), "6 Hours of Imola")
+
+    assert values["label"] == "Race"
+    assert values["type"] is SessionType.RACE
+
+
+def test_derive_session_keeps_the_whole_name_when_it_is_not_prefixed():
+    values = derive_session(
+        source_snapshot(name="Weekend Qualifying"), "6 Hours of Imola"
+    )
+
+    assert values["label"] == "Weekend Qualifying"
+    assert values["type"] is SessionType.QUALIFYING
+
+
+def test_derive_session_maps_the_time_onto_start_or_date():
+    assert derive_session(source_snapshot(time="13:00:00"), "x")["start"] == (
+        "2026-04-19T13:00:00+00:00"
+    )
+    assert derive_session(source_snapshot(time=None), "x")["date"] == "2026-04-19"
     # TheSportsDB uses 00:00:00 as "no time yet", not as actual midnight.
-    assert derive(source_snapshot(time="00:00:00"))["start"] is None
+    assert derive_session(source_snapshot(time="00:00:00"), "x")["start"] is None
 
 
-def test_derive_handles_a_partial_location():
-    assert derive(source_snapshot(country=None))["location"] == "Imola"
-    assert derive(source_snapshot(venue=None))["location"] == "Italy"
-    assert derive(source_snapshot(venue=None, country=None))["location"] is None
+# ----------------------------------------------------------------- merge_session
+
+
+def _merge(session, new_source, *, was="6 Hours of Imola", now="6 Hours of Imola"):
+    return merge_session(session, new_source, was_event_name=was, now_event_name=now)
+
+
+def test_provider_change_is_taken_when_you_have_not_touched_the_field():
+    session = source_session("1", name="6 Hours of Imola Qualifying")
+
+    taken = _merge(session, source_snapshot(name="6 Hours of Imola Qualifying 1"))
+
+    assert taken == ["label"]
+    assert session.label == "Qualifying 1"
+
+
+def test_your_edit_wins_over_a_provider_change():
+    session = source_session("1", name="6 Hours of Imola Qualifying")
+    session.label = "Quali"
+
+    taken = _merge(session, source_snapshot(name="6 Hours of Imola Qualifying 1"))
+
+    assert taken == []
+    assert session.label == "Quali"
+
+
+def test_an_unchanged_provider_value_never_overwrites_your_edit():
+    """The common case: you set a time the provider still hasn't announced."""
+    session = source_session("1", time=None)  # provider has no time -> all-day
+    session.start, session.date = "2026-04-19T13:00:00+00:00", None
+
+    taken = _merge(session, source_snapshot(time=None))  # provider still has none
+
+    assert taken == []
+    assert session.start == "2026-04-19T13:00:00+00:00"
+    assert session.date is None
+
+
+def test_the_provider_announcing_a_time_promotes_an_untouched_all_day_session():
+    session = source_session("1", time=None)
+    assert session.date == "2026-04-19" and session.start is None
+
+    taken = _merge(session, source_snapshot(time="13:00:00"))
+
+    assert taken == ["start"]
+    assert session.start == "2026-04-19T13:00:00+00:00"
+    assert session.date is None
+
+
+def test_the_provider_announcing_a_time_does_not_override_your_own_time():
+    session = source_session("1", time=None)
+    session.start, session.date = "2026-04-19T12:00:00+00:00", None  # you guessed 12:00
+
+    taken = _merge(session, source_snapshot(time="13:00:00"))  # provider says 13:00
+
+    assert taken == []
+    assert session.start == "2026-04-19T12:00:00+00:00"  # yours stands until you clear it
+
+
+def test_merge_updates_the_source_baseline_even_when_your_edit_wins():
+    """Otherwise your edit would be re-compared against a stale baseline forever."""
+    session = source_session("1", name="6 Hours of Imola Practice 1")
+    session.label = "Mine"
+
+    _merge(session, source_snapshot(name="6 Hours of Imola Practice 2"))
+
+    assert session.source.name == "6 Hours of Imola Practice 2"
+    # A later provider change is now measured from that, and still loses to your edit.
+    assert _merge(session, source_snapshot(name="6 Hours of Imola Practice 3")) == []
+    assert session.label == "Mine"
+
+
+def test_renaming_the_weekend_does_not_relabel_its_sessions():
+    """The label is measured against the event name of the same generation, so a
+    weekend the provider renames leaves every session's label untouched."""
+    session = source_session("1", name="6 Hours of Imola Qualifying")
+
+    taken = _merge(
+        session, source_snapshot(name="6 Hours of Emilia Qualifying"),
+        was="6 Hours of Imola", now="6 Hours of Emilia",
+    )
+
+    assert taken == []
+    assert session.label == "Qualifying"
+
+
+def test_merge_never_touches_your_own_fields():
+    session = source_session("1")
+    session.duration, session.note, session.status = "6h", "my note", "TENTATIVE"
+
+    _merge(session, source_snapshot(name="Anything Else"))
+
+    assert (session.duration, session.note, session.status) == ("6h", "my note", "TENTATIVE")
+
+
+def test_merge_ignores_manual_sessions():
+    session = manual_session("mine")
+
+    assert _merge(session, source_snapshot()) == []
+    assert session.source is None
 
 
 # ----------------------------------------------------------------- merge_event
 
 
-def test_provider_change_is_taken_when_you_have_not_touched_the_field():
+def test_event_level_provider_change_is_taken_when_untouched():
     event = source_event("1", name="6 Hours of Imola")
+    old = [session.source for session in event.sessions]
 
-    taken = merge_event(event, source_snapshot(name="6 Hours of Imola (Revised)"))
+    taken = merge_event(event, old, [source_snapshot(name="6 Hours of Imola", venue="Monza")])
 
-    assert taken == ["summary"]
-    assert event.summary == "6 Hours of Imola (Revised)"
-
-
-def test_your_edit_wins_over_a_provider_change():
-    event = source_event("1", name="6 Hours of Imola")
-    event.summary = "6 Hours of Imola (my title)"
-
-    taken = merge_event(event, source_snapshot(name="6 Hours of Imola (Revised)"))
-
-    assert taken == []
-    assert event.summary == "6 Hours of Imola (my title)"
-
-
-def test_an_unchanged_provider_value_never_overwrites_your_edit():
-    """The common case: you set a time the provider still hasn't announced."""
-    event = source_event("1", time=None)  # provider has no time -> all-day
-    event.start, event.date = "2026-04-19T13:00:00+00:00", None
-
-    taken = merge_event(event, source_snapshot(time=None))  # provider still has none
-
-    assert taken == []
-    assert event.start == "2026-04-19T13:00:00+00:00"
-    assert event.date is None
-
-
-def test_the_provider_announcing_a_time_promotes_an_untouched_all_day_event():
-    event = source_event("1", time=None)
-    assert event.date == "2026-04-19" and event.start is None
-
-    taken = merge_event(event, source_snapshot(time="13:00:00"))
-
-    assert taken == ["start"]
-    assert event.start == "2026-04-19T13:00:00+00:00"
-    assert event.date is None
-
-
-def test_the_provider_announcing_a_time_does_not_override_your_own_time():
-    event = source_event("1", time=None)
-    event.start, event.date = "2026-04-19T12:00:00+00:00", None  # you guessed 12:00
-
-    taken = merge_event(event, source_snapshot(time="13:00:00"))  # provider says 13:00
-
-    assert taken == []
-    assert event.start == "2026-04-19T12:00:00+00:00"  # yours stands until you clear it
-
-
-def test_merge_updates_the_source_baseline_even_when_your_edit_wins():
-    """Otherwise your edit would be re-compared against a stale baseline forever."""
-    event = source_event("1", name="Original")
-    event.summary = "Mine"
-
-    merge_event(event, source_snapshot(name="Provider v2"))
-
-    assert event.source.name == "Provider v2"
-    # A later provider change is now measured from v2, and still loses to your edit.
-    assert merge_event(event, source_snapshot(name="Provider v3")) == []
-    assert event.summary == "Mine"
-
-
-def test_fields_merge_independently():
-    event = source_event("1", name="Original", venue="Imola", country="Italy")
-    event.summary = "Mine"  # only the summary is yours
-
-    merge_event(event, source_snapshot(name="Provider v2", venue="Monza", country="Italy"))
-
-    assert event.summary == "Mine"
+    assert taken == ["location"]
     assert event.location == "Monza, Italy"
 
 
-def test_merge_never_touches_your_own_fields():
+def test_your_event_level_edit_wins_over_a_provider_change():
+    event = source_event("1", name="6 Hours of Imola")
+    event.name, event.location = "6 Hours of Imola (mine)", "Autodromo Imola"
+    old = [session.source for session in event.sessions]
+
+    taken = merge_event(event, old, [source_snapshot(name="6 Hours of Monza", venue="Monza")])
+
+    assert taken == []
+    assert (event.name, event.location) == ("6 Hours of Imola (mine)", "Autodromo Imola")
+
+
+def test_merge_event_with_no_baseline_changes_nothing():
     event = source_event("1")
-    event.duration, event.note, event.status = "6h", "my note", "TENTATIVE"
 
-    merge_event(event, source_snapshot(name="Anything Else"))
-
-    assert (event.duration, event.note, event.status) == ("6h", "my note", "TENTATIVE")
-
-
-def test_merge_ignores_manual_events():
-    event = manual_event("mine")
-
-    assert merge_event(event, source_snapshot()) == []
-    assert event.source is None
+    assert merge_event(event, [], [source_snapshot(name="Anything")]) == []
 
 
 # ----------------------------------------------------------------- sync_snapshot
 
 
-def test_sync_adds_new_events():
+def test_sync_groups_a_round_into_one_event_with_its_sessions():
     series = _series()
 
-    result = _sync(series, snapshot([provider_event("1"), provider_event("2")]))
+    result = _sync(series, snapshot([
+        provider_event("1", name="6 Hours of Imola", date="2026-04-19"),
+        provider_event("2", name="6 Hours of Imola Qualifying", date="2026-04-18"),
+        provider_event("3", name="6 Hours of Imola Free Practice 3", date="2026-04-17"),
+    ]))
 
     assert result.committed is True
-    assert result.events_added == 2
-    assert {e.id_event for e in series.events} == {"1", "2"}
+    assert result.events_added == 3
+    assert len(series.events) == 1
+    event = series.events[0]
+    assert event.name == "6 Hours of Imola"
+    assert event.location == "Imola, Italy"
+    assert event.round == 1
+    assert [(s.key, s.label, s.type) for s in event.sessions] == [
+        ("3", "Free Practice 3", SessionType.PRACTICE),
+        ("2", "Qualifying", SessionType.QUALIFYING),
+        ("1", "Race", SessionType.RACE),
+    ]
 
 
-def test_sync_leaves_manual_events_alone():
-    series = _series([manual_event("mine")])
+def test_sync_keeps_separate_rounds_as_separate_events():
+    series = _series()
+
+    _sync(series, snapshot([
+        provider_event("1", name="6 Hours of Imola", round=1),
+        provider_event("2", name="6 Hours of Monza", round=2, date="2026-05-19"),
+    ]))
+
+    assert [e.name for e in series.events] == ["6 Hours of Imola", "6 Hours of Monza"]
+    assert all(len(e.sessions) == 1 for e in series.events)
+
+
+def test_a_new_session_joins_the_weekend_it_belongs_to():
+    series = _series()
+    _sync(series, snapshot([provider_event("1", name="6 Hours of Imola")]))
+
+    _sync(series, snapshot([
+        provider_event("1", name="6 Hours of Imola"),
+        provider_event("2", name="6 Hours of Imola Qualifying"),
+    ]))
+
+    assert len(series.events) == 1
+    assert [s.label for s in series.events[0].sessions] == ["Race", "Qualifying"]
+
+
+def test_sync_leaves_manual_sessions_alone():
+    series = _series([source_event("1")])
+    series.events[0].sessions.append(manual_session("mine"))
 
     _sync(series, snapshot([provider_event("1")]))
 
-    assert {e.key for e in series.events} == {"mine", "1"}
-    assert next(e for e in series.events if e.key == "mine").disappeared_at is None
+    assert _sessions(series)["mine"].disappeared_at is None
 
 
 def test_incomplete_snapshot_is_discarded_in_full():
-    series = _series([source_event("1", name="Original")])
+    series = _series([source_event("1", name="6 Hours of Imola")])
 
     result = _sync(series, snapshot([provider_event("1", name="Changed")], complete=False,
                                     diagnostics=["round 2: boom"]))
 
     assert result.committed is False
     assert result.reason == "incomplete_snapshot"
-    assert series.events[0].summary == "Original"
+    assert series.events[0].name == "6 Hours of Imola"
 
 
 def test_disappearance_is_marked_not_deleted():
@@ -180,9 +318,9 @@ def test_disappearance_is_marked_not_deleted():
     result = _sync(series, snapshot([provider_event("1")]), now="t2")
 
     assert result.events_disappeared == 1
-    by_id = {e.id_event: e for e in series.events}
-    assert by_id["1"].disappeared_at is None
-    assert by_id["2"].disappeared_at == "t2"
+    sessions = _sessions(series)
+    assert sessions["1"].disappeared_at is None
+    assert sessions["2"].disappeared_at == "t2"
 
 
 def test_reappearance_clears_the_disappearance_mark():
@@ -192,7 +330,7 @@ def test_reappearance_clears_the_disappearance_mark():
 
     _sync(series, snapshot([provider_event("1"), provider_event("2")]), now="t3")
 
-    assert all(e.disappeared_at is None for e in series.events)
+    assert all(s.disappeared_at is None for s in _sessions(series).values())
 
 
 def test_disappearance_is_scoped_to_the_season_being_synced():
@@ -203,9 +341,9 @@ def test_disappearance_is_scoped_to_the_season_being_synced():
 
     _sync(series, snapshot([provider_event("2", season="2026")]), season="2026", now="t2")
 
-    by_id = {e.id_event: e for e in series.events}
-    assert by_id["1"].disappeared_at == "t2"
-    assert by_id["9"].disappeared_at is None  # different season, untouched
+    sessions = _sessions(series)
+    assert sessions["1"].disappeared_at == "t2"
+    assert sessions["9"].disappeared_at is None  # different season, untouched
 
 
 def test_empty_snapshot_for_current_season_is_always_suspicious():
@@ -230,24 +368,44 @@ def test_empty_snapshot_for_a_previously_populated_future_season_is_suspicious()
 
     assert result.committed is False
     assert result.reason == "suspicious_empty_future_season"
-    assert series.events[0].disappeared_at is None  # untouched
+    assert series.events[0].sessions[0].disappeared_at is None  # untouched
 
 
-def test_sync_sorts_events_by_when_they_happen():
+def test_sync_sorts_events_and_their_sessions_by_when_they_happen():
     series = _series()
 
     _sync(series, snapshot([
-        provider_event("late", date="2026-09-01"),
-        provider_event("early", date="2026-03-01"),
+        provider_event("late", round=2, date="2026-09-01"),
+        provider_event("early-race", round=1, date="2026-03-02"),
+        provider_event("early-quali", round=1, date="2026-03-01"),
     ]))
 
-    assert [e.id_event for e in series.events] == ["early", "late"]
+    assert [s.key for _, s in series.iter_sessions()] == ["early-quali", "early-race", "late"]
 
 
-def test_event_from_source_carries_the_snapshot():
-    event = event_from_source(source_snapshot(), "1")
+def test_resyncing_the_same_snapshot_changes_nothing():
+    """The invariant that keeps a refresh from rewriting files it has nothing new for
+    -- and that a hand edit survives every cycle, not just the first."""
+    series = _series()
+    events = [
+        provider_event("1", name="6 Hours of Imola", date="2026-04-19"),
+        provider_event("2", name="6 Hours of Imola Qualifying", date="2026-04-18"),
+    ]
+    _sync(series, snapshot(events))
+    series.events[0].name = "6 Hours of Imola (mine)"
+    before = series.model_dump()
 
-    assert event.id_event == "1"
-    assert event.uid is None
-    assert event.source is not None
-    assert merge_event(event, source_snapshot()) == []  # already in sync
+    result = _sync(series, snapshot(events), now="t2")
+
+    assert (result.events_added, result.events_updated, result.events_disappeared) == (0, 0, 0)
+    assert series.model_dump() == before
+
+
+def test_event_from_sources_carries_the_snapshots():
+    event = event_from_sources({"1": source_snapshot()})
+
+    assert event.sessions[0].id_event == "1"
+    assert event.sessions[0].uid is None
+    assert event.sessions[0].source is not None
+    # already in sync: a refetch of the same snapshot changes nothing
+    assert merge_event(event, [source_snapshot()], [source_snapshot()]) == []

@@ -1,9 +1,16 @@
-"""Building one published event from one configured event."""
+"""Building one published event from one session of one configured race event."""
 from datetime import datetime, timezone
 
-from tests.conftest import UID_DOMAIN, make_globals, make_series, manual_event, source_event
+from tests.conftest import (
+    UID_DOMAIN,
+    make_globals,
+    make_series,
+    manual_event,
+    manual_session,
+    source_event,
+)
 
-from motorcal.config import DurationDefaults, EventConfig
+from motorcal.config import EventConfig, DurationDefaults
 from motorcal.merge import build_published_event
 from motorcal.models import EventStatus, SessionType
 from motorcal.state import VersionState
@@ -12,8 +19,9 @@ NOW = datetime(2026, 1, 1, 12, tzinfo=timezone.utc)
 
 
 def _build(event, *, series="wec", series_config=None, globals_=None, previous=None, now=NOW):
+    """Build the first (usually only) session of `event`."""
     return build_published_event(
-        event, series=series, series_config=series_config or make_series(),
+        event, event.sessions[0], series=series, series_config=series_config or make_series(),
         globals_=globals_ or make_globals(alerts={"race": ["-1d", "-30m"], "qualifying": ["-15m"]}),
         previous=previous, now=now,
     )
@@ -27,6 +35,21 @@ def test_confirmed_time_produces_a_timed_event():
     assert built.all_day_date is None
 
 
+def test_the_summary_is_the_event_name_and_the_session_label():
+    event = source_event(
+        "1", name="6 Hours of Imola Qualifying", event_name="6 Hours of Imola",
+        time="13:00:00",
+    )
+
+    assert _build(event).summary == "6 Hours of Imola Qualifying"
+
+
+def test_a_session_with_no_label_publishes_just_the_event_name():
+    event = manual_event("mine", name="Pre-season testing")
+
+    assert _build(event).summary == "Pre-season testing"
+
+
 def test_unannounced_time_produces_an_all_day_tbc_event_with_no_alarms():
     built = _build(source_event("1", time=None))
 
@@ -38,23 +61,25 @@ def test_unannounced_time_produces_an_all_day_tbc_event_with_no_alarms():
     assert built.duration_seconds is None
 
 
-def test_a_manual_all_day_event_is_not_marked_tbc():
-    """An all-day manual event is deliberate, not an unannounced provider time."""
-    built = _build(manual_event("mine", summary="Test Day"))
+def test_a_manual_all_day_session_is_not_marked_tbc():
+    """An all-day manual session is deliberate, not an unannounced provider time."""
+    built = _build(manual_event("mine", name="Test Day"))
 
     assert built.all_day_date == "2026-05-01"
     assert built.summary == "Test Day"
 
 
-def test_uid_distinguishes_provider_and_manual_events():
+def test_uid_distinguishes_provider_and_manual_sessions():
     assert _build(source_event("1")).uid == f"thesportsdb-1@{UID_DOMAIN}"
     assert _build(manual_event("mine")).uid == f"local-mine@{UID_DOMAIN}"
 
 
-def test_session_type_is_classified_from_the_summary():
-    built = _build(source_event("1", name="6 Hours of Imola Qualifying"))
+def test_the_published_session_type_is_the_one_stored_on_the_session():
+    event = source_event(
+        "1", name="6 Hours of Imola Qualifying", event_name="6 Hours of Imola"
+    )
 
-    assert built.session_type == SessionType.QUALIFYING
+    assert _build(event).session_type == SessionType.QUALIFYING
 
 
 def test_alarms_come_from_the_global_defaults_for_the_session_type():
@@ -64,22 +89,25 @@ def test_alarms_come_from_the_global_defaults_for_the_session_type():
     assert built.alarms == ["-1d", "-30m"]
 
 
-def test_an_events_own_alarms_win_over_the_defaults():
+def test_a_sessions_own_alarms_win_over_the_defaults():
     event = source_event("1", time="13:00:00")
-    event.alarms = ["-2h"]
+    event.sessions[0].alarms = ["-2h"]
 
     assert _build(event).alarms == ["-2h"]
 
 
-def test_an_explicit_empty_alarm_list_silences_just_that_event():
+def test_an_explicit_empty_alarm_list_silences_just_that_session():
     event = source_event("1", time="13:00:00")
-    event.alarms = []
+    event.sessions[0].alarms = []
 
     assert _build(event).alarms == []
 
 
-def test_duration_falls_back_from_event_to_series_to_global():
-    event = source_event("1", name="Practice One", time="13:00:00")
+def test_duration_falls_back_from_session_to_series_to_global():
+    event = source_event(
+        "1", name="6 Hours of Imola Practice 1", event_name="6 Hours of Imola",
+        time="13:00:00",
+    )
     globals_ = make_globals(durations=DurationDefaults(practice="1h"))
 
     assert _build(event, globals_=globals_).duration_seconds == 3600
@@ -87,13 +115,13 @@ def test_duration_falls_back_from_event_to_series_to_global():
     series_config = make_series(durations=DurationDefaults(practice="90m"))
     assert _build(event, globals_=globals_, series_config=series_config).duration_seconds == 5400
 
-    event.duration = "2h"
+    event.sessions[0].duration = "2h"
     assert _build(event, globals_=globals_, series_config=series_config).duration_seconds == 7200
 
 
-def test_location_and_note_reach_the_published_event():
+def test_the_events_location_reaches_every_session_it_holds():
     event = source_event("1", time="13:00:00")
-    event.note = "official timetable"
+    event.sessions[0].note = "official timetable"
 
     built = _build(event)
 
@@ -101,11 +129,11 @@ def test_location_and_note_reach_the_published_event():
     assert "Note: official timetable" in built.description
 
 
-def test_description_names_the_provider_for_provider_backed_events():
+def test_description_names_the_provider_for_provider_backed_sessions():
     assert "Source: TheSportsDB" in _build(source_event("1")).description
 
 
-def test_description_names_local_for_manual_events():
+def test_description_names_local_for_manual_sessions():
     assert "Source: local event" in _build(manual_event("mine")).description
 
 
@@ -115,11 +143,17 @@ def test_race_only_series_says_so_in_the_description():
     assert "race sessions only" in _build(source_event("1"), series_config=series_config).description
 
 
-def test_race_only_series_note_is_absent_from_a_manual_qualifying_event():
-    """A manually added qualifying event in a race-only series shouldn't claim the
+def test_race_only_series_note_is_absent_from_a_manual_qualifying_session():
+    """A manually added qualifying session in a race-only series shouldn't claim the
     feed only has races -- that would contradict the event it's attached to."""
     series_config = make_series(race_only=True)
-    event = manual_event("indycar-2026-portland-qualifying", summary="Portland Qualifying")
+    event = EventConfig(
+        name="Portland",
+        sessions=[manual_session(
+            "indycar-2026-portland-qualifying", label="Qualifying",
+            type=SessionType.QUALIFYING,
+        )],
+    )
 
     built = _build(event, series="indycar", series_config=series_config)
 
@@ -127,13 +161,13 @@ def test_race_only_series_note_is_absent_from_a_manual_qualifying_event():
     assert "race sessions only" not in built.description
 
 
-def test_a_disappeared_future_event_is_cancelled():
+def test_a_disappeared_future_session_is_cancelled():
     event = source_event("1", time="13:00:00", disappeared_at="t1")
 
     assert _build(event).status == EventStatus.CANCELLED
 
 
-def test_a_disappeared_past_event_keeps_its_last_known_status():
+def test_a_disappeared_past_session_keeps_its_last_known_status():
     event = source_event("1", date="2025-01-01", time="13:00:00", disappeared_at="t1")
 
     built = _build(event, previous=None)
@@ -152,12 +186,12 @@ def test_cancellation_is_sticky_once_applied():
 
 
 def test_a_configured_status_is_honoured():
-    event = EventConfig(uid="mine", summary="Maybe", date="2026-05-01", status="TENTATIVE")
+    event = manual_event("mine", name="Maybe", status="TENTATIVE")
 
     assert _build(event).status == EventStatus.TENTATIVE
 
 
-def test_an_unchanged_event_keeps_its_sequence_and_dtstamp():
+def test_an_unchanged_session_keeps_its_sequence_and_dtstamp():
     event = source_event("1", time="13:00:00")
     first = _build(event)
     previous = VersionState(
@@ -172,7 +206,7 @@ def test_an_unchanged_event_keeps_its_sequence_and_dtstamp():
     assert second.dtstamp == first.dtstamp
 
 
-def test_a_changed_event_advances_sequence_and_dtstamp():
+def test_a_changed_session_advances_sequence_and_dtstamp():
     event = source_event("1", time="13:00:00")
     first = _build(event)
     previous = VersionState(
@@ -180,10 +214,34 @@ def test_a_changed_event_advances_sequence_and_dtstamp():
         dtstamp=first.dtstamp.isoformat(), last_modified=first.last_modified.isoformat(),
         status=first.status.value,
     )
-    event.summary = "Renamed"
+    event.name = "Renamed"
 
     later = datetime(2026, 6, 1, tzinfo=timezone.utc)
     second = _build(event, previous=previous, now=later)
 
     assert second.sequence > first.sequence
     assert second.dtstamp == later
+
+
+def test_renaming_the_event_changes_every_session_it_holds():
+    """The point of the shape: the weekend's name is stored once."""
+    event = source_event(
+        "1", name="6 Hours of Imola Qualifying", event_name="6 Hours of Imola",
+        time="13:00:00",
+    )
+    event.sessions.append(
+        manual_session("extra", label="Warm Up", start="2026-04-19T09:00:00+00:00")
+    )
+
+    event.name = "6 Hours of Emilia"
+    built = [
+        build_published_event(
+            event, session, series="wec", series_config=make_series(),
+            globals_=make_globals(), previous=None, now=NOW,
+        )
+        for session in event.sessions
+    ]
+
+    assert [b.summary for b in built] == [
+        "6 Hours of Emilia Qualifying", "6 Hours of Emilia Warm Up",
+    ]
