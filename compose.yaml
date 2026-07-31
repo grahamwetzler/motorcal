@@ -1,5 +1,6 @@
 services:
   app:
+    image: ghcr.io/grahamwetzler/motorcal:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -10,6 +11,8 @@ services:
       - ./config:/config
       - ./motorcal-data:/data
     container_name: app
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     healthcheck:
       test:
         [
@@ -29,5 +32,14 @@ services:
     command: tunnel --no-autoupdate run
     environment:
       TUNNEL_TOKEN: "${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN must be set}"
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     depends_on:
       - app
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    restart: unless-stopped
+    command: --label-enable --cleanup --interval 1800
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro

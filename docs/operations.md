@@ -91,6 +91,33 @@ edit `state.yaml`'s `uid_domain:` and clear its `versions:` block. Every
 still-retained event will appear twice in existing subscribers' calendars until
 the old copies expire.
 
+## Deploys and auto-update
+
+Pushing to `main` runs tests and config validation, then builds and pushes
+`ghcr.io/grahamwetzler/motorcal:latest` (and a `sha-<commit>` tag) via GitHub
+Actions. A `watchtower` container in `compose.yaml` polls GHCR every 30
+minutes and recreates `app` (and `cloudflared`) when a new image lands — no
+manual pull or restart needed on any host running this stack.
+
+One-time setup after the very first push: the GHCR package is created
+private by default even though the repo is public. Open the package's
+GitHub settings and set visibility to Public, or `docker compose pull` will
+fail with 403s.
+
+To move this to a new machine: copy `compose.yaml`, `.env`, and `config/`
+over and run `docker compose up -d`. No git checkout or build step required
+— everything pulls from GHCR.
+
+To roll back a bad release, pin the image to a known-good commit instead of
+`latest`:
+
+```yaml
+image: ghcr.io/grahamwetzler/motorcal:sha-<previous-good-commit>
+```
+
+then `docker compose up -d`. Watchtower never touches a `sha-*` tag, so it
+stays pinned until you switch back to `:latest`.
+
 ## Unclassified events
 
 Container logs carry an `Unclassified events:` warning listing UIDs whose
