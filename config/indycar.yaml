@@ -10,8 +10,9 @@ events:
   start: '2026-03-01T17:00:00+00:00'
   location: Streets of St. Petersburg, United States
   status: CONFIRMED
+  alarms:
+  - '0'
   round: 1
-  alarms: ['0']
   source:
     name: Firestone Grand Prix of St. Petersburg
     date: '2026-03-01'
@@ -25,8 +26,9 @@ events:
   start: '2026-03-07T20:00:00+00:00'
   location: Phoenix Raceway, United States
   status: CONFIRMED
+  alarms:
+  - '0'
   round: 2
-  alarms: ['0']
   source:
     name: Good Ranchers 250
     date: '2026-03-07'
@@ -40,8 +42,9 @@ events:
   start: '2026-03-15T15:30:00+00:00'
   location: United States
   status: CONFIRMED
+  alarms:
+  - '0'
   round: 3
-  alarms: ['0']
   source:
     name: Java House Grand Prix of Arlington
     date: '2026-03-15'
@@ -54,8 +57,9 @@ events:
   start: '2026-03-29T17:00:00+00:00'
   location: Barber Motorsports Park, United States
   status: CONFIRMED
+  alarms:
+  - '0'
   round: 4
-  alarms: ['0']
   source:
     name: Childrens of Alabama Indy Grand Prix
     date: '2026-03-29'
@@ -69,8 +73,9 @@ events:
   start: '2026-04-19T21:30:00+00:00'
   location: United States
   status: CONFIRMED
+  alarms:
+  - '0'
   round: 5
-  alarms: ['0']
   source:
     name: Acura Grand Prix of Long Beach
     date: '2026-04-19'
@@ -83,8 +88,9 @@ events:
   start: '2026-05-09T20:30:00+00:00'
   location: United States
   status: CONFIRMED
+  alarms:
+  - '0'
   round: 6
-  alarms: ['0']
   source:
     name: Sonsio Grand Prix
     date: '2026-05-09'
@@ -98,8 +104,9 @@ events:
   duration: 180m
   location: United States
   status: CONFIRMED
+  alarms:
+  - '0'
   round: 7
-  alarms: ['0']
   source:
     name: 110th Running of the Indianapolis 500
     date: '2026-05-24'
@@ -112,8 +119,9 @@ events:
   start: '2026-05-31T16:30:00+00:00'
   location: Streets of Detroit, United States
   status: CONFIRMED
+  alarms:
+  - '0'
   round: 8
-  alarms: ['0']
   source:
     name: Chevrolet Detroit Grand Prix
     date: '2026-05-31'
@@ -128,8 +136,9 @@ events:
   duration: 150m
   location: World Wide Technology Raceway, United States
   status: CONFIRMED
+  alarms:
+  - '0'
   round: 9
-  alarms: ['0']
   source:
     name: Bommarito Automotive Group 500
     date: '2026-06-07'
@@ -143,8 +152,9 @@ events:
   start: '2026-06-21T18:00:00+00:00'
   location: Road America, United States
   status: CONFIRMED
+  alarms:
+  - '0'
   round: 10
-  alarms: ['0']
   source:
     name: XPEL Grand Prix at Road America
     date: '2026-06-21'
@@ -158,8 +168,9 @@ events:
   start: '2026-07-05T16:30:00+00:00'
   location: Mid-Ohio Sports Car Course, United States
   status: CONFIRMED
+  alarms:
+  - '0'
   round: 11
-  alarms: ['0']
   source:
     name: Honda Indy 200 at Mid Ohio
     date: '2026-07-05'
@@ -173,9 +184,10 @@ events:
   start: '2026-07-20T19:00:00+00:00'
   location: Nashville Superspeedway, United States
   status: CONFIRMED
-  round: 12
-  alarms: ['0']
   note: Rescheduled from Sunday to Monday 3pm ET due to rain
+  alarms:
+  - '0'
+  round: 12
   source:
     name: Borchetta Bourbon Music City Grand Prix
     date: '2026-07-20'
@@ -184,13 +196,23 @@ events:
     country: United States
     round: 12
     season: '2026'
+- uid: indycar-2026-portland-qualifying
+  summary: OnlyBulls Grand Prix of Portland Qualifying
+  start: '2026-08-08T23:00:00+00:00'
+  location: Portland International Raceway, United States
+  status: CONFIRMED
+  note: Added manually from indycar.com; not yet in TheSportsDB
+  alarms:
+  - '0'
+  round: 13
 - id_event: '2402409'
   summary: OnlyBulls Grand Prix of Portland
   start: '2026-08-09T20:00:00+00:00'
   location: Portland International Raceway, United States
   status: CONFIRMED
+  alarms:
+  - '0'
   round: 13
-  alarms: ['0']
   source:
     name: BITNILE.com Grand Prix of Portland
     date: '2026-08-09'
@@ -199,21 +221,23 @@ events:
     country: United States
     round: 13
     season: '2026'
-- uid: indycar-2026-portland-qualifying
-  summary: OnlyBulls Grand Prix of Portland Qualifying
-  start: '2026-08-08T23:00:00+00:00'
-  location: Portland International Raceway, United States
+- uid: indycar-2026-markham-qualifying
+  summary: Ontario Honda Dealers Indy at Markham Qualifying
+  start: '2026-08-15T18:25:00+00:00'
+  location: Streets of Markham, Canada
   status: CONFIRMED
-  round: 13
-  alarms: ['0']
   note: Added manually from indycar.com; not yet in TheSportsDB
+  alarms:
+  - '0'
+  round: 14
 - id_event: '2402410'
   summary: Ontario Honda Dealers Indy at Markham
   start: '2026-08-16T16:00:00+00:00'
   location: Canada
   status: CONFIRMED
+  alarms:
+  - '0'
   round: 14
-  alarms: ['0']
   source:
     name: Ontario Honda Dealers Indy at Markham
     date: '2026-08-16'
@@ -221,46 +245,43 @@ events:
     country: Canada
     round: 14
     season: '2026'
-- uid: indycar-2026-markham-qualifying
-  summary: Ontario Honda Dealers Indy at Markham Qualifying
-  start: '2026-08-15T18:25:00+00:00'
-  location: Streets of Markham, Canada
-  status: CONFIRMED
-  round: 14
-  alarms: ['0']
-  note: Added manually from indycar.com; not yet in TheSportsDB
-- uid: indycar-2026-washington-dc
-  summary: Freedom 250 Grand Prix of Washington, D.C.
-  start: '2026-08-23T17:00:00+00:00'
-  location: Streets of Washington, United States
-  status: CONFIRMED
-  round: 15
-  alarms: ['0']
-  note: Inaugural race, added manually from indycar.com; not yet in TheSportsDB
 - uid: indycar-2026-washington-dc-qualifying
   summary: Freedom 250 Grand Prix of Washington, D.C. Qualifying
   start: '2026-08-22T21:00:00+00:00'
   duration: 90m
   location: Streets of Washington, United States
   status: CONFIRMED
-  round: 15
-  alarms: ['0']
   note: Added manually from indycar.com; not yet in TheSportsDB
+  alarms:
+  - '0'
+  round: 15
+- uid: indycar-2026-washington-dc
+  summary: Freedom 250 Grand Prix of Washington, D.C.
+  start: '2026-08-23T17:00:00+00:00'
+  location: Streets of Washington, United States
+  status: CONFIRMED
+  note: Inaugural race, added manually from indycar.com; not yet in TheSportsDB
+  alarms:
+  - '0'
+  round: 15
 - uid: indycar-2026-milwaukee-qualifying
   summary: Snap-on INDYCAR Weekend Qualifying
   start: '2026-08-29T15:00:00+00:00'
   location: Milwaukee Mile, United States
   status: CONFIRMED
+  note: Single qualifying session sets the grid for both Milwaukee races (rounds 16 and 17); added manually
+    from indycar.com, not yet in TheSportsDB
+  alarms:
+  - '0'
   round: 16
-  alarms: ['0']
-  note: Single qualifying session sets the grid for both Milwaukee races (rounds 16 and 17); added manually from indycar.com, not yet in TheSportsDB
 - id_event: '2402411'
-  summary: 'Snap-on Makers and Fixers 250'
+  summary: Snap-on Makers and Fixers 250
   start: '2026-08-29T18:30:00+00:00'
   location: Milwaukee Mile, United States
   status: CONFIRMED
+  alarms:
+  - '0'
   round: 16
-  alarms: ['0']
   source:
     name: 'Snap On Milwaukee 250 Race #1'
     date: '2026-08-29'
@@ -270,12 +291,13 @@ events:
     round: 15
     season: '2026'
 - id_event: '2402412'
-  summary: 'Snap-on Milwaukee Mile 250'
+  summary: Snap-on Milwaukee Mile 250
   start: '2026-08-30T17:00:00+00:00'
   location: Milwaukee Mile, United States
   status: CONFIRMED
+  alarms:
+  - '0'
   round: 17
-  alarms: ['0']
   source:
     name: 'Snap On Milwaukee 250 Race #2'
     date: '2026-08-30'
@@ -284,13 +306,23 @@ events:
     country: United States
     round: 16
     season: '2026'
+- uid: indycar-2026-monterey-qualifying
+  summary: IndyCar Grand Prix of Monterey Qualifying
+  start: '2026-09-05T20:30:00+00:00'
+  location: WeatherTech Raceway Laguna Seca, United States
+  status: CONFIRMED
+  note: Added manually from indycar.com; not yet in TheSportsDB
+  alarms:
+  - '0'
+  round: 18
 - id_event: '2402413'
   summary: IndyCar Grand Prix of Monterey
   start: '2026-09-06T18:30:00+00:00'
   location: United States
   status: CONFIRMED
+  alarms:
+  - '0'
   round: 18
-  alarms: ['0']
   source:
     name: IndyCar Grand Prix of Monterey
     date: '2026-09-06'
@@ -298,11 +330,3 @@ events:
     country: United States
     round: 17
     season: '2026'
-- uid: indycar-2026-monterey-qualifying
-  summary: IndyCar Grand Prix of Monterey Qualifying
-  start: '2026-09-05T20:30:00+00:00'
-  location: WeatherTech Raceway Laguna Seca, United States
-  status: CONFIRMED
-  round: 18
-  alarms: ['0']
-  note: Added manually from indycar.com; not yet in TheSportsDB
