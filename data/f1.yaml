@@ -68,7 +68,6 @@ events:
       round: 1
       season: '2026'
   - id_event: '2408111'
-    label: Race
     type: race
     start: '2026-03-08T04:00:00+00:00'
     status: CONFIRMED
@@ -136,7 +135,6 @@ events:
       round: 2
       season: '2026'
   - id_event: '2408116'
-    label: Race
     type: race
     start: '2026-03-15T07:00:00+00:00'
     status: CONFIRMED
@@ -205,7 +203,6 @@ events:
       round: 3
       season: '2026'
   - id_event: '2408121'
-    label: Race
     type: race
     start: '2026-03-29T05:00:00+00:00'
     status: CONFIRMED
@@ -273,7 +270,6 @@ events:
       round: 4
       season: '2026'
   - id_event: '2408136'
-    label: Race
     type: race
     start: '2026-05-03T17:00:00+00:00'
     status: CONFIRMED
@@ -342,7 +338,6 @@ events:
       round: 5
       season: '2026'
   - id_event: '2408156'
-    label: Race
     type: race
     start: '2026-05-24T20:00:00+00:00'
     status: CONFIRMED
@@ -411,7 +406,6 @@ events:
       round: 6
       season: '2026'
   - id_event: '2408146'
-    label: Race
     type: race
     start: '2026-06-07T13:00:00+00:00'
     status: CONFIRMED
@@ -480,7 +474,6 @@ events:
       round: 7
       season: '2026'
   - id_event: '2408151'
-    label: Race
     type: race
     start: '2026-06-14T13:00:00+00:00'
     status: CONFIRMED
@@ -549,7 +542,6 @@ events:
       round: 8
       season: '2026'
   - id_event: '2408161'
-    label: Race
     type: race
     start: '2026-06-28T13:00:00+00:00'
     status: CONFIRMED
@@ -618,7 +610,6 @@ events:
       round: 9
       season: '2026'
   - id_event: '2408166'
-    label: Race
     type: race
     start: '2026-07-05T14:00:00+00:00'
     status: CONFIRMED
@@ -687,7 +678,6 @@ events:
       round: 10
       season: '2026'
   - id_event: '2408171'
-    label: Race
     type: race
     start: '2026-07-19T13:00:00+00:00'
     status: CONFIRMED
@@ -756,7 +746,6 @@ events:
       round: 11
       season: '2026'
   - id_event: '2408176'
-    label: Race
     type: race
     start: '2026-07-26T13:00:00+00:00'
     status: CONFIRMED
@@ -825,7 +814,6 @@ events:
       round: 12
       season: '2026'
   - id_event: '2408181'
-    label: Race
     type: race
     start: '2026-08-23T13:00:00+00:00'
     status: CONFIRMED
@@ -893,7 +881,6 @@ events:
       round: 13
       season: '2026'
   - id_event: '2408186'
-    label: Race
     type: race
     start: '2026-09-06T13:00:00+00:00'
     status: CONFIRMED
@@ -962,7 +949,6 @@ events:
       round: 14
       season: '2026'
   - id_event: '2408914'
-    label: Race
     type: race
     start: '2026-09-13T13:00:00+00:00'
     status: CONFIRMED
@@ -1031,7 +1017,6 @@ events:
       round: 15
       season: '2026'
   - id_event: '2408191'
-    label: Race
     type: race
     start: '2026-09-26T11:00:00+00:00'
     status: CONFIRMED
@@ -1100,7 +1085,6 @@ events:
       round: 16
       season: '2026'
   - id_event: '2408196'
-    label: Race
     type: race
     start: '2026-10-11T12:00:00+00:00'
     status: CONFIRMED
@@ -1169,7 +1153,6 @@ events:
       round: 17
       season: '2026'
   - id_event: '2408201'
-    label: Race
     type: race
     start: '2026-10-25T20:00:00+00:00'
     status: CONFIRMED
@@ -1238,7 +1221,6 @@ events:
       round: 18
       season: '2026'
   - id_event: '2408206'
-    label: Race
     type: race
     start: '2026-11-01T20:00:00+00:00'
     status: CONFIRMED
@@ -1307,7 +1289,6 @@ events:
       round: 19
       season: '2026'
   - id_event: '2408211'
-    label: Race
     type: race
     start: '2026-11-08T17:00:00+00:00'
     status: CONFIRMED
@@ -1375,7 +1356,6 @@ events:
       round: 20
       season: '2026'
   - id_event: '2408216'
-    label: Race
     type: race
     start: '2026-11-22T04:00:00+00:00'
     status: CONFIRMED
@@ -1443,7 +1423,6 @@ events:
       round: 21
       season: '2026'
   - id_event: '2408221'
-    label: Race
     type: race
     start: '2026-11-29T16:00:00+00:00'
     status: CONFIRMED
@@ -1512,7 +1491,6 @@ events:
       round: 22
       season: '2026'
   - id_event: '2408226'
-    label: Race
     type: race
     start: '2026-12-06T13:00:00+00:00'
     status: CONFIRMED

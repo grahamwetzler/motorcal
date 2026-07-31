@@ -166,7 +166,7 @@ def derive_session(
         start, all_day = f"{source.date}T{source.time}+00:00", None
 
     return {
-        "label": label or session_type.value.title(),
+        "label": label,
         "type": session_type,
         "start": start,
         "date": all_day,

@@ -78,7 +78,7 @@ def test_reload_picks_up_a_hand_edited_event(tmp_path):
     result = check_and_reload_config(config_dir, make_state(), None, config, UID_DOMAIN, NOW)
 
     assert result.reloaded is True
-    assert result.published["wec"][0].summary == "6 Hours of Imola (edited) Race"
+    assert result.published["wec"][0].summary == "6 Hours of Imola (edited)"
 
 
 def test_reload_picks_up_a_new_series_file(tmp_path):

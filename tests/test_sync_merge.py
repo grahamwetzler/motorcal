@@ -94,7 +94,7 @@ def test_derive_session_splits_the_label_off_the_provider_name():
 def test_derive_session_labels_the_event_named_session_as_the_race():
     values = derive_session(source_snapshot(name="6 Hours of Imola"), "6 Hours of Imola")
 
-    assert values["label"] == "Race"
+    assert values["label"] == ""
     assert values["type"] is SessionType.RACE
 
 
@@ -270,7 +270,7 @@ def test_sync_groups_a_round_into_one_event_with_its_sessions():
     assert [(s.key, s.label, s.type) for s in event.sessions] == [
         ("3", "Free Practice 3", SessionType.PRACTICE),
         ("2", "Qualifying", SessionType.QUALIFYING),
-        ("1", "Race", SessionType.RACE),
+        ("1", "", SessionType.RACE),
     ]
 
 
@@ -415,7 +415,7 @@ def test_a_new_session_joins_the_weekend_it_belongs_to():
     ]))
 
     assert len(series.events) == 1
-    assert [s.label for s in series.events[0].sessions] == ["Race", "Qualifying"]
+    assert [s.label for s in series.events[0].sessions] == ["", "Qualifying"]
 
 
 def test_sync_leaves_manual_sessions_alone():

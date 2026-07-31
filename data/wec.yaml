@@ -39,7 +39,6 @@ events:
       round: 1
       season: '2026'
   - id_event: '2421035'
-    label: Race
     type: race
     date: '2026-04-19'
     status: CONFIRMED
@@ -147,7 +146,6 @@ events:
       round: 2
       season: '2026'
   - id_event: '2421036'
-    label: Race
     type: race
     date: '2026-05-09'
     status: CONFIRMED
@@ -294,7 +292,6 @@ events:
       round: 3
       season: '2026'
   - id_event: '2421037'
-    label: Race
     type: race
     start: '2026-06-13T14:00:00+00:00'
     duration: 1440m
@@ -403,7 +400,6 @@ events:
       round: 4
       season: '2026'
   - id_event: '2421038'
-    label: Race
     type: race
     start: '2026-07-12T16:30:00+00:00'
     status: CONFIRMED
@@ -498,7 +494,6 @@ events:
       round: 5
       season: '2026'
   - id_event: '2421039'
-    label: Race
     type: race
     date: '2026-09-06'
     duration: 360m
@@ -594,7 +589,6 @@ events:
       round: 6
       season: '2026'
   - id_event: '2421041'
-    label: Race
     type: race
     date: '2026-09-27'
     status: CONFIRMED
@@ -702,7 +696,6 @@ events:
       round: 7
       season: '2026'
   - id_event: '2421034'
-    label: Race
     type: race
     date: '2026-10-18'
     duration: 360m
@@ -811,7 +804,6 @@ events:
       round: 8
       season: '2026'
   - id_event: '2421042'
-    label: Race
     type: race
     date: '2026-11-08'
     duration: 360m
