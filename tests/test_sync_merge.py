@@ -296,6 +296,37 @@ def test_a_double_header_weekend_is_one_event_with_both_races():
     ]
 
 
+def test_a_double_header_groups_even_when_one_round_omits_the_venue():
+    """The provider drops the venue on some sessions of a weekend it gives in full
+    on others -- requiring identical locations would split the very weekends this
+    grouping exists to join."""
+    series = _series()
+
+    _sync(series, snapshot([
+        provider_event("r1", name="Milwaukee 250 Race #1", round=15, date="2026-08-29",
+                       venue="Milwaukee Mile", country="United States"),
+        provider_event("r2", name="Milwaukee 250 Race #2", round=16, date="2026-08-30",
+                       venue=None, country="United States"),
+    ]))
+
+    assert len(series.events) == 1
+    assert series.events[0].location == "Milwaukee Mile, United States"
+
+
+def test_rounds_with_no_location_at_all_never_group():
+    """An unknown location is unknown, not equal to another unknown one."""
+    series = _series()
+
+    _sync(series, snapshot([
+        provider_event("1", name="Somewhere", round=1, date="2026-08-29",
+                       venue=None, country=None),
+        provider_event("2", name="Elsewhere", round=2, date="2026-08-30",
+                       venue=None, country=None),
+    ]))
+
+    assert len(series.events) == 2
+
+
 def test_the_same_venue_a_week_later_is_a_separate_weekend():
     series = _series()
 
@@ -307,6 +338,38 @@ def test_the_same_venue_a_week_later_is_a_separate_weekend():
     ]))
 
     assert [e.name for e in series.events] == ["Austrian Grand Prix", "Styrian Grand Prix"]
+
+
+def _milwaukee(first: int, second: int):
+    return [
+        provider_event("r1", name="Milwaukee 250 Race #1", round=first, date="2026-08-29",
+                       venue="Milwaukee Mile", country="United States"),
+        provider_event("r2", name="Milwaukee 250 Race #2", round=second, date="2026-08-30",
+                       venue="Milwaukee Mile", country="United States"),
+    ]
+
+
+def test_renumbering_a_double_header_upstream_moves_both_of_its_rounds():
+    """The second race's `round` overrides the weekend's, so it has to follow the
+    provider too -- left behind it would silently claim the first race's round."""
+    series = _series()
+    _sync(series, snapshot(_milwaukee(15, 16)))
+
+    _sync(series, snapshot(_milwaukee(16, 17)))
+
+    event = series.events[0]
+    assert event.round == 16
+    assert [s.round for s in event.sessions] == [None, 17]
+
+
+def test_your_own_round_survives_the_weekend_being_renumbered():
+    series = _series()
+    _sync(series, snapshot(_milwaukee(15, 16)))
+    series.events[0].sessions[1].round = 99
+
+    _sync(series, snapshot(_milwaukee(16, 17)))
+
+    assert series.events[0].sessions[1].round == 99
 
 
 def test_a_weekend_stored_as_two_events_is_folded_into_one():

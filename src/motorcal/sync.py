@@ -101,12 +101,28 @@ def weekend_groups(provider_events: list[ProviderEvent]) -> list[list[ProviderEv
 
 def _runs_on_from(previous: list[ProviderEvent], events: list[ProviderEvent]) -> bool:
     """Whether `events` continues the same weekend `previous` belongs to."""
-    where = derive_event([_snapshot_of(e) for e in previous])["location"]
-    if where is None or where != derive_event([_snapshot_of(e) for e in events])["location"]:
+    if not _same_place(previous, events):
         return False
     ended = max(date.fromisoformat(e.date) for e in previous)
     starts = min(date.fromisoformat(e.date) for e in events)
     return starts - ended <= timedelta(days=1)
+
+
+def _same_place(previous: list[ProviderEvent], events: list[ProviderEvent]) -> bool:
+    """The same country, and the same venue whenever both sides name one.
+
+    Comparing full location strings would split exactly the weekends this is meant
+    to join: the provider routinely omits the venue on some sessions of a weekend
+    it gives in full on others. Country alone is enough next to the one-day gap --
+    no series runs two rounds at different venues on consecutive days. A weekend
+    with no country at all never joins anything, since that is unknown, not equal.
+    """
+    countries = {e.country for e in previous if e.country}
+    if not countries or countries != {e.country for e in events if e.country}:
+        return False
+    venues = {e.venue for e in previous if e.venue}
+    others = {e.venue for e in events if e.venue}
+    return not venues or not others or bool(venues & others)
 
 
 def derive_event(sources: list[SourceSnapshot]) -> dict:
@@ -125,11 +141,15 @@ def derive_event(sources: list[SourceSnapshot]) -> dict:
     }
 
 
-def derive_session(source: SourceSnapshot, event_name: str) -> dict:
+def derive_session(
+    source: SourceSnapshot, event_name: str, event_round: int | None = None
+) -> dict:
     """The session-level values one provider snapshot implies, before any local edit.
 
     A missing or midnight time means the provider hasn't announced one yet, which
-    is published as an all-day event rather than a guess at 00:00.
+    is published as an all-day event rather than a guess at 00:00. `round` is set
+    only when this session runs for a different championship round than the weekend
+    holding it, which only a double-header ever does.
     """
     if source.name.startswith(event_name):
         label = source.name[len(event_name):].strip(_LABEL_SEPARATORS)
@@ -141,15 +161,16 @@ def derive_session(source: SourceSnapshot, event_name: str) -> dict:
     session_type = classify_session(label, source.round)
 
     if source.time in (None, "", "00:00:00"):
-        start, date = None, source.date
+        start, all_day = None, source.date
     else:
-        start, date = f"{source.date}T{source.time}+00:00", None
+        start, all_day = f"{source.date}T{source.time}+00:00", None
 
     return {
         "label": label or session_type.value.title(),
         "type": session_type,
         "start": start,
-        "date": date,
+        "date": all_day,
+        "round": source.round if source.round != event_round else None,
     }
 
 
@@ -174,8 +195,14 @@ def merge_event(event: EventConfig, old_sources: list[SourceSnapshot],
 
 
 def merge_session(session: SessionConfig, new_source: SourceSnapshot, *,
-                  was_event_name: str, now_event_name: str) -> list[str]:
+                  was_event_name: str, now_event_name: str,
+                  was_event_round: int | None = None,
+                  now_event_round: int | None = None) -> list[str]:
     """Apply a fresh provider snapshot to one stored session. Returns the fields taken.
+
+    Every field is measured against the event values of its own generation, so
+    renaming or renumbering the weekend never drags a session's own label or round
+    along with it.
 
     `start` and `date` are merged as a pair: they are two encodings of one fact
     (is the time known?), and treating them independently could leave a session
@@ -184,9 +211,9 @@ def merge_session(session: SessionConfig, new_source: SourceSnapshot, *,
     if session.source is None:
         return []  # manual session: nothing upstream owns any of its fields
 
-    was = derive_session(session.source, was_event_name)
-    now = derive_session(new_source, now_event_name)
-    taken = _take_changed(session, was, now, ("label", "type"))
+    was = derive_session(session.source, was_event_name, was_event_round)
+    now = derive_session(new_source, now_event_name, now_event_round)
+    taken = _take_changed(session, was, now, ("label", "type", "round"))
 
     timing_changed = (was["start"], was["date"]) != (now["start"], now["date"])
     timing_untouched = (session.start, session.date) == (was["start"], was["date"])
@@ -201,19 +228,15 @@ def merge_session(session: SessionConfig, new_source: SourceSnapshot, *,
 def session_from_source(
     source: SourceSnapshot, id_event: str, event_name: str, event_round: int | None = None
 ) -> SessionConfig:
-    """Build a brand-new session from a provider snapshot -- nothing local to preserve.
-
-    `round` is written only when this session runs for a different championship
-    round than the weekend holding it, which only a double-header ever does.
-    """
-    values = derive_session(source, event_name)
+    """Build a brand-new session from a provider snapshot -- nothing local to preserve."""
+    values = derive_session(source, event_name, event_round)
     return SessionConfig(
         id_event=id_event,
         label=values["label"],
         type=values["type"],
         start=values["start"],
         date=values["date"],
-        round=source.round if source.round != event_round else None,
+        round=values["round"],
         source=source,
     )
 
@@ -322,25 +345,29 @@ def sync_snapshot(
             session.source for session in event.sessions
             if session.source is not None and session.source.season == season
         ]
-        was_event_name = derive_event(old_sources)["name"] if old_sources else ""
+        # The baseline is what the provider said last time, captured before
+        # merge_event moves the event on to what it says now.
+        was_values = derive_event(old_sources) if old_sources else {"name": "", "round": None}
         if merge_event(event, old_sources, new_sources):
             updated += 1
         now_values = derive_event(new_sources)
-        now_event_name = now_values["name"]
 
         for provider_event, source in zip(group, new_sources):
             session = session_by_key.get(provider_event.id_event)
             if session is None:
                 session = session_from_source(
-                    source, provider_event.id_event, now_event_name, now_values["round"]
+                    source, provider_event.id_event, now_values["name"], now_values["round"]
                 )
                 event.sessions.append(session)
                 session_by_key[session.key] = session
                 event_by_key[session.key] = event
                 added += 1
                 continue
-            if merge_session(session, source, was_event_name=was_event_name,
-                             now_event_name=now_event_name):
+            if merge_session(
+                session, source,
+                was_event_name=was_values["name"], now_event_name=now_values["name"],
+                was_event_round=was_values["round"], now_event_round=now_values["round"],
+            ):
                 updated += 1
             if session.disappeared_at is not None:
                 session.disappeared_at = None  # reappeared upstream

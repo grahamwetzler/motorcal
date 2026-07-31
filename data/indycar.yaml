@@ -351,7 +351,7 @@ events:
       round: 16
       season: '2026'
 - name: IndyCar Grand Prix of Monterey
-  location: United States
+  location: WeatherTech Raceway Laguna Seca, United States
   round: 18
   sessions:
   - uid: indycar-2026-monterey-qualifying
