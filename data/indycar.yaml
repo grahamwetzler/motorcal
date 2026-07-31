@@ -306,12 +306,12 @@ events:
     note: Inaugural race, added manually from indycar.com; not yet in TheSportsDB
     alarms:
     - '0'
-- name: Snap-on
+- name: Snap-on Milwaukee 250
   location: Milwaukee Mile, United States
   round: 16
   sessions:
   - uid: indycar-2026-milwaukee-qualifying
-    label: INDYCAR Weekend Qualifying
+    label: Qualifying
     type: qualifying
     start: '2026-08-29T15:00:00+00:00'
     status: CONFIRMED
@@ -320,7 +320,7 @@ events:
     alarms:
     - '0'
   - id_event: '2402411'
-    label: Makers and Fixers 250
+    label: 'Race #1'
     type: race
     start: '2026-08-29T18:30:00+00:00'
     status: CONFIRMED
@@ -335,7 +335,7 @@ events:
       round: 15
       season: '2026'
   - id_event: '2402412'
-    label: Milwaukee Mile 250
+    label: 'Race #2'
     type: race
     start: '2026-08-30T17:00:00+00:00'
     status: CONFIRMED
