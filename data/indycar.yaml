@@ -233,7 +233,7 @@ events:
 - id_event: '2402410'
   summary: Ontario Honda Dealers Indy at Markham
   start: '2026-08-16T16:00:00+00:00'
-  location: Canada
+  location: Streets of Markham, Canada
   status: CONFIRMED
   alarms:
   - '0'
