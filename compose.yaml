@@ -1,9 +1,6 @@
 services:
   app:
     image: ghcr.io/grahamwetzler/motorcal:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       THESPORTSDB_API_KEY: "${THESPORTSDB_API_KEY:?THESPORTSDB_API_KEY must be set}"
