@@ -1,16 +1,33 @@
+from datetime import datetime, timezone
+
 from fastapi.testclient import TestClient
 from tests.conftest import make_config, make_series
 
-from motorcal.web import create_app
+from motorcal.models import EventStatus, PublishedEvent, SessionType
+from motorcal.web import Publication, create_app
 
 ROOT_CONFIG = make_config(series={"wec": make_series()})
 ICS = b"BEGIN:VCALENDAR\r\nSUMMARY:6 Hours of Imola\r\nEND:VCALENDAR\r\n"
 
+NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
-def _client(feeds=None):
+
+def _client(feeds=None, published=None):
     app = create_app(ROOT_CONFIG)
-    app.state.feeds = feeds or {}
+    app.state.publication = Publication(
+        config=ROOT_CONFIG, feeds=feeds or {}, published=published or {}
+    )
     return TestClient(app)
+
+
+def _event(uid, session_type):
+    return PublishedEvent(
+        uid=uid, series="wec", session_type=session_type, summary=uid,
+        start=datetime(2026, 4, 19, 13, tzinfo=timezone.utc), all_day_date=None,
+        time_confirmed=True, duration_seconds=3600, location=None, description="D",
+        status=EventStatus.CONFIRMED, sequence=1, dtstamp=NOW, last_modified=NOW,
+        fingerprint="fp", event_key=uid,
+    )
 
 
 def test_unconfigured_series_returns_404():
@@ -60,3 +77,41 @@ def test_etag_changes_when_the_feed_content_changes():
     second = _client({"wec": ICS + b"X"}).get("/wec.ics")
 
     assert first.headers["etag"] != second.headers["etag"]
+
+
+def test_default_request_serves_the_unfiltered_feed_unchanged():
+    events = {"wec": [_event("practice", SessionType.PRACTICE), _event("race", SessionType.RACE)]}
+    response = _client({"wec": ICS}, events).get("/wec.ics")
+
+    assert response.content == ICS
+
+
+def test_practices_false_excludes_practice_sessions_but_keeps_race():
+    events = {"wec": [_event("practice", SessionType.PRACTICE), _event("race", SessionType.RACE)]}
+    response = _client({"wec": ICS}, events).get("/wec.ics", params={"practices": "false"})
+
+    assert b"UID:practice" not in response.content
+    assert b"UID:race" in response.content
+
+
+def test_qualifying_false_excludes_qualifying_hyperpole_and_sprint_qualifying():
+    events = {
+        "wec": [
+            _event("q", SessionType.QUALIFYING),
+            _event("hp", SessionType.HYPERPOLE),
+            _event("sq", SessionType.SPRINT_QUALIFYING),
+            _event("race", SessionType.RACE),
+        ]
+    }
+    response = _client({"wec": ICS}, events).get("/wec.ics", params={"qualifying": "false"})
+
+    assert b"UID:q\r\n" not in response.content
+    assert b"UID:hp" not in response.content
+    assert b"UID:sq" not in response.content
+    assert b"UID:race" in response.content
+
+
+def test_filtered_request_returns_503_when_series_has_no_feed_at_all():
+    response = _client({}, {}).get("/wec.ics", params={"practices": "false"})
+
+    assert response.status_code == 503

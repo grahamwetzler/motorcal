@@ -38,7 +38,9 @@ anything else in there.
    docker compose up -d
    ```
 
-4. Subscribe at `https://<your-domain>/<series>.ics`.
+4. Subscribe at `https://<your-domain>/<series>.ics`. Races are always
+   included; add `?practices=false` and/or `?qualifying=false` to drop those
+   session types from the feed.
 
 5. Edit events by hand in the series YAML files under `data/`. Changes are
    picked up within ~30 seconds.
