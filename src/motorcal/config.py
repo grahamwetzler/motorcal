@@ -215,6 +215,7 @@ class SessionConfig(StrictModel):
     status: str = EventStatus.CONFIRMED.value
     note: str | None = None
     alarms: list[str] | None = None  # None = fall back to series/global defaults
+    round: int | None = None  # only when it differs from the event's -- see EventConfig
     disappeared_at: str | None = None
     source: SourceSnapshot | None = None
 
@@ -261,12 +262,18 @@ class EventConfig(StrictModel):
 
     Name, location and round are stored once here rather than repeated on every
     session, and each published session is summarised as "{name} {label}".
+
+    `round` is the weekend's first championship round. A double-header runs two
+    rounds over one weekend; its second race carries its own `round` to say so.
     """
 
     name: str
     location: str | None = None
     round: int | None = None
     sessions: list[SessionConfig] = []
+
+    def round_of(self, session: SessionConfig) -> int | None:
+        return session.round if session.round is not None else self.round
 
     @model_validator(mode="after")
     def validate_has_sessions(self) -> "EventConfig":

@@ -27,9 +27,13 @@ tracking, delete your value and let the next refresh repopulate it.
 `duration`, `status`, `note`, and `alarms` are never provider-owned.
 
 An event's `name:`, `location:` and `round:` are merged the same way, against
-what the provider called that weekend as a whole. Moving a session between
-events is always yours to do — the refresh only ever adds a new session to the
-event that already holds its round.
+what the provider called that weekend as a whole.
+
+The provider reports one round at a time; the refresh groups rounds run at the
+same place within a day of each other into one event, so a double-header weekend
+keeps its two races and its shared qualifying together. If it ever gets that
+wrong, move the sessions by hand — a refresh only adds a new session to the event
+that already holds its weekend, and never moves one you placed.
 
 **Comments do not survive a refresh** — the file is rewritten from parsed data.
 Put anything you want to keep in a session's `note:`, which also shows up in the

@@ -114,8 +114,9 @@ def build_description(
     """
     source = session.source
     lines: list[str] = []
-    if event.round is not None:
-        lines.append(f"Round: {event.round}")
+    round_number = event.round_of(session)
+    if round_number is not None:
+        lines.append(f"Round: {round_number}")
 
     lines.append("Source: TheSportsDB" if source else "Source: local event")
     if race_only and session.type == SessionType.RACE:

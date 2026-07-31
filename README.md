@@ -111,6 +111,30 @@ how a one-session weekend with nothing to distinguish reads best.
 alarm defaults are looked up by. It is guessed from the label when the session
 first appears; correct it by hand and your value stands.
 
+An event holds every session of its weekend, including a double-header's second
+race. `round:` on the event is the weekend's first championship round; a session
+running for a later one says so itself:
+
+```yaml
+  - name: Snap-on
+    location: Milwaukee Mile, United States
+    round: 16
+    sessions:
+      - uid: indycar-2026-milwaukee-qualifying
+        label: INDYCAR Weekend Qualifying
+        type: qualifying
+        start: '2026-08-29T15:00:00+00:00'
+      - id_event: "2402411"
+        label: Makers and Fixers 250
+        type: race
+        start: '2026-08-29T18:30:00+00:00'
+      - id_event: "2402412"
+        label: Milwaukee Mile 250
+        type: race
+        start: '2026-08-30T17:00:00+00:00'
+        round: 17                # a second race, for the next round
+```
+
 Use `start:` for a confirmed time or `date:` for an all-day entry — exactly one.
 A provider session with only `date:` is published with a "(time TBC)" suffix,
 since that means the time hasn't been announced yet.

@@ -49,10 +49,18 @@ def test_event_name_is_the_session_name_that_prefixes_the_others():
     ]) == "6 Hours of Imola"
 
 
-def test_event_name_falls_back_to_the_shortest_when_nothing_prefixes():
+def test_event_name_of_a_two_race_weekend_drops_the_session_word_they_share():
+    """Neither race name prefixes the other, so the weekend is what they share --
+    without the "Race" that belongs to the sessions, not the weekend."""
     assert event_name_from([
-        "Snap-on INDYCAR Weekend Qualifying", "Snap On Milwaukee 250",
+        "Snap On Milwaukee 250 Race #1", "Snap On Milwaukee 250 Race #2",
     ]) == "Snap On Milwaukee 250"
+
+
+def test_event_name_falls_back_to_the_shortest_when_nothing_is_shared():
+    assert event_name_from([
+        "Weekend Qualifying", "Milwaukee 250",
+    ]) == "Milwaukee 250"
 
 
 def test_derive_event_takes_the_most_complete_location_of_the_weekend():
@@ -264,6 +272,62 @@ def test_sync_groups_a_round_into_one_event_with_its_sessions():
         ("2", "Qualifying", SessionType.QUALIFYING),
         ("1", "Race", SessionType.RACE),
     ]
+
+
+def test_a_double_header_weekend_is_one_event_with_both_races():
+    """Two championship rounds at one venue on consecutive days are one weekend, and
+    every session of it -- including the qualifying they share -- belongs together."""
+    series = _series()
+
+    _sync(series, snapshot([
+        provider_event("r1", name="Snap On Milwaukee 250 Race #1", round=15,
+                       date="2026-08-29", venue="Milwaukee Mile", country="United States"),
+        provider_event("r2", name="Snap On Milwaukee 250 Race #2", round=16,
+                       date="2026-08-30", venue="Milwaukee Mile", country="United States"),
+    ]))
+
+    assert len(series.events) == 1
+    event = series.events[0]
+    assert event.name == "Snap On Milwaukee 250"
+    assert event.round == 15
+    assert [(s.label, s.type, s.round) for s in event.sessions] == [
+        ("Race #1", SessionType.RACE, None),   # the weekend's own round
+        ("Race #2", SessionType.RACE, 16),     # runs for the next one
+    ]
+
+
+def test_the_same_venue_a_week_later_is_a_separate_weekend():
+    series = _series()
+
+    _sync(series, snapshot([
+        provider_event("1", name="Austrian Grand Prix", round=1, date="2026-07-05",
+                       venue="Red Bull Ring", country="Austria"),
+        provider_event("2", name="Styrian Grand Prix", round=2, date="2026-07-12",
+                       venue="Red Bull Ring", country="Austria"),
+    ]))
+
+    assert [e.name for e in series.events] == ["Austrian Grand Prix", "Styrian Grand Prix"]
+
+
+def test_a_weekend_stored_as_two_events_is_folded_into_one():
+    """Files written before a round was recognised as a double-header converge on
+    the next refresh instead of staying split -- hand-added sessions included."""
+    series = _series()
+    _sync(series, snapshot([
+        provider_event("r1", name="Milwaukee 250 Race #1", round=15, date="2026-08-29",
+                       venue="Milwaukee Mile", country="United States"),
+    ]))
+    series.events[0].sessions.append(manual_session("quali", label="Qualifying"))
+    # The second race turns up only now, making it a double-header.
+    _sync(series, snapshot([
+        provider_event("r1", name="Milwaukee 250 Race #1", round=15, date="2026-08-29",
+                       venue="Milwaukee Mile", country="United States"),
+        provider_event("r2", name="Milwaukee 250 Race #2", round=16, date="2026-08-30",
+                       venue="Milwaukee Mile", country="United States"),
+    ]))
+
+    assert len(series.events) == 1
+    assert {s.key for s in series.events[0].sessions} == {"r1", "r2", "quali"}
 
 
 def test_sync_keeps_separate_rounds_as_separate_events():

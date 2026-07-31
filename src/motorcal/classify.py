@@ -23,7 +23,22 @@ _RULES: list[tuple[re.Pattern[str], SessionType]] = [
     (re.compile(r"hyperpole", re.IGNORECASE), SessionType.HYPERPOLE),
     (re.compile(r"qualifying", re.IGNORECASE), SessionType.QUALIFYING),
     (re.compile(r"practice", re.IGNORECASE), SessionType.PRACTICE),
+    # Last: a weekend running two races labels them "Race 1"/"Race 2" rather than
+    # leaving the label empty, and those are still races.
+    (re.compile(r"\brace\b", re.IGNORECASE), SessionType.RACE),
 ]
+
+# A trailing session word and anything after it, for recovering a weekend's name
+# from session names that share no full-name prefix ("... 250 Race #1" -> "... 250").
+_SESSION_SUFFIX_RE = re.compile(
+    r"\s+(sprint qualifying|free practice|practice|sprint|hyperpole|qualifying|race)\b.*$",
+    re.IGNORECASE,
+)
+
+
+def strip_session_suffix(name: str) -> str:
+    """Drop a trailing session word from a name, leaving the weekend it belongs to."""
+    return _SESSION_SUFFIX_RE.sub("", name).strip()
 
 
 def classify_session(label: str, round_number: int) -> SessionType:
