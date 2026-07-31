@@ -13,7 +13,6 @@ events:
   round: 2
   sessions:
   - id_event: '2415565'
-    label: Race
     type: race
     start: '2026-03-21T14:00:00+00:00'
     duration: 720m
@@ -31,7 +30,6 @@ events:
   round: 3
   sessions:
   - id_event: '2415566'
-    label: Race
     type: race
     start: '2026-04-18T20:05:00+00:00'
     duration: 100m
@@ -49,7 +47,6 @@ events:
   round: 4
   sessions:
   - id_event: '2415567'
-    label: Race
     type: race
     date: '2026-05-03'
     status: CONFIRMED
@@ -66,7 +63,6 @@ events:
   round: 5
   sessions:
   - id_event: '2415568'
-    label: Race
     type: race
     date: '2026-05-30'
     duration: 100m
@@ -84,7 +80,6 @@ events:
   round: 6
   sessions:
   - id_event: '2415569'
-    label: Race
     type: race
     start: '2026-06-28T16:00:00+00:00'
     duration: 360m
@@ -102,7 +97,6 @@ events:
   round: 7
   sessions:
   - id_event: '2415570'
-    label: Race
     type: race
     start: '2026-07-12T18:00:00+00:00'
     status: CONFIRMED
@@ -119,7 +113,6 @@ events:
   round: 8
   sessions:
   - id_event: '2415571'
-    label: Race
     type: race
     start: '2026-08-02T15:30:00+00:00'
     duration: 360m
@@ -137,7 +130,6 @@ events:
   round: 9
   sessions:
   - id_event: '2415572'
-    label: Race
     type: race
     start: '2026-08-23T16:00:00+00:00'
     status: CONFIRMED
@@ -154,7 +146,6 @@ events:
   round: 10
   sessions:
   - id_event: '2415573'
-    label: Race
     type: race
     start: '2026-09-20T19:00:00+00:00'
     status: CONFIRMED
@@ -171,7 +162,6 @@ events:
   round: 11
   sessions:
   - id_event: '2415574'
-    label: Race
     type: race
     start: '2026-10-03T16:00:00+00:00'
     duration: 600m

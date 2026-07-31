@@ -28,7 +28,6 @@ events:
       round: 1
       season: '2026'
   - id_event: '2408111'
-    label: Race
     type: race
     start: '2026-03-08T04:00:00+00:00'
     duration: 2h
