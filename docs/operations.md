@@ -26,8 +26,17 @@ tracking, delete your value and let the next refresh repopulate it.
 
 `duration`, `status`, `note`, and `alarms` are never provider-owned.
 
+An event's `name:`, `location:` and `round:` are merged the same way, against
+what the provider called that weekend as a whole.
+
+The provider reports one round at a time; the refresh groups rounds run at the
+same place within a day of each other into one event, so a double-header weekend
+keeps its two races and its shared qualifying together. If it ever gets that
+wrong, move the sessions by hand — a refresh only adds a new session to the event
+that already holds its weekend, and never moves one you placed.
+
 **Comments do not survive a refresh** — the file is rewritten from parsed data.
-Put anything you want to keep in an event's `note:`, which also shows up in the
+Put anything you want to keep in a session's `note:`, which also shows up in the
 calendar description.
 
 ## Backups
@@ -118,16 +127,16 @@ stays pinned until you switch back to `:latest`.
 
 ## Unclassified events
 
-Container logs carry an `Unclassified events:` warning listing UIDs whose
-session name didn't match any of that series' classification rules
-(`src/motorcal/classify.py`). They are still published — just without an
-inferred alarm or duration. An entry here usually means TheSportsDB introduced
-a new session-name format.
+Container logs carry an `Unclassified events:` warning listing UIDs of sessions
+stored as `type: unknown` — their label matched none of the classification rules
+(`src/motorcal/classify.py`) when they first appeared. They are still published,
+just without an inferred alarm or duration. An entry here usually means
+TheSportsDB introduced a new session-name format.
 
-Two fixes, depending on scope. For a one-off, set that event's `duration:` and
-`alarms:` directly in the series file. For a naming pattern that will recur,
-extend the series' rule list in `classify.py` — classification rules are code,
-not configuration.
+The fix is usually the session file: set that session's `type:` to what it
+actually is, and your value stands from then on. For a naming pattern that will
+recur, extend the rule list in `classify.py` too, so the next session named that
+way classifies itself.
 
 ## Interpreting stale, incomplete, and suspicious-empty refreshes
 

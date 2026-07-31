@@ -51,7 +51,7 @@ def test_refresh_cycle_fetches_and_publishes(monkeypatch):
     result = _run(config)
 
     assert result.series_season_outcomes["wec"]["2026"] == "committed"
-    assert [e.id_event for e in config.series["wec"].events] == ["2421035"]
+    assert [s.key for _, s in config.series["wec"].iter_sessions()] == ["2421035"]
     assert result.published["wec"][0].uid == f"thesportsdb-2421035@{UID_DOMAIN}"
     assert result.diagnostics["events_published"] == 1
 
@@ -84,14 +84,14 @@ def test_refresh_cycle_preserves_a_hand_edited_field(monkeypatch):
     _run(config, state)
 
     event = config.series["wec"].events[0]
-    event.summary = "6 Hours of Imola (my title)"
-    event.duration = "6h"
+    event.name = "6 Hours of Imola (my title)"
+    event.sessions[0].duration = "6h"
 
     _run(config, state, now=datetime(2026, 1, 2, tzinfo=timezone.utc))
 
     event = config.series["wec"].events[0]
-    assert event.summary == "6 Hours of Imola (my title)"
-    assert event.duration == "6h"
+    assert event.name == "6 Hours of Imola (my title)"
+    assert event.sessions[0].duration == "6h"
 
 
 def test_refresh_cycle_leaves_manual_events_alone(monkeypatch):
@@ -101,9 +101,11 @@ def test_refresh_cycle_leaves_manual_events_alone(monkeypatch):
 
     _run(config)
 
-    mine = next(e for e in config.series["wec"].events if e.key == "mine")
-    assert mine.summary == "Test Day"
-    assert mine.disappeared_at is None
+    event, session = next(
+        pair for pair in config.series["wec"].iter_sessions() if pair[1].key == "mine"
+    )
+    assert event.name == "Test Day"
+    assert session.disappeared_at is None
 
 
 def test_refresh_cycle_fetches_next_season_after_the_cutoff(monkeypatch):
@@ -154,7 +156,7 @@ def test_a_refresh_merges_into_what_is_on_disk_not_a_stale_copy(monkeypatch, tmp
 
     # Someone edits the file directly, the way a person would.
     on_disk = load_config(config_dir, uid_domain=UID_DOMAIN)
-    on_disk.series["wec"].events[0].summary = "Edited by hand"
+    on_disk.series["wec"].events[0].name = "Edited by hand"
     save_series(config_dir, "wec", on_disk.series["wec"])
 
     # Cycle two, done correctly: re-read, merge, write back.
@@ -162,6 +164,7 @@ def test_a_refresh_merges_into_what_is_on_disk_not_a_stale_copy(monkeypatch, tmp
     run_refresh_cycle(fresh, state, api_key="3", now=datetime(2026, 1, 2, tzinfo=timezone.utc))
     save_series(config_dir, "wec", fresh.series["wec"])
 
-    assert load_config(config_dir, uid_domain=UID_DOMAIN).series["wec"].events[0].summary == "Edited by hand"
+    reloaded = load_config(config_dir, uid_domain=UID_DOMAIN)
+    assert reloaded.series["wec"].events[0].name == "Edited by hand"
     # And the stale copy, had it been used, would indeed have clobbered it.
-    assert stale.series["wec"].events[0].summary == "6 Hours of Imola"
+    assert stale.series["wec"].events[0].name == "6 Hours of Imola"

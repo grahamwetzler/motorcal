@@ -1,20 +1,20 @@
 from datetime import datetime, timezone
 
-from tests.conftest import manual_event, source_event
+from tests.conftest import manual_session, source_session
 
-from motorcal.models import EventStatus, PublishedEvent, SessionType, event_uid
+from motorcal.models import EventStatus, PublishedEvent, SessionType, session_uid
 
 
 def test_provider_backed_uid_format():
     assert (
-        event_uid(source_event("2421035"), "racing.example.com")
+        session_uid(source_session("2421035"), "racing.example.com")
         == "thesportsdb-2421035@racing.example.com"
     )
 
 
-def test_manual_event_uid_format():
+def test_manual_session_uid_format():
     assert (
-        event_uid(manual_event("imsa-2026-rolex-24"), "racing.example.com")
+        session_uid(manual_session("imsa-2026-rolex-24"), "racing.example.com")
         == "local-imsa-2026-rolex-24@racing.example.com"
     )
 
@@ -38,7 +38,7 @@ def test_published_event_construction():
         last_modified=now,
         fingerprint="deadbeef",
         alarms=["-1d", "-30m"],
-        event_key="2421035",
+        session_key="2421035",
     )
     assert pub.session_type is SessionType.RACE
     assert pub.status is EventStatus.CONFIRMED

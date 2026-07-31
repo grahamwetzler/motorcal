@@ -10,1539 +10,1517 @@ alerts:
   qualifying:
   - '0'
 events:
-- id_event: '2408107'
-  summary: Australian Grand Prix Practice 1
-  start: '2026-03-06T01:30:00+00:00'
-  duration: 90m
+- name: Australian Grand Prix
   location: Albert Park Circuit, Australia
-  status: CONFIRMED
-  note: edited by hand to test the merge
   round: 1
-  source:
-    name: Australian Grand Prix Practice 1
-    date: '2026-03-06'
-    time: 01:30:00
-    venue: Albert Park Circuit
-    country: Australia
-    round: 1
-    season: '2026'
-- id_event: '2408108'
-  summary: Australian Grand Prix Practice 2
-  start: '2026-03-06T05:00:00+00:00'
-  location: Albert Park Circuit, Australia
-  status: CONFIRMED
-  round: 1
-  source:
-    name: Australian Grand Prix Practice 2
-    date: '2026-03-06'
-    time: 05:00:00
-    venue: Albert Park Circuit
-    country: Australia
-    round: 1
-    season: '2026'
-- id_event: '2408109'
-  summary: Australian Grand Prix Practice 3
-  start: '2026-03-07T01:30:00+00:00'
-  location: Australia
-  status: CONFIRMED
-  round: 1
-  source:
-    name: Australian Grand Prix Practice 3
-    date: '2026-03-07'
-    time: 01:30:00
-    country: Australia
-    round: 1
-    season: '2026'
-- id_event: '2408110'
-  summary: Australian Grand Prix Qualifying
-  start: '2026-03-07T05:00:00+00:00'
-  location: Albert Park Circuit, Australia
-  status: CONFIRMED
-  round: 1
-  source:
-    name: Australian Grand Prix Qualifying
-    date: '2026-03-07'
-    time: 05:00:00
-    venue: Albert Park Circuit
-    country: Australia
-    round: 1
-    season: '2026'
-- id_event: '2408111'
-  summary: Australian Grand Prix
-  start: '2026-03-08T04:00:00+00:00'
-  location: Albert Park Circuit, Australia
-  status: CONFIRMED
-  round: 1
-  source:
-    name: Australian Grand Prix
-    date: '2026-03-08'
-    time: 04:00:00
-    venue: Albert Park Circuit
-    country: Australia
-    round: 1
-    season: '2026'
-- id_event: '2408112'
-  summary: Chinese Grand Prix Practice 1
-  start: '2026-03-13T03:30:00+00:00'
+  sessions:
+  - id_event: '2408107'
+    label: Practice 1
+    type: practice
+    start: '2026-03-06T01:30:00+00:00'
+    duration: 90m
+    status: CONFIRMED
+    note: edited by hand to test the merge
+    source:
+      name: Australian Grand Prix Practice 1
+      date: '2026-03-06'
+      time: 01:30:00
+      venue: Albert Park Circuit
+      country: Australia
+      round: 1
+      season: '2026'
+  - id_event: '2408108'
+    label: Practice 2
+    type: practice
+    start: '2026-03-06T05:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Australian Grand Prix Practice 2
+      date: '2026-03-06'
+      time: 05:00:00
+      venue: Albert Park Circuit
+      country: Australia
+      round: 1
+      season: '2026'
+  - id_event: '2408109'
+    label: Practice 3
+    type: practice
+    start: '2026-03-07T01:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Australian Grand Prix Practice 3
+      date: '2026-03-07'
+      time: 01:30:00
+      country: Australia
+      round: 1
+      season: '2026'
+  - id_event: '2408110'
+    label: Qualifying
+    type: qualifying
+    start: '2026-03-07T05:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Australian Grand Prix Qualifying
+      date: '2026-03-07'
+      time: 05:00:00
+      venue: Albert Park Circuit
+      country: Australia
+      round: 1
+      season: '2026'
+  - id_event: '2408111'
+    label: Race
+    type: race
+    start: '2026-03-08T04:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Australian Grand Prix
+      date: '2026-03-08'
+      time: 04:00:00
+      venue: Albert Park Circuit
+      country: Australia
+      round: 1
+      season: '2026'
+- name: Chinese Grand Prix
   location: Shanghai International Circuit, China
-  status: CONFIRMED
   round: 2
-  source:
-    name: Chinese Grand Prix Practice 1
-    date: '2026-03-13'
-    time: 03:30:00
-    venue: Shanghai International Circuit
-    country: China
-    round: 2
-    season: '2026'
-- id_event: '2408113'
-  summary: Chinese Grand Prix Sprint Qualifying
-  start: '2026-03-13T07:30:00+00:00'
-  location: Shanghai International Circuit, China
-  status: CONFIRMED
-  round: 2
-  source:
-    name: Chinese Grand Prix Sprint Qualifying
-    date: '2026-03-13'
-    time: 07:30:00
-    venue: Shanghai International Circuit
-    country: China
-    round: 2
-    season: '2026'
-- id_event: '2408114'
-  summary: Chinese Grand Prix Sprint
-  start: '2026-03-14T03:00:00+00:00'
-  location: Shanghai International Circuit, China
-  status: CONFIRMED
-  round: 2
-  source:
-    name: Chinese Grand Prix Sprint
-    date: '2026-03-14'
-    time: 03:00:00
-    venue: Shanghai International Circuit
-    country: China
-    round: 2
-    season: '2026'
-- id_event: '2408115'
-  summary: Chinese Grand Prix Qualifying
-  start: '2026-03-14T07:30:00+00:00'
-  location: China
-  status: CONFIRMED
-  round: 2
-  source:
-    name: Chinese Grand Prix Qualifying
-    date: '2026-03-14'
-    time: 07:30:00
-    country: China
-    round: 2
-    season: '2026'
-- id_event: '2408116'
-  summary: Chinese Grand Prix
-  start: '2026-03-15T07:00:00+00:00'
-  location: Shanghai International Circuit, China
-  status: CONFIRMED
-  round: 2
-  source:
-    name: Chinese Grand Prix
-    date: '2026-03-15'
-    time: 07:00:00
-    venue: Shanghai International Circuit
-    country: China
-    round: 2
-    season: '2026'
-- id_event: '2408117'
-  summary: Japanese Grand Prix Practice 1
-  start: '2026-03-27T02:30:00+00:00'
+  sessions:
+  - id_event: '2408112'
+    label: Practice 1
+    type: practice
+    start: '2026-03-13T03:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Chinese Grand Prix Practice 1
+      date: '2026-03-13'
+      time: 03:30:00
+      venue: Shanghai International Circuit
+      country: China
+      round: 2
+      season: '2026'
+  - id_event: '2408113'
+    label: Sprint Qualifying
+    type: sprint_qualifying
+    start: '2026-03-13T07:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Chinese Grand Prix Sprint Qualifying
+      date: '2026-03-13'
+      time: 07:30:00
+      venue: Shanghai International Circuit
+      country: China
+      round: 2
+      season: '2026'
+  - id_event: '2408114'
+    label: Sprint
+    type: sprint
+    start: '2026-03-14T03:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Chinese Grand Prix Sprint
+      date: '2026-03-14'
+      time: 03:00:00
+      venue: Shanghai International Circuit
+      country: China
+      round: 2
+      season: '2026'
+  - id_event: '2408115'
+    label: Qualifying
+    type: qualifying
+    start: '2026-03-14T07:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Chinese Grand Prix Qualifying
+      date: '2026-03-14'
+      time: 07:30:00
+      country: China
+      round: 2
+      season: '2026'
+  - id_event: '2408116'
+    label: Race
+    type: race
+    start: '2026-03-15T07:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Chinese Grand Prix
+      date: '2026-03-15'
+      time: 07:00:00
+      venue: Shanghai International Circuit
+      country: China
+      round: 2
+      season: '2026'
+- name: Japanese Grand Prix
   location: Suzuka International Racing Course, Japan
-  status: CONFIRMED
   round: 3
-  source:
-    name: Japanese Grand Prix Practice 1
-    date: '2026-03-27'
-    time: 02:30:00
-    venue: Suzuka International Racing Course
-    country: Japan
-    round: 3
-    season: '2026'
-- id_event: '2408118'
-  summary: Japanese Grand Prix Practice 2
-  start: '2026-03-27T06:00:00+00:00'
-  location: Suzuka International Racing Course, Japan
-  status: CONFIRMED
-  round: 3
-  source:
-    name: Japanese Grand Prix Practice 2
-    date: '2026-03-27'
-    time: 06:00:00
-    venue: Suzuka International Racing Course
-    country: Japan
-    round: 3
-    season: '2026'
-- id_event: '2408119'
-  summary: Japanese Grand Prix Practice 3
-  start: '2026-03-28T02:30:00+00:00'
-  location: Suzuka International Racing Course, Japan
-  status: CONFIRMED
-  round: 3
-  source:
-    name: Japanese Grand Prix Practice 3
-    date: '2026-03-28'
-    time: 02:30:00
-    venue: Suzuka International Racing Course
-    country: Japan
-    round: 3
-    season: '2026'
-- id_event: '2408120'
-  summary: Japanese Grand Prix Qualifying
-  start: '2026-03-28T06:00:00+00:00'
-  location: Suzuka International Racing Course, Japan
-  status: CONFIRMED
-  round: 3
-  source:
-    name: Japanese Grand Prix Qualifying
-    date: '2026-03-28'
-    time: 06:00:00
-    venue: Suzuka International Racing Course
-    country: Japan
-    round: 3
-    season: '2026'
-- id_event: '2408121'
-  summary: Japanese Grand Prix
-  start: '2026-03-29T05:00:00+00:00'
-  location: Suzuka International Racing Course, Japan
-  status: CONFIRMED
-  round: 3
-  source:
-    name: Japanese Grand Prix
-    date: '2026-03-29'
-    time: 05:00:00
-    venue: Suzuka International Racing Course
-    country: Japan
-    round: 3
-    season: '2026'
-- id_event: '2408132'
-  summary: Miami Grand Prix Practice 1
-  start: '2026-05-01T16:00:00+00:00'
+  sessions:
+  - id_event: '2408117'
+    label: Practice 1
+    type: practice
+    start: '2026-03-27T02:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Japanese Grand Prix Practice 1
+      date: '2026-03-27'
+      time: 02:30:00
+      venue: Suzuka International Racing Course
+      country: Japan
+      round: 3
+      season: '2026'
+  - id_event: '2408118'
+    label: Practice 2
+    type: practice
+    start: '2026-03-27T06:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Japanese Grand Prix Practice 2
+      date: '2026-03-27'
+      time: 06:00:00
+      venue: Suzuka International Racing Course
+      country: Japan
+      round: 3
+      season: '2026'
+  - id_event: '2408119'
+    label: Practice 3
+    type: practice
+    start: '2026-03-28T02:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Japanese Grand Prix Practice 3
+      date: '2026-03-28'
+      time: 02:30:00
+      venue: Suzuka International Racing Course
+      country: Japan
+      round: 3
+      season: '2026'
+  - id_event: '2408120'
+    label: Qualifying
+    type: qualifying
+    start: '2026-03-28T06:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Japanese Grand Prix Qualifying
+      date: '2026-03-28'
+      time: 06:00:00
+      venue: Suzuka International Racing Course
+      country: Japan
+      round: 3
+      season: '2026'
+  - id_event: '2408121'
+    label: Race
+    type: race
+    start: '2026-03-29T05:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Japanese Grand Prix
+      date: '2026-03-29'
+      time: 05:00:00
+      venue: Suzuka International Racing Course
+      country: Japan
+      round: 3
+      season: '2026'
+- name: Miami Grand Prix
   location: Miami International Autodrome, United States
-  status: CONFIRMED
   round: 4
-  source:
-    name: Miami Grand Prix Practice 1
-    date: '2026-05-01'
-    time: '16:00:00'
-    venue: Miami International Autodrome
-    country: United States
-    round: 4
-    season: '2026'
-- id_event: '2408133'
-  summary: Miami Grand Prix Sprint Qualifying
-  start: '2026-05-01T20:30:00+00:00'
-  location: United States
-  status: CONFIRMED
-  round: 4
-  source:
-    name: Miami Grand Prix Sprint Qualifying
-    date: '2026-05-01'
-    time: '20:30:00'
-    country: United States
-    round: 4
-    season: '2026'
-- id_event: '2408134'
-  summary: Miami Grand Prix Sprint
-  start: '2026-05-02T16:00:00+00:00'
-  location: Miami International Autodrome, United States
-  status: CONFIRMED
-  round: 4
-  source:
-    name: Miami Grand Prix Sprint
-    date: '2026-05-02'
-    time: '16:00:00'
-    venue: Miami International Autodrome
-    country: United States
-    round: 4
-    season: '2026'
-- id_event: '2408135'
-  summary: Miami Grand Prix Qualifying
-  start: '2026-05-02T20:00:00+00:00'
-  location: Miami International Autodrome, United States
-  status: CONFIRMED
-  round: 4
-  source:
-    name: Miami Grand Prix Qualifying
-    date: '2026-05-02'
-    time: '20:00:00'
-    venue: Miami International Autodrome
-    country: United States
-    round: 4
-    season: '2026'
-- id_event: '2408136'
-  summary: Miami Grand Prix
-  start: '2026-05-03T17:00:00+00:00'
-  location: Miami International Autodrome, United States
-  status: CONFIRMED
-  round: 4
-  source:
-    name: Miami Grand Prix
-    date: '2026-05-03'
-    time: '17:00:00'
-    venue: Miami International Autodrome
-    country: United States
-    round: 4
-    season: '2026'
-- id_event: '2408152'
-  summary: Canadian Grand Prix Practice 1
-  start: '2026-05-22T16:30:00+00:00'
+  sessions:
+  - id_event: '2408132'
+    label: Practice 1
+    type: practice
+    start: '2026-05-01T16:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Miami Grand Prix Practice 1
+      date: '2026-05-01'
+      time: '16:00:00'
+      venue: Miami International Autodrome
+      country: United States
+      round: 4
+      season: '2026'
+  - id_event: '2408133'
+    label: Sprint Qualifying
+    type: sprint_qualifying
+    start: '2026-05-01T20:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Miami Grand Prix Sprint Qualifying
+      date: '2026-05-01'
+      time: '20:30:00'
+      country: United States
+      round: 4
+      season: '2026'
+  - id_event: '2408134'
+    label: Sprint
+    type: sprint
+    start: '2026-05-02T16:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Miami Grand Prix Sprint
+      date: '2026-05-02'
+      time: '16:00:00'
+      venue: Miami International Autodrome
+      country: United States
+      round: 4
+      season: '2026'
+  - id_event: '2408135'
+    label: Qualifying
+    type: qualifying
+    start: '2026-05-02T20:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Miami Grand Prix Qualifying
+      date: '2026-05-02'
+      time: '20:00:00'
+      venue: Miami International Autodrome
+      country: United States
+      round: 4
+      season: '2026'
+  - id_event: '2408136'
+    label: Race
+    type: race
+    start: '2026-05-03T17:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Miami Grand Prix
+      date: '2026-05-03'
+      time: '17:00:00'
+      venue: Miami International Autodrome
+      country: United States
+      round: 4
+      season: '2026'
+- name: Canadian Grand Prix
   location: Circuit Gilles Villeneuve, Canada
-  status: CONFIRMED
   round: 5
-  source:
-    name: Canadian Grand Prix Practice 1
-    date: '2026-05-22'
-    time: '16:30:00'
-    venue: Circuit Gilles Villeneuve
-    country: Canada
-    round: 5
-    season: '2026'
-- id_event: '2408153'
-  summary: Canadian Grand Prix Sprint Qualifying
-  start: '2026-05-22T20:30:00+00:00'
-  location: Circuit Gilles Villeneuve, Canada
-  status: CONFIRMED
-  round: 5
-  source:
-    name: Canadian Grand Prix Sprint Qualifying
-    date: '2026-05-22'
-    time: '20:30:00'
-    venue: Circuit Gilles Villeneuve
-    country: Canada
-    round: 5
-    season: '2026'
-- id_event: '2408154'
-  summary: Canadian Grand Prix Sprint
-  start: '2026-05-23T16:00:00+00:00'
-  location: Circuit Gilles Villeneuve, Canada
-  status: CONFIRMED
-  round: 5
-  source:
-    name: Canadian Grand Prix Sprint
-    date: '2026-05-23'
-    time: '16:00:00'
-    venue: Circuit Gilles Villeneuve
-    country: Canada
-    round: 5
-    season: '2026'
-- id_event: '2408155'
-  summary: Canadian Grand Prix Qualifying
-  start: '2026-05-23T20:00:00+00:00'
-  location: Circuit Gilles Villeneuve, Canada
-  status: CONFIRMED
-  round: 5
-  source:
-    name: Canadian Grand Prix Qualifying
-    date: '2026-05-23'
-    time: '20:00:00'
-    venue: Circuit Gilles Villeneuve
-    country: Canada
-    round: 5
-    season: '2026'
-- id_event: '2408156'
-  summary: Canadian Grand Prix
-  start: '2026-05-24T20:00:00+00:00'
-  location: Circuit Gilles Villeneuve, Canada
-  status: CONFIRMED
-  round: 5
-  source:
-    name: Canadian Grand Prix
-    date: '2026-05-24'
-    time: '20:00:00'
-    venue: Circuit Gilles Villeneuve
-    country: Canada
-    round: 5
-    season: '2026'
-- id_event: '2408142'
-  summary: Monaco Grand Prix Practice 1
-  start: '2026-06-05T11:30:00+00:00'
+  sessions:
+  - id_event: '2408152'
+    label: Practice 1
+    type: practice
+    start: '2026-05-22T16:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Canadian Grand Prix Practice 1
+      date: '2026-05-22'
+      time: '16:30:00'
+      venue: Circuit Gilles Villeneuve
+      country: Canada
+      round: 5
+      season: '2026'
+  - id_event: '2408153'
+    label: Sprint Qualifying
+    type: sprint_qualifying
+    start: '2026-05-22T20:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Canadian Grand Prix Sprint Qualifying
+      date: '2026-05-22'
+      time: '20:30:00'
+      venue: Circuit Gilles Villeneuve
+      country: Canada
+      round: 5
+      season: '2026'
+  - id_event: '2408154'
+    label: Sprint
+    type: sprint
+    start: '2026-05-23T16:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Canadian Grand Prix Sprint
+      date: '2026-05-23'
+      time: '16:00:00'
+      venue: Circuit Gilles Villeneuve
+      country: Canada
+      round: 5
+      season: '2026'
+  - id_event: '2408155'
+    label: Qualifying
+    type: qualifying
+    start: '2026-05-23T20:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Canadian Grand Prix Qualifying
+      date: '2026-05-23'
+      time: '20:00:00'
+      venue: Circuit Gilles Villeneuve
+      country: Canada
+      round: 5
+      season: '2026'
+  - id_event: '2408156'
+    label: Race
+    type: race
+    start: '2026-05-24T20:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Canadian Grand Prix
+      date: '2026-05-24'
+      time: '20:00:00'
+      venue: Circuit Gilles Villeneuve
+      country: Canada
+      round: 5
+      season: '2026'
+- name: Monaco Grand Prix
   location: Circuit de Monaco, Monaco
-  status: CONFIRMED
   round: 6
-  source:
-    name: Monaco Grand Prix Practice 1
-    date: '2026-06-05'
-    time: '11:30:00'
-    venue: Circuit de Monaco
-    country: Monaco
-    round: 6
-    season: '2026'
-- id_event: '2408143'
-  summary: Monaco Grand Prix Practice 2
-  start: '2026-06-05T15:00:00+00:00'
-  location: Circuit de Monaco, Monaco
-  status: CONFIRMED
-  round: 6
-  source:
-    name: Monaco Grand Prix Practice 2
-    date: '2026-06-05'
-    time: '15:00:00'
-    venue: Circuit de Monaco
-    country: Monaco
-    round: 6
-    season: '2026'
-- id_event: '2408144'
-  summary: Monaco Grand Prix Practice 3
-  start: '2026-06-06T10:30:00+00:00'
-  location: Circuit de Monaco, Monaco
-  status: CONFIRMED
-  round: 6
-  source:
-    name: Monaco Grand Prix Practice 3
-    date: '2026-06-06'
-    time: '10:30:00'
-    venue: Circuit de Monaco
-    country: Monaco
-    round: 6
-    season: '2026'
-- id_event: '2408145'
-  summary: Monaco Grand Prix Qualifying
-  start: '2026-06-06T14:00:00+00:00'
-  location: Circuit de Monaco, Monaco
-  status: CONFIRMED
-  round: 6
-  source:
-    name: Monaco Grand Prix Qualifying
-    date: '2026-06-06'
-    time: '14:00:00'
-    venue: Circuit de Monaco
-    country: Monaco
-    round: 6
-    season: '2026'
-- id_event: '2408146'
-  summary: Monaco Grand Prix
-  start: '2026-06-07T13:00:00+00:00'
-  location: Circuit de Monaco, Monaco
-  status: CONFIRMED
-  round: 6
-  source:
-    name: Monaco Grand Prix
-    date: '2026-06-07'
-    time: '13:00:00'
-    venue: Circuit de Monaco
-    country: Monaco
-    round: 6
-    season: '2026'
-- id_event: '2408147'
-  summary: Barcelona-Catalunya Grand Prix Practice 1
-  start: '2026-06-12T11:30:00+00:00'
+  sessions:
+  - id_event: '2408142'
+    label: Practice 1
+    type: practice
+    start: '2026-06-05T11:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Monaco Grand Prix Practice 1
+      date: '2026-06-05'
+      time: '11:30:00'
+      venue: Circuit de Monaco
+      country: Monaco
+      round: 6
+      season: '2026'
+  - id_event: '2408143'
+    label: Practice 2
+    type: practice
+    start: '2026-06-05T15:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Monaco Grand Prix Practice 2
+      date: '2026-06-05'
+      time: '15:00:00'
+      venue: Circuit de Monaco
+      country: Monaco
+      round: 6
+      season: '2026'
+  - id_event: '2408144'
+    label: Practice 3
+    type: practice
+    start: '2026-06-06T10:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Monaco Grand Prix Practice 3
+      date: '2026-06-06'
+      time: '10:30:00'
+      venue: Circuit de Monaco
+      country: Monaco
+      round: 6
+      season: '2026'
+  - id_event: '2408145'
+    label: Qualifying
+    type: qualifying
+    start: '2026-06-06T14:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Monaco Grand Prix Qualifying
+      date: '2026-06-06'
+      time: '14:00:00'
+      venue: Circuit de Monaco
+      country: Monaco
+      round: 6
+      season: '2026'
+  - id_event: '2408146'
+    label: Race
+    type: race
+    start: '2026-06-07T13:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Monaco Grand Prix
+      date: '2026-06-07'
+      time: '13:00:00'
+      venue: Circuit de Monaco
+      country: Monaco
+      round: 6
+      season: '2026'
+- name: Barcelona-Catalunya Grand Prix
   location: Circuit de Barcelona-Catalunya, Spain
-  status: CONFIRMED
   round: 7
-  source:
-    name: Barcelona-Catalunya Grand Prix Practice 1
-    date: '2026-06-12'
-    time: '11:30:00'
-    venue: Circuit de Barcelona-Catalunya
-    country: Spain
-    round: 7
-    season: '2026'
-- id_event: '2408148'
-  summary: Barcelona-Catalunya Grand Prix Practice 2
-  start: '2026-06-12T15:00:00+00:00'
-  location: Circuit de Barcelona-Catalunya, Spain
-  status: CONFIRMED
-  round: 7
-  source:
-    name: Barcelona-Catalunya Grand Prix Practice 2
-    date: '2026-06-12'
-    time: '15:00:00'
-    venue: Circuit de Barcelona-Catalunya
-    country: Spain
-    round: 7
-    season: '2026'
-- id_event: '2408149'
-  summary: Barcelona-Catalunya Grand Prix Practice 3
-  start: '2026-06-13T10:30:00+00:00'
-  location: Circuit de Barcelona-Catalunya, Spain
-  status: CONFIRMED
-  round: 7
-  source:
-    name: Barcelona-Catalunya Grand Prix Practice 3
-    date: '2026-06-13'
-    time: '10:30:00'
-    venue: Circuit de Barcelona-Catalunya
-    country: Spain
-    round: 7
-    season: '2026'
-- id_event: '2408150'
-  summary: Barcelona-Catalunya Grand Prix Qualifying
-  start: '2026-06-13T14:00:00+00:00'
-  location: Circuit de Barcelona-Catalunya, Spain
-  status: CONFIRMED
-  round: 7
-  source:
-    name: Barcelona-Catalunya Grand Prix Qualifying
-    date: '2026-06-13'
-    time: '14:00:00'
-    venue: Circuit de Barcelona-Catalunya
-    country: Spain
-    round: 7
-    season: '2026'
-- id_event: '2408151'
-  summary: Barcelona-Catalunya Grand Prix
-  start: '2026-06-14T13:00:00+00:00'
-  location: Circuit de Barcelona-Catalunya, Spain
-  status: CONFIRMED
-  round: 7
-  source:
-    name: Barcelona-Catalunya Grand Prix
-    date: '2026-06-14'
-    time: '13:00:00'
-    venue: Circuit de Barcelona-Catalunya
-    country: Spain
-    round: 7
-    season: '2026'
-- id_event: '2408157'
-  summary: Austrian Grand Prix Practice 1
-  start: '2026-06-26T11:30:00+00:00'
+  sessions:
+  - id_event: '2408147'
+    label: Practice 1
+    type: practice
+    start: '2026-06-12T11:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Barcelona-Catalunya Grand Prix Practice 1
+      date: '2026-06-12'
+      time: '11:30:00'
+      venue: Circuit de Barcelona-Catalunya
+      country: Spain
+      round: 7
+      season: '2026'
+  - id_event: '2408148'
+    label: Practice 2
+    type: practice
+    start: '2026-06-12T15:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Barcelona-Catalunya Grand Prix Practice 2
+      date: '2026-06-12'
+      time: '15:00:00'
+      venue: Circuit de Barcelona-Catalunya
+      country: Spain
+      round: 7
+      season: '2026'
+  - id_event: '2408149'
+    label: Practice 3
+    type: practice
+    start: '2026-06-13T10:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Barcelona-Catalunya Grand Prix Practice 3
+      date: '2026-06-13'
+      time: '10:30:00'
+      venue: Circuit de Barcelona-Catalunya
+      country: Spain
+      round: 7
+      season: '2026'
+  - id_event: '2408150'
+    label: Qualifying
+    type: qualifying
+    start: '2026-06-13T14:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Barcelona-Catalunya Grand Prix Qualifying
+      date: '2026-06-13'
+      time: '14:00:00'
+      venue: Circuit de Barcelona-Catalunya
+      country: Spain
+      round: 7
+      season: '2026'
+  - id_event: '2408151'
+    label: Race
+    type: race
+    start: '2026-06-14T13:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Barcelona-Catalunya Grand Prix
+      date: '2026-06-14'
+      time: '13:00:00'
+      venue: Circuit de Barcelona-Catalunya
+      country: Spain
+      round: 7
+      season: '2026'
+- name: Austrian Grand Prix
   location: Red Bull Ring, Austria
-  status: CONFIRMED
   round: 8
-  source:
-    name: Austrian Grand Prix Practice 1
-    date: '2026-06-26'
-    time: '11:30:00'
-    venue: Red Bull Ring
-    country: Austria
-    round: 8
-    season: '2026'
-- id_event: '2408158'
-  summary: Austrian Grand Prix Practice 2
-  start: '2026-06-26T15:00:00+00:00'
-  location: Red Bull Ring, Austria
-  status: CONFIRMED
-  round: 8
-  source:
-    name: Austrian Grand Prix Practice 2
-    date: '2026-06-26'
-    time: '15:00:00'
-    venue: Red Bull Ring
-    country: Austria
-    round: 8
-    season: '2026'
-- id_event: '2408159'
-  summary: Austrian Grand Prix Practice 3
-  start: '2026-06-27T10:30:00+00:00'
-  location: Red Bull Ring, Austria
-  status: CONFIRMED
-  round: 8
-  source:
-    name: Austrian Grand Prix Practice 3
-    date: '2026-06-27'
-    time: '10:30:00'
-    venue: Red Bull Ring
-    country: Austria
-    round: 8
-    season: '2026'
-- id_event: '2408160'
-  summary: Austrian Grand Prix Qualifying
-  start: '2026-06-27T14:00:00+00:00'
-  location: Red Bull Ring, Austria
-  status: CONFIRMED
-  round: 8
-  source:
-    name: Austrian Grand Prix Qualifying
-    date: '2026-06-27'
-    time: '14:00:00'
-    venue: Red Bull Ring
-    country: Austria
-    round: 8
-    season: '2026'
-- id_event: '2408161'
-  summary: Austrian Grand Prix
-  start: '2026-06-28T13:00:00+00:00'
-  location: Red Bull Ring, Austria
-  status: CONFIRMED
-  round: 8
-  source:
-    name: Austrian Grand Prix
-    date: '2026-06-28'
-    time: '13:00:00'
-    venue: Red Bull Ring
-    country: Austria
-    round: 8
-    season: '2026'
-- id_event: '2408162'
-  summary: British Grand Prix Practice 1
-  start: '2026-07-03T11:30:00+00:00'
+  sessions:
+  - id_event: '2408157'
+    label: Practice 1
+    type: practice
+    start: '2026-06-26T11:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Austrian Grand Prix Practice 1
+      date: '2026-06-26'
+      time: '11:30:00'
+      venue: Red Bull Ring
+      country: Austria
+      round: 8
+      season: '2026'
+  - id_event: '2408158'
+    label: Practice 2
+    type: practice
+    start: '2026-06-26T15:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Austrian Grand Prix Practice 2
+      date: '2026-06-26'
+      time: '15:00:00'
+      venue: Red Bull Ring
+      country: Austria
+      round: 8
+      season: '2026'
+  - id_event: '2408159'
+    label: Practice 3
+    type: practice
+    start: '2026-06-27T10:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Austrian Grand Prix Practice 3
+      date: '2026-06-27'
+      time: '10:30:00'
+      venue: Red Bull Ring
+      country: Austria
+      round: 8
+      season: '2026'
+  - id_event: '2408160'
+    label: Qualifying
+    type: qualifying
+    start: '2026-06-27T14:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Austrian Grand Prix Qualifying
+      date: '2026-06-27'
+      time: '14:00:00'
+      venue: Red Bull Ring
+      country: Austria
+      round: 8
+      season: '2026'
+  - id_event: '2408161'
+    label: Race
+    type: race
+    start: '2026-06-28T13:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Austrian Grand Prix
+      date: '2026-06-28'
+      time: '13:00:00'
+      venue: Red Bull Ring
+      country: Austria
+      round: 8
+      season: '2026'
+- name: British Grand Prix
   location: Silverstone Circuit, United Kingdom
-  status: CONFIRMED
   round: 9
-  source:
-    name: British Grand Prix Practice 1
-    date: '2026-07-03'
-    time: '11:30:00'
-    venue: Silverstone Circuit
-    country: United Kingdom
-    round: 9
-    season: '2026'
-- id_event: '2408163'
-  summary: British Grand Prix Sprint Qualifying
-  start: '2026-07-03T15:30:00+00:00'
-  location: Silverstone Circuit, United Kingdom
-  status: CONFIRMED
-  round: 9
-  source:
-    name: British Grand Prix Sprint Qualifying
-    date: '2026-07-03'
-    time: '15:30:00'
-    venue: Silverstone Circuit
-    country: United Kingdom
-    round: 9
-    season: '2026'
-- id_event: '2408164'
-  summary: British Grand Prix Sprint
-  start: '2026-07-04T11:00:00+00:00'
-  location: Silverstone Circuit, United Kingdom
-  status: CONFIRMED
-  round: 9
-  source:
-    name: British Grand Prix Sprint
-    date: '2026-07-04'
-    time: '11:00:00'
-    venue: Silverstone Circuit
-    country: United Kingdom
-    round: 9
-    season: '2026'
-- id_event: '2408165'
-  summary: British Grand Prix Qualifying
-  start: '2026-07-04T15:00:00+00:00'
-  location: Silverstone Circuit, United Kingdom
-  status: CONFIRMED
-  round: 9
-  source:
-    name: British Grand Prix Qualifying
-    date: '2026-07-04'
-    time: '15:00:00'
-    venue: Silverstone Circuit
-    country: United Kingdom
-    round: 9
-    season: '2026'
-- id_event: '2408166'
-  summary: British Grand Prix
-  start: '2026-07-05T14:00:00+00:00'
-  location: Silverstone Circuit, United Kingdom
-  status: CONFIRMED
-  round: 9
-  source:
-    name: British Grand Prix
-    date: '2026-07-05'
-    time: '14:00:00'
-    venue: Silverstone Circuit
-    country: United Kingdom
-    round: 9
-    season: '2026'
-- id_event: '2408167'
-  summary: Belgian Grand Prix Practice 1
-  start: '2026-07-17T11:30:00+00:00'
+  sessions:
+  - id_event: '2408162'
+    label: Practice 1
+    type: practice
+    start: '2026-07-03T11:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: British Grand Prix Practice 1
+      date: '2026-07-03'
+      time: '11:30:00'
+      venue: Silverstone Circuit
+      country: United Kingdom
+      round: 9
+      season: '2026'
+  - id_event: '2408163'
+    label: Sprint Qualifying
+    type: sprint_qualifying
+    start: '2026-07-03T15:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: British Grand Prix Sprint Qualifying
+      date: '2026-07-03'
+      time: '15:30:00'
+      venue: Silverstone Circuit
+      country: United Kingdom
+      round: 9
+      season: '2026'
+  - id_event: '2408164'
+    label: Sprint
+    type: sprint
+    start: '2026-07-04T11:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: British Grand Prix Sprint
+      date: '2026-07-04'
+      time: '11:00:00'
+      venue: Silverstone Circuit
+      country: United Kingdom
+      round: 9
+      season: '2026'
+  - id_event: '2408165'
+    label: Qualifying
+    type: qualifying
+    start: '2026-07-04T15:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: British Grand Prix Qualifying
+      date: '2026-07-04'
+      time: '15:00:00'
+      venue: Silverstone Circuit
+      country: United Kingdom
+      round: 9
+      season: '2026'
+  - id_event: '2408166'
+    label: Race
+    type: race
+    start: '2026-07-05T14:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: British Grand Prix
+      date: '2026-07-05'
+      time: '14:00:00'
+      venue: Silverstone Circuit
+      country: United Kingdom
+      round: 9
+      season: '2026'
+- name: Belgian Grand Prix
   location: Circuit de Spa-Francorchamps, Belgium
-  status: CONFIRMED
   round: 10
-  source:
-    name: Belgian Grand Prix Practice 1
-    date: '2026-07-17'
-    time: '11:30:00'
-    venue: Circuit de Spa-Francorchamps
-    country: Belgium
-    round: 10
-    season: '2026'
-- id_event: '2408168'
-  summary: Belgian Grand Prix Practice 2
-  start: '2026-07-17T15:00:00+00:00'
-  location: Circuit de Spa-Francorchamps, Belgium
-  status: CONFIRMED
-  round: 10
-  source:
-    name: Belgian Grand Prix Practice 2
-    date: '2026-07-17'
-    time: '15:00:00'
-    venue: Circuit de Spa-Francorchamps
-    country: Belgium
-    round: 10
-    season: '2026'
-- id_event: '2408169'
-  summary: Belgian Grand Prix Practice 3
-  start: '2026-07-18T10:30:00+00:00'
-  location: Circuit de Spa-Francorchamps, Belgium
-  status: CONFIRMED
-  round: 10
-  source:
-    name: Belgian Grand Prix Practice 3
-    date: '2026-07-18'
-    time: '10:30:00'
-    venue: Circuit de Spa-Francorchamps
-    country: Belgium
-    round: 10
-    season: '2026'
-- id_event: '2408170'
-  summary: Belgian Grand Prix Qualifying
-  start: '2026-07-18T14:00:00+00:00'
-  location: Circuit de Spa-Francorchamps, Belgium
-  status: CONFIRMED
-  round: 10
-  source:
-    name: Belgian Grand Prix Qualifying
-    date: '2026-07-18'
-    time: '14:00:00'
-    venue: Circuit de Spa-Francorchamps
-    country: Belgium
-    round: 10
-    season: '2026'
-- id_event: '2408171'
-  summary: Belgian Grand Prix
-  start: '2026-07-19T13:00:00+00:00'
-  location: Circuit de Spa-Francorchamps, Belgium
-  status: CONFIRMED
-  round: 10
-  source:
-    name: Belgian Grand Prix
-    date: '2026-07-19'
-    time: '13:00:00'
-    venue: Circuit de Spa-Francorchamps
-    country: Belgium
-    round: 10
-    season: '2026'
-- id_event: '2408172'
-  summary: Hungarian Grand Prix Practice 1
-  start: '2026-07-24T11:30:00+00:00'
+  sessions:
+  - id_event: '2408167'
+    label: Practice 1
+    type: practice
+    start: '2026-07-17T11:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Belgian Grand Prix Practice 1
+      date: '2026-07-17'
+      time: '11:30:00'
+      venue: Circuit de Spa-Francorchamps
+      country: Belgium
+      round: 10
+      season: '2026'
+  - id_event: '2408168'
+    label: Practice 2
+    type: practice
+    start: '2026-07-17T15:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Belgian Grand Prix Practice 2
+      date: '2026-07-17'
+      time: '15:00:00'
+      venue: Circuit de Spa-Francorchamps
+      country: Belgium
+      round: 10
+      season: '2026'
+  - id_event: '2408169'
+    label: Practice 3
+    type: practice
+    start: '2026-07-18T10:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Belgian Grand Prix Practice 3
+      date: '2026-07-18'
+      time: '10:30:00'
+      venue: Circuit de Spa-Francorchamps
+      country: Belgium
+      round: 10
+      season: '2026'
+  - id_event: '2408170'
+    label: Qualifying
+    type: qualifying
+    start: '2026-07-18T14:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Belgian Grand Prix Qualifying
+      date: '2026-07-18'
+      time: '14:00:00'
+      venue: Circuit de Spa-Francorchamps
+      country: Belgium
+      round: 10
+      season: '2026'
+  - id_event: '2408171'
+    label: Race
+    type: race
+    start: '2026-07-19T13:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Belgian Grand Prix
+      date: '2026-07-19'
+      time: '13:00:00'
+      venue: Circuit de Spa-Francorchamps
+      country: Belgium
+      round: 10
+      season: '2026'
+- name: Hungarian Grand Prix
   location: Hungaroring, Hungary
-  status: CONFIRMED
   round: 11
-  source:
-    name: Hungarian Grand Prix Practice 1
-    date: '2026-07-24'
-    time: '11:30:00'
-    venue: Hungaroring
-    country: Hungary
-    round: 11
-    season: '2026'
-- id_event: '2408173'
-  summary: Hungarian Grand Prix Practice 2
-  start: '2026-07-24T15:00:00+00:00'
-  location: Hungaroring, Hungary
-  status: CONFIRMED
-  round: 11
-  source:
-    name: Hungarian Grand Prix Practice 2
-    date: '2026-07-24'
-    time: '15:00:00'
-    venue: Hungaroring
-    country: Hungary
-    round: 11
-    season: '2026'
-- id_event: '2408174'
-  summary: Hungarian Grand Prix Practice 3
-  start: '2026-07-25T10:30:00+00:00'
-  location: Hungaroring, Hungary
-  status: CONFIRMED
-  round: 11
-  source:
-    name: Hungarian Grand Prix Practice 3
-    date: '2026-07-25'
-    time: '10:30:00'
-    venue: Hungaroring
-    country: Hungary
-    round: 11
-    season: '2026'
-- id_event: '2408175'
-  summary: Hungarian Grand Prix Qualifying
-  start: '2026-07-25T14:00:00+00:00'
-  location: Hungaroring, Hungary
-  status: CONFIRMED
-  round: 11
-  source:
-    name: Hungarian Grand Prix Qualifying
-    date: '2026-07-25'
-    time: '14:00:00'
-    venue: Hungaroring
-    country: Hungary
-    round: 11
-    season: '2026'
-- id_event: '2408176'
-  summary: Hungarian Grand Prix
-  start: '2026-07-26T13:00:00+00:00'
-  location: Hungaroring, Hungary
-  status: CONFIRMED
-  round: 11
-  source:
-    name: Hungarian Grand Prix
-    date: '2026-07-26'
-    time: '13:00:00'
-    venue: Hungaroring
-    country: Hungary
-    round: 11
-    season: '2026'
-- id_event: '2408177'
-  summary: Dutch Grand Prix Practice 1
-  start: '2026-08-21T10:30:00+00:00'
+  sessions:
+  - id_event: '2408172'
+    label: Practice 1
+    type: practice
+    start: '2026-07-24T11:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Hungarian Grand Prix Practice 1
+      date: '2026-07-24'
+      time: '11:30:00'
+      venue: Hungaroring
+      country: Hungary
+      round: 11
+      season: '2026'
+  - id_event: '2408173'
+    label: Practice 2
+    type: practice
+    start: '2026-07-24T15:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Hungarian Grand Prix Practice 2
+      date: '2026-07-24'
+      time: '15:00:00'
+      venue: Hungaroring
+      country: Hungary
+      round: 11
+      season: '2026'
+  - id_event: '2408174'
+    label: Practice 3
+    type: practice
+    start: '2026-07-25T10:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Hungarian Grand Prix Practice 3
+      date: '2026-07-25'
+      time: '10:30:00'
+      venue: Hungaroring
+      country: Hungary
+      round: 11
+      season: '2026'
+  - id_event: '2408175'
+    label: Qualifying
+    type: qualifying
+    start: '2026-07-25T14:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Hungarian Grand Prix Qualifying
+      date: '2026-07-25'
+      time: '14:00:00'
+      venue: Hungaroring
+      country: Hungary
+      round: 11
+      season: '2026'
+  - id_event: '2408176'
+    label: Race
+    type: race
+    start: '2026-07-26T13:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Hungarian Grand Prix
+      date: '2026-07-26'
+      time: '13:00:00'
+      venue: Hungaroring
+      country: Hungary
+      round: 11
+      season: '2026'
+- name: Dutch Grand Prix
   location: Circuit Zandvoort, The Netherlands
-  status: CONFIRMED
   round: 12
-  source:
-    name: Dutch Grand Prix Practice 1
-    date: '2026-08-21'
-    time: '10:30:00'
-    venue: Circuit Zandvoort
-    country: The Netherlands
-    round: 12
-    season: '2026'
-- id_event: '2408178'
-  summary: Dutch Grand Prix Sprint Qualifying
-  start: '2026-08-21T14:30:00+00:00'
-  location: Circuit Zandvoort, The Netherlands
-  status: CONFIRMED
-  round: 12
-  source:
-    name: Dutch Grand Prix Sprint Qualifying
-    date: '2026-08-21'
-    time: '14:30:00'
-    venue: Circuit Zandvoort
-    country: The Netherlands
-    round: 12
-    season: '2026'
-- id_event: '2408179'
-  summary: Dutch Grand Prix Sprint
-  start: '2026-08-22T10:00:00+00:00'
-  location: Circuit Zandvoort, The Netherlands
-  status: CONFIRMED
-  round: 12
-  source:
-    name: Dutch Grand Prix Sprint
-    date: '2026-08-22'
-    time: '10:00:00'
-    venue: Circuit Zandvoort
-    country: The Netherlands
-    round: 12
-    season: '2026'
-- id_event: '2408180'
-  summary: Dutch Grand Prix Qualifying
-  start: '2026-08-22T14:00:00+00:00'
-  location: Circuit Zandvoort, The Netherlands
-  status: CONFIRMED
-  round: 12
-  source:
-    name: Dutch Grand Prix Qualifying
-    date: '2026-08-22'
-    time: '14:00:00'
-    venue: Circuit Zandvoort
-    country: The Netherlands
-    round: 12
-    season: '2026'
-- id_event: '2408181'
-  summary: Dutch Grand Prix
-  start: '2026-08-23T13:00:00+00:00'
-  location: Circuit Zandvoort, The Netherlands
-  status: CONFIRMED
-  round: 12
-  source:
-    name: Dutch Grand Prix
-    date: '2026-08-23'
-    time: '13:00:00'
-    venue: Circuit Zandvoort
-    country: The Netherlands
-    round: 12
-    season: '2026'
-- id_event: '2408182'
-  summary: Italian Grand Prix Practice 1
-  start: '2026-09-04T10:30:00+00:00'
+  sessions:
+  - id_event: '2408177'
+    label: Practice 1
+    type: practice
+    start: '2026-08-21T10:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Dutch Grand Prix Practice 1
+      date: '2026-08-21'
+      time: '10:30:00'
+      venue: Circuit Zandvoort
+      country: The Netherlands
+      round: 12
+      season: '2026'
+  - id_event: '2408178'
+    label: Sprint Qualifying
+    type: sprint_qualifying
+    start: '2026-08-21T14:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Dutch Grand Prix Sprint Qualifying
+      date: '2026-08-21'
+      time: '14:30:00'
+      venue: Circuit Zandvoort
+      country: The Netherlands
+      round: 12
+      season: '2026'
+  - id_event: '2408179'
+    label: Sprint
+    type: sprint
+    start: '2026-08-22T10:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Dutch Grand Prix Sprint
+      date: '2026-08-22'
+      time: '10:00:00'
+      venue: Circuit Zandvoort
+      country: The Netherlands
+      round: 12
+      season: '2026'
+  - id_event: '2408180'
+    label: Qualifying
+    type: qualifying
+    start: '2026-08-22T14:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Dutch Grand Prix Qualifying
+      date: '2026-08-22'
+      time: '14:00:00'
+      venue: Circuit Zandvoort
+      country: The Netherlands
+      round: 12
+      season: '2026'
+  - id_event: '2408181'
+    label: Race
+    type: race
+    start: '2026-08-23T13:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Dutch Grand Prix
+      date: '2026-08-23'
+      time: '13:00:00'
+      venue: Circuit Zandvoort
+      country: The Netherlands
+      round: 12
+      season: '2026'
+- name: Italian Grand Prix
   location: Monza Circuit, Italy
-  status: CONFIRMED
   round: 13
-  source:
-    name: Italian Grand Prix Practice 1
-    date: '2026-09-04'
-    time: '10:30:00'
-    venue: Monza Circuit
-    country: Italy
-    round: 13
-    season: '2026'
-- id_event: '2408183'
-  summary: Italian Grand Prix Practice 2
-  start: '2026-09-04T14:00:00+00:00'
-  location: Monza Circuit, Italy
-  status: CONFIRMED
-  round: 13
-  source:
-    name: Italian Grand Prix Practice 2
-    date: '2026-09-04'
-    time: '14:00:00'
-    venue: Monza Circuit
-    country: Italy
-    round: 13
-    season: '2026'
-- id_event: '2408184'
-  summary: Italian Grand Prix Practice 3
-  start: '2026-09-05T10:30:00+00:00'
-  location: Italy
-  status: CONFIRMED
-  round: 13
-  source:
-    name: Italian Grand Prix Practice 3
-    date: '2026-09-05'
-    time: '10:30:00'
-    country: Italy
-    round: 13
-    season: '2026'
-- id_event: '2408185'
-  summary: Italian Grand Prix Qualifying
-  start: '2026-09-05T14:00:00+00:00'
-  location: Monza Circuit, Italy
-  status: CONFIRMED
-  round: 13
-  source:
-    name: Italian Grand Prix Qualifying
-    date: '2026-09-05'
-    time: '14:00:00'
-    venue: Monza Circuit
-    country: Italy
-    round: 13
-    season: '2026'
-- id_event: '2408186'
-  summary: Italian Grand Prix
-  start: '2026-09-06T13:00:00+00:00'
-  location: Monza Circuit, Italy
-  status: CONFIRMED
-  round: 13
-  source:
-    name: Italian Grand Prix
-    date: '2026-09-06'
-    time: '13:00:00'
-    venue: Monza Circuit
-    country: Italy
-    round: 13
-    season: '2026'
-- id_event: '2408915'
-  summary: Spanish Grand Prix Practice 1
-  start: '2026-09-11T11:30:00+00:00'
+  sessions:
+  - id_event: '2408182'
+    label: Practice 1
+    type: practice
+    start: '2026-09-04T10:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Italian Grand Prix Practice 1
+      date: '2026-09-04'
+      time: '10:30:00'
+      venue: Monza Circuit
+      country: Italy
+      round: 13
+      season: '2026'
+  - id_event: '2408183'
+    label: Practice 2
+    type: practice
+    start: '2026-09-04T14:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Italian Grand Prix Practice 2
+      date: '2026-09-04'
+      time: '14:00:00'
+      venue: Monza Circuit
+      country: Italy
+      round: 13
+      season: '2026'
+  - id_event: '2408184'
+    label: Practice 3
+    type: practice
+    start: '2026-09-05T10:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Italian Grand Prix Practice 3
+      date: '2026-09-05'
+      time: '10:30:00'
+      country: Italy
+      round: 13
+      season: '2026'
+  - id_event: '2408185'
+    label: Qualifying
+    type: qualifying
+    start: '2026-09-05T14:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Italian Grand Prix Qualifying
+      date: '2026-09-05'
+      time: '14:00:00'
+      venue: Monza Circuit
+      country: Italy
+      round: 13
+      season: '2026'
+  - id_event: '2408186'
+    label: Race
+    type: race
+    start: '2026-09-06T13:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Italian Grand Prix
+      date: '2026-09-06'
+      time: '13:00:00'
+      venue: Monza Circuit
+      country: Italy
+      round: 13
+      season: '2026'
+- name: Spanish Grand Prix
   location: Madring, Spain
-  status: CONFIRMED
   round: 14
-  source:
-    name: Spanish Grand Prix Practice 1
-    date: '2026-09-11'
-    time: '11:30:00'
-    venue: Madring
-    country: Spain
-    round: 14
-    season: '2026'
-- id_event: '2408916'
-  summary: Spanish Grand Prix Practice 2
-  start: '2026-09-11T15:00:00+00:00'
-  location: Madring, Spain
-  status: CONFIRMED
-  round: 14
-  source:
-    name: Spanish Grand Prix Practice 2
-    date: '2026-09-11'
-    time: '15:00:00'
-    venue: Madring
-    country: Spain
-    round: 14
-    season: '2026'
-- id_event: '2408917'
-  summary: Spanish Grand Prix Practice 3
-  start: '2026-09-12T10:30:00+00:00'
-  location: Madring, Spain
-  status: CONFIRMED
-  round: 14
-  source:
-    name: Spanish Grand Prix Practice 3
-    date: '2026-09-12'
-    time: '10:30:00'
-    venue: Madring
-    country: Spain
-    round: 14
-    season: '2026'
-- id_event: '2408918'
-  summary: Spanish Grand Prix Qualifying
-  start: '2026-09-12T14:00:00+00:00'
-  location: Madring, Spain
-  status: CONFIRMED
-  round: 14
-  source:
-    name: Spanish Grand Prix Qualifying
-    date: '2026-09-12'
-    time: '14:00:00'
-    venue: Madring
-    country: Spain
-    round: 14
-    season: '2026'
-- id_event: '2408914'
-  summary: Spanish Grand Prix
-  start: '2026-09-13T13:00:00+00:00'
-  location: Madring, Spain
-  status: CONFIRMED
-  round: 14
-  source:
-    name: Spanish Grand Prix
-    date: '2026-09-13'
-    time: '13:00:00'
-    venue: Madring
-    country: Spain
-    round: 14
-    season: '2026'
-- id_event: '2408187'
-  summary: Azerbaijan Grand Prix Practice 1
-  start: '2026-09-24T08:30:00+00:00'
+  sessions:
+  - id_event: '2408915'
+    label: Practice 1
+    type: practice
+    start: '2026-09-11T11:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Spanish Grand Prix Practice 1
+      date: '2026-09-11'
+      time: '11:30:00'
+      venue: Madring
+      country: Spain
+      round: 14
+      season: '2026'
+  - id_event: '2408916'
+    label: Practice 2
+    type: practice
+    start: '2026-09-11T15:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Spanish Grand Prix Practice 2
+      date: '2026-09-11'
+      time: '15:00:00'
+      venue: Madring
+      country: Spain
+      round: 14
+      season: '2026'
+  - id_event: '2408917'
+    label: Practice 3
+    type: practice
+    start: '2026-09-12T10:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Spanish Grand Prix Practice 3
+      date: '2026-09-12'
+      time: '10:30:00'
+      venue: Madring
+      country: Spain
+      round: 14
+      season: '2026'
+  - id_event: '2408918'
+    label: Qualifying
+    type: qualifying
+    start: '2026-09-12T14:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Spanish Grand Prix Qualifying
+      date: '2026-09-12'
+      time: '14:00:00'
+      venue: Madring
+      country: Spain
+      round: 14
+      season: '2026'
+  - id_event: '2408914'
+    label: Race
+    type: race
+    start: '2026-09-13T13:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Spanish Grand Prix
+      date: '2026-09-13'
+      time: '13:00:00'
+      venue: Madring
+      country: Spain
+      round: 14
+      season: '2026'
+- name: Azerbaijan Grand Prix
   location: Baku City Circuit, Azerbaijan
-  status: CONFIRMED
   round: 15
-  source:
-    name: Azerbaijan Grand Prix Practice 1
-    date: '2026-09-24'
-    time: 08:30:00
-    venue: Baku City Circuit
-    country: Azerbaijan
-    round: 15
-    season: '2026'
-- id_event: '2408188'
-  summary: Azerbaijan Grand Prix Practice 2
-  start: '2026-09-24T12:00:00+00:00'
-  location: Baku City Circuit, Azerbaijan
-  status: CONFIRMED
-  round: 15
-  source:
-    name: Azerbaijan Grand Prix Practice 2
-    date: '2026-09-24'
-    time: '12:00:00'
-    venue: Baku City Circuit
-    country: Azerbaijan
-    round: 15
-    season: '2026'
-- id_event: '2408189'
-  summary: Azerbaijan Grand Prix Practice 3
-  start: '2026-09-25T08:30:00+00:00'
-  location: Baku City Circuit, Azerbaijan
-  status: CONFIRMED
-  round: 15
-  source:
-    name: Azerbaijan Grand Prix Practice 3
-    date: '2026-09-25'
-    time: 08:30:00
-    venue: Baku City Circuit
-    country: Azerbaijan
-    round: 15
-    season: '2026'
-- id_event: '2408190'
-  summary: Azerbaijan Grand Prix Qualifying
-  start: '2026-09-25T12:00:00+00:00'
-  location: Baku City Circuit, Azerbaijan
-  status: CONFIRMED
-  round: 15
-  source:
-    name: Azerbaijan Grand Prix Qualifying
-    date: '2026-09-25'
-    time: '12:00:00'
-    venue: Baku City Circuit
-    country: Azerbaijan
-    round: 15
-    season: '2026'
-- id_event: '2408191'
-  summary: Azerbaijan Grand Prix
-  start: '2026-09-26T11:00:00+00:00'
-  location: Baku City Circuit, Azerbaijan
-  status: CONFIRMED
-  round: 15
-  source:
-    name: Azerbaijan Grand Prix
-    date: '2026-09-26'
-    time: '11:00:00'
-    venue: Baku City Circuit
-    country: Azerbaijan
-    round: 15
-    season: '2026'
-- id_event: '2408192'
-  summary: Singapore Grand Prix Practice 1
-  start: '2026-10-09T08:30:00+00:00'
+  sessions:
+  - id_event: '2408187'
+    label: Practice 1
+    type: practice
+    start: '2026-09-24T08:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Azerbaijan Grand Prix Practice 1
+      date: '2026-09-24'
+      time: 08:30:00
+      venue: Baku City Circuit
+      country: Azerbaijan
+      round: 15
+      season: '2026'
+  - id_event: '2408188'
+    label: Practice 2
+    type: practice
+    start: '2026-09-24T12:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Azerbaijan Grand Prix Practice 2
+      date: '2026-09-24'
+      time: '12:00:00'
+      venue: Baku City Circuit
+      country: Azerbaijan
+      round: 15
+      season: '2026'
+  - id_event: '2408189'
+    label: Practice 3
+    type: practice
+    start: '2026-09-25T08:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Azerbaijan Grand Prix Practice 3
+      date: '2026-09-25'
+      time: 08:30:00
+      venue: Baku City Circuit
+      country: Azerbaijan
+      round: 15
+      season: '2026'
+  - id_event: '2408190'
+    label: Qualifying
+    type: qualifying
+    start: '2026-09-25T12:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Azerbaijan Grand Prix Qualifying
+      date: '2026-09-25'
+      time: '12:00:00'
+      venue: Baku City Circuit
+      country: Azerbaijan
+      round: 15
+      season: '2026'
+  - id_event: '2408191'
+    label: Race
+    type: race
+    start: '2026-09-26T11:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Azerbaijan Grand Prix
+      date: '2026-09-26'
+      time: '11:00:00'
+      venue: Baku City Circuit
+      country: Azerbaijan
+      round: 15
+      season: '2026'
+- name: Singapore Grand Prix
   location: Marina Bay Street Circuit, Singapore
-  status: CONFIRMED
   round: 16
-  source:
-    name: Singapore Grand Prix Practice 1
-    date: '2026-10-09'
-    time: 08:30:00
-    venue: Marina Bay Street Circuit
-    country: Singapore
-    round: 16
-    season: '2026'
-- id_event: '2408193'
-  summary: Singapore Grand Prix Sprint Qualifying
-  start: '2026-10-09T12:30:00+00:00'
-  location: Marina Bay Street Circuit, Singapore
-  status: CONFIRMED
-  round: 16
-  source:
-    name: Singapore Grand Prix Sprint Qualifying
-    date: '2026-10-09'
-    time: '12:30:00'
-    venue: Marina Bay Street Circuit
-    country: Singapore
-    round: 16
-    season: '2026'
-- id_event: '2408194'
-  summary: Singapore Grand Prix Sprint
-  start: '2026-10-10T09:00:00+00:00'
-  location: Marina Bay Street Circuit, Singapore
-  status: CONFIRMED
-  round: 16
-  source:
-    name: Singapore Grand Prix Sprint
-    date: '2026-10-10'
-    time: 09:00:00
-    venue: Marina Bay Street Circuit
-    country: Singapore
-    round: 16
-    season: '2026'
-- id_event: '2408195'
-  summary: Singapore Grand Prix Qualifying
-  start: '2026-10-10T13:00:00+00:00'
-  location: Marina Bay Street Circuit, Singapore
-  status: CONFIRMED
-  round: 16
-  source:
-    name: Singapore Grand Prix Qualifying
-    date: '2026-10-10'
-    time: '13:00:00'
-    venue: Marina Bay Street Circuit
-    country: Singapore
-    round: 16
-    season: '2026'
-- id_event: '2408196'
-  summary: Singapore Grand Prix
-  start: '2026-10-11T12:00:00+00:00'
-  location: Marina Bay Street Circuit, Singapore
-  status: CONFIRMED
-  round: 16
-  source:
-    name: Singapore Grand Prix
-    date: '2026-10-11'
-    time: '12:00:00'
-    venue: Marina Bay Street Circuit
-    country: Singapore
-    round: 16
-    season: '2026'
-- id_event: '2408197'
-  summary: United States Grand Prix Practice 1
-  start: '2026-10-23T17:30:00+00:00'
+  sessions:
+  - id_event: '2408192'
+    label: Practice 1
+    type: practice
+    start: '2026-10-09T08:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Singapore Grand Prix Practice 1
+      date: '2026-10-09'
+      time: 08:30:00
+      venue: Marina Bay Street Circuit
+      country: Singapore
+      round: 16
+      season: '2026'
+  - id_event: '2408193'
+    label: Sprint Qualifying
+    type: sprint_qualifying
+    start: '2026-10-09T12:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Singapore Grand Prix Sprint Qualifying
+      date: '2026-10-09'
+      time: '12:30:00'
+      venue: Marina Bay Street Circuit
+      country: Singapore
+      round: 16
+      season: '2026'
+  - id_event: '2408194'
+    label: Sprint
+    type: sprint
+    start: '2026-10-10T09:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Singapore Grand Prix Sprint
+      date: '2026-10-10'
+      time: 09:00:00
+      venue: Marina Bay Street Circuit
+      country: Singapore
+      round: 16
+      season: '2026'
+  - id_event: '2408195'
+    label: Qualifying
+    type: qualifying
+    start: '2026-10-10T13:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Singapore Grand Prix Qualifying
+      date: '2026-10-10'
+      time: '13:00:00'
+      venue: Marina Bay Street Circuit
+      country: Singapore
+      round: 16
+      season: '2026'
+  - id_event: '2408196'
+    label: Race
+    type: race
+    start: '2026-10-11T12:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Singapore Grand Prix
+      date: '2026-10-11'
+      time: '12:00:00'
+      venue: Marina Bay Street Circuit
+      country: Singapore
+      round: 16
+      season: '2026'
+- name: United States Grand Prix
   location: Circuit of the Americas, United States
-  status: CONFIRMED
   round: 17
-  source:
-    name: United States Grand Prix Practice 1
-    date: '2026-10-23'
-    time: '17:30:00'
-    venue: Circuit of the Americas
-    country: United States
-    round: 17
-    season: '2026'
-- id_event: '2408198'
-  summary: United States Grand Prix Practice 2
-  start: '2026-10-23T21:00:00+00:00'
-  location: Circuit of the Americas, United States
-  status: CONFIRMED
-  round: 17
-  source:
-    name: United States Grand Prix Practice 2
-    date: '2026-10-23'
-    time: '21:00:00'
-    venue: Circuit of the Americas
-    country: United States
-    round: 17
-    season: '2026'
-- id_event: '2408199'
-  summary: United States Grand Prix Practice 3
-  start: '2026-10-24T17:30:00+00:00'
-  location: Circuit of the Americas, United States
-  status: CONFIRMED
-  round: 17
-  source:
-    name: United States Grand Prix Practice 3
-    date: '2026-10-24'
-    time: '17:30:00'
-    venue: Circuit of the Americas
-    country: United States
-    round: 17
-    season: '2026'
-- id_event: '2408200'
-  summary: United States Grand Prix Qualifying
-  start: '2026-10-24T21:00:00+00:00'
-  location: Circuit of the Americas, United States
-  status: CONFIRMED
-  round: 17
-  source:
-    name: United States Grand Prix Qualifying
-    date: '2026-10-24'
-    time: '21:00:00'
-    venue: Circuit of the Americas
-    country: United States
-    round: 17
-    season: '2026'
-- id_event: '2408201'
-  summary: United States Grand Prix
-  start: '2026-10-25T20:00:00+00:00'
-  location: Circuit of the Americas, United States
-  status: CONFIRMED
-  round: 17
-  source:
-    name: United States Grand Prix
-    date: '2026-10-25'
-    time: '20:00:00'
-    venue: Circuit of the Americas
-    country: United States
-    round: 17
-    season: '2026'
-- id_event: '2408202'
-  summary: Mexico City Grand Prix Practice 1
-  start: '2026-10-30T18:30:00+00:00'
+  sessions:
+  - id_event: '2408197'
+    label: Practice 1
+    type: practice
+    start: '2026-10-23T17:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: United States Grand Prix Practice 1
+      date: '2026-10-23'
+      time: '17:30:00'
+      venue: Circuit of the Americas
+      country: United States
+      round: 17
+      season: '2026'
+  - id_event: '2408198'
+    label: Practice 2
+    type: practice
+    start: '2026-10-23T21:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: United States Grand Prix Practice 2
+      date: '2026-10-23'
+      time: '21:00:00'
+      venue: Circuit of the Americas
+      country: United States
+      round: 17
+      season: '2026'
+  - id_event: '2408199'
+    label: Practice 3
+    type: practice
+    start: '2026-10-24T17:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: United States Grand Prix Practice 3
+      date: '2026-10-24'
+      time: '17:30:00'
+      venue: Circuit of the Americas
+      country: United States
+      round: 17
+      season: '2026'
+  - id_event: '2408200'
+    label: Qualifying
+    type: qualifying
+    start: '2026-10-24T21:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: United States Grand Prix Qualifying
+      date: '2026-10-24'
+      time: '21:00:00'
+      venue: Circuit of the Americas
+      country: United States
+      round: 17
+      season: '2026'
+  - id_event: '2408201'
+    label: Race
+    type: race
+    start: '2026-10-25T20:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: United States Grand Prix
+      date: '2026-10-25'
+      time: '20:00:00'
+      venue: Circuit of the Americas
+      country: United States
+      round: 17
+      season: '2026'
+- name: Mexico City Grand Prix
   location: "Aut\xF3dromo Hermanos Rodr\xEDguez, Mexico"
-  status: CONFIRMED
   round: 18
-  source:
-    name: Mexico City Grand Prix Practice 1
-    date: '2026-10-30'
-    time: '18:30:00'
-    venue: "Aut\xF3dromo Hermanos Rodr\xEDguez"
-    country: Mexico
-    round: 18
-    season: '2026'
-- id_event: '2408203'
-  summary: Mexico City Grand Prix Practice 2
-  start: '2026-10-30T22:00:00+00:00'
-  location: "Aut\xF3dromo Hermanos Rodr\xEDguez, Mexico"
-  status: CONFIRMED
-  round: 18
-  source:
-    name: Mexico City Grand Prix Practice 2
-    date: '2026-10-30'
-    time: '22:00:00'
-    venue: "Aut\xF3dromo Hermanos Rodr\xEDguez"
-    country: Mexico
-    round: 18
-    season: '2026'
-- id_event: '2408204'
-  summary: Mexico City Grand Prix Practice 3
-  start: '2026-10-31T17:30:00+00:00'
-  location: "Aut\xF3dromo Hermanos Rodr\xEDguez, Mexico"
-  status: CONFIRMED
-  round: 18
-  source:
-    name: Mexico City Grand Prix Practice 3
-    date: '2026-10-31'
-    time: '17:30:00'
-    venue: "Aut\xF3dromo Hermanos Rodr\xEDguez"
-    country: Mexico
-    round: 18
-    season: '2026'
-- id_event: '2408205'
-  summary: Mexico City Grand Prix Qualifying
-  start: '2026-10-31T21:00:00+00:00'
-  location: "Aut\xF3dromo Hermanos Rodr\xEDguez, Mexico"
-  status: CONFIRMED
-  round: 18
-  source:
-    name: Mexico City Grand Prix Qualifying
-    date: '2026-10-31'
-    time: '21:00:00'
-    venue: "Aut\xF3dromo Hermanos Rodr\xEDguez"
-    country: Mexico
-    round: 18
-    season: '2026'
-- id_event: '2408206'
-  summary: Mexico City Grand Prix
-  start: '2026-11-01T20:00:00+00:00'
-  location: "Aut\xF3dromo Hermanos Rodr\xEDguez, Mexico"
-  status: CONFIRMED
-  round: 18
-  source:
-    name: Mexico City Grand Prix
-    date: '2026-11-01'
-    time: '20:00:00'
-    venue: "Aut\xF3dromo Hermanos Rodr\xEDguez"
-    country: Mexico
-    round: 18
-    season: '2026'
-- id_event: '2408207'
-  summary: "S\xE3o Paulo Grand Prix Practice 1"
-  start: '2026-11-06T15:30:00+00:00'
+  sessions:
+  - id_event: '2408202'
+    label: Practice 1
+    type: practice
+    start: '2026-10-30T18:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Mexico City Grand Prix Practice 1
+      date: '2026-10-30'
+      time: '18:30:00'
+      venue: "Aut\xF3dromo Hermanos Rodr\xEDguez"
+      country: Mexico
+      round: 18
+      season: '2026'
+  - id_event: '2408203'
+    label: Practice 2
+    type: practice
+    start: '2026-10-30T22:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Mexico City Grand Prix Practice 2
+      date: '2026-10-30'
+      time: '22:00:00'
+      venue: "Aut\xF3dromo Hermanos Rodr\xEDguez"
+      country: Mexico
+      round: 18
+      season: '2026'
+  - id_event: '2408204'
+    label: Practice 3
+    type: practice
+    start: '2026-10-31T17:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Mexico City Grand Prix Practice 3
+      date: '2026-10-31'
+      time: '17:30:00'
+      venue: "Aut\xF3dromo Hermanos Rodr\xEDguez"
+      country: Mexico
+      round: 18
+      season: '2026'
+  - id_event: '2408205'
+    label: Qualifying
+    type: qualifying
+    start: '2026-10-31T21:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Mexico City Grand Prix Qualifying
+      date: '2026-10-31'
+      time: '21:00:00'
+      venue: "Aut\xF3dromo Hermanos Rodr\xEDguez"
+      country: Mexico
+      round: 18
+      season: '2026'
+  - id_event: '2408206'
+    label: Race
+    type: race
+    start: '2026-11-01T20:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Mexico City Grand Prix
+      date: '2026-11-01'
+      time: '20:00:00'
+      venue: "Aut\xF3dromo Hermanos Rodr\xEDguez"
+      country: Mexico
+      round: 18
+      season: '2026'
+- name: "S\xE3o Paulo Grand Prix"
   location: Interlagos Circuit, Brazil
-  status: CONFIRMED
   round: 19
-  source:
-    name: "S\xE3o Paulo Grand Prix Practice 1"
-    date: '2026-11-06'
-    time: '15:30:00'
-    venue: Interlagos Circuit
-    country: Brazil
-    round: 19
-    season: '2026'
-- id_event: '2408208'
-  summary: "S\xE3o Paulo Grand Prix Practice 2"
-  start: '2026-11-06T19:00:00+00:00'
-  location: Interlagos Circuit, Brazil
-  status: CONFIRMED
-  round: 19
-  source:
-    name: "S\xE3o Paulo Grand Prix Practice 2"
-    date: '2026-11-06'
-    time: '19:00:00'
-    venue: Interlagos Circuit
-    country: Brazil
-    round: 19
-    season: '2026'
-- id_event: '2408209'
-  summary: "S\xE3o Paulo Grand Prix Practice 3"
-  start: '2026-11-07T14:30:00+00:00'
-  location: Interlagos Circuit, Brazil
-  status: CONFIRMED
-  round: 19
-  source:
-    name: "S\xE3o Paulo Grand Prix Practice 3"
-    date: '2026-11-07'
-    time: '14:30:00'
-    venue: Interlagos Circuit
-    country: Brazil
-    round: 19
-    season: '2026'
-- id_event: '2408210'
-  summary: "S\xE3o Paulo Grand Prix Qualifying"
-  start: '2026-11-07T18:00:00+00:00'
-  location: Interlagos Circuit, Brazil
-  status: CONFIRMED
-  round: 19
-  source:
-    name: "S\xE3o Paulo Grand Prix Qualifying"
-    date: '2026-11-07'
-    time: '18:00:00'
-    venue: Interlagos Circuit
-    country: Brazil
-    round: 19
-    season: '2026'
-- id_event: '2408211'
-  summary: "S\xE3o Paulo Grand Prix"
-  start: '2026-11-08T17:00:00+00:00'
-  location: Brazil
-  status: CONFIRMED
-  round: 19
-  source:
-    name: "S\xE3o Paulo Grand Prix"
-    date: '2026-11-08'
-    time: '17:00:00'
-    country: Brazil
-    round: 19
-    season: '2026'
-- id_event: '2408212'
-  summary: Las Vegas Grand Prix Practice 1
-  start: '2026-11-20T00:30:00+00:00'
+  sessions:
+  - id_event: '2408207'
+    label: Practice 1
+    type: practice
+    start: '2026-11-06T15:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: "S\xE3o Paulo Grand Prix Practice 1"
+      date: '2026-11-06'
+      time: '15:30:00'
+      venue: Interlagos Circuit
+      country: Brazil
+      round: 19
+      season: '2026'
+  - id_event: '2408208'
+    label: Practice 2
+    type: practice
+    start: '2026-11-06T19:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: "S\xE3o Paulo Grand Prix Practice 2"
+      date: '2026-11-06'
+      time: '19:00:00'
+      venue: Interlagos Circuit
+      country: Brazil
+      round: 19
+      season: '2026'
+  - id_event: '2408209'
+    label: Practice 3
+    type: practice
+    start: '2026-11-07T14:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: "S\xE3o Paulo Grand Prix Practice 3"
+      date: '2026-11-07'
+      time: '14:30:00'
+      venue: Interlagos Circuit
+      country: Brazil
+      round: 19
+      season: '2026'
+  - id_event: '2408210'
+    label: Qualifying
+    type: qualifying
+    start: '2026-11-07T18:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: "S\xE3o Paulo Grand Prix Qualifying"
+      date: '2026-11-07'
+      time: '18:00:00'
+      venue: Interlagos Circuit
+      country: Brazil
+      round: 19
+      season: '2026'
+  - id_event: '2408211'
+    label: Race
+    type: race
+    start: '2026-11-08T17:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: "S\xE3o Paulo Grand Prix"
+      date: '2026-11-08'
+      time: '17:00:00'
+      country: Brazil
+      round: 19
+      season: '2026'
+- name: Las Vegas Grand Prix
   location: Las Vegas Strip Circuit, United States
-  status: CONFIRMED
   round: 20
-  source:
-    name: Las Vegas Grand Prix Practice 1
-    date: '2026-11-20'
-    time: 00:30:00
-    venue: Las Vegas Strip Circuit
-    country: United States
-    round: 20
-    season: '2026'
-- id_event: '2408213'
-  summary: Las Vegas Grand Prix Practice 2
-  start: '2026-11-20T04:00:00+00:00'
-  location: Las Vegas Strip Circuit, United States
-  status: CONFIRMED
-  round: 20
-  source:
-    name: Las Vegas Grand Prix Practice 2
-    date: '2026-11-20'
-    time: 04:00:00
-    venue: Las Vegas Strip Circuit
-    country: United States
-    round: 20
-    season: '2026'
-- id_event: '2408214'
-  summary: Las Vegas Grand Prix Practice 3
-  start: '2026-11-21T00:30:00+00:00'
-  location: Las Vegas Strip Circuit, United States
-  status: CONFIRMED
-  round: 20
-  source:
-    name: Las Vegas Grand Prix Practice 3
-    date: '2026-11-21'
-    time: 00:30:00
-    venue: Las Vegas Strip Circuit
-    country: United States
-    round: 20
-    season: '2026'
-- id_event: '2408215'
-  summary: Las Vegas Grand Prix Qualifying
-  start: '2026-11-21T04:00:00+00:00'
-  location: Las Vegas Strip Circuit, United States
-  status: CONFIRMED
-  round: 20
-  source:
-    name: Las Vegas Grand Prix Qualifying
-    date: '2026-11-21'
-    time: 04:00:00
-    venue: Las Vegas Strip Circuit
-    country: United States
-    round: 20
-    season: '2026'
-- id_event: '2408216'
-  summary: Las Vegas Grand Prix
-  start: '2026-11-22T04:00:00+00:00'
-  location: United States
-  status: CONFIRMED
-  round: 20
-  source:
-    name: Las Vegas Grand Prix
-    date: '2026-11-22'
-    time: 04:00:00
-    country: United States
-    round: 20
-    season: '2026'
-- id_event: '2408217'
-  summary: Qatar Grand Prix Practice 1
-  start: '2026-11-27T13:30:00+00:00'
+  sessions:
+  - id_event: '2408212'
+    label: Practice 1
+    type: practice
+    start: '2026-11-20T00:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Las Vegas Grand Prix Practice 1
+      date: '2026-11-20'
+      time: 00:30:00
+      venue: Las Vegas Strip Circuit
+      country: United States
+      round: 20
+      season: '2026'
+  - id_event: '2408213'
+    label: Practice 2
+    type: practice
+    start: '2026-11-20T04:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Las Vegas Grand Prix Practice 2
+      date: '2026-11-20'
+      time: 04:00:00
+      venue: Las Vegas Strip Circuit
+      country: United States
+      round: 20
+      season: '2026'
+  - id_event: '2408214'
+    label: Practice 3
+    type: practice
+    start: '2026-11-21T00:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Las Vegas Grand Prix Practice 3
+      date: '2026-11-21'
+      time: 00:30:00
+      venue: Las Vegas Strip Circuit
+      country: United States
+      round: 20
+      season: '2026'
+  - id_event: '2408215'
+    label: Qualifying
+    type: qualifying
+    start: '2026-11-21T04:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Las Vegas Grand Prix Qualifying
+      date: '2026-11-21'
+      time: 04:00:00
+      venue: Las Vegas Strip Circuit
+      country: United States
+      round: 20
+      season: '2026'
+  - id_event: '2408216'
+    label: Race
+    type: race
+    start: '2026-11-22T04:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Las Vegas Grand Prix
+      date: '2026-11-22'
+      time: 04:00:00
+      country: United States
+      round: 20
+      season: '2026'
+- name: Qatar Grand Prix
   location: Lusail International Circuit, Qatar
-  status: CONFIRMED
   round: 21
-  source:
-    name: Qatar Grand Prix Practice 1
-    date: '2026-11-27'
-    time: '13:30:00'
-    venue: Lusail International Circuit
-    country: Qatar
-    round: 21
-    season: '2026'
-- id_event: '2408218'
-  summary: Qatar Grand Prix Practice 2
-  start: '2026-11-27T17:00:00+00:00'
-  location: Lusail International Circuit, Qatar
-  status: CONFIRMED
-  round: 21
-  source:
-    name: Qatar Grand Prix Practice 2
-    date: '2026-11-27'
-    time: '17:00:00'
-    venue: Lusail International Circuit
-    country: Qatar
-    round: 21
-    season: '2026'
-- id_event: '2408219'
-  summary: Qatar Grand Prix Practice 3
-  start: '2026-11-28T14:30:00+00:00'
-  location: Lusail International Circuit, Qatar
-  status: CONFIRMED
-  round: 21
-  source:
-    name: Qatar Grand Prix Practice 3
-    date: '2026-11-28'
-    time: '14:30:00'
-    venue: Lusail International Circuit
-    country: Qatar
-    round: 21
-    season: '2026'
-- id_event: '2408220'
-  summary: Qatar Grand Prix Qualifying
-  start: '2026-11-28T18:00:00+00:00'
-  location: Lusail International Circuit, Qatar
-  status: CONFIRMED
-  round: 21
-  source:
-    name: Qatar Grand Prix Qualifying
-    date: '2026-11-28'
-    time: '18:00:00'
-    venue: Lusail International Circuit
-    country: Qatar
-    round: 21
-    season: '2026'
-- id_event: '2408221'
-  summary: Qatar Grand Prix
-  start: '2026-11-29T16:00:00+00:00'
-  location: Lusail International Circuit, Qatar
-  status: CONFIRMED
-  round: 21
-  source:
-    name: Qatar Grand Prix
-    date: '2026-11-29'
-    time: '16:00:00'
-    venue: Lusail International Circuit
-    country: Qatar
-    round: 21
-    season: '2026'
-- id_event: '2408222'
-  summary: Abu Dhabi Grand Prix Practice 1
-  start: '2026-12-04T09:30:00+00:00'
+  sessions:
+  - id_event: '2408217'
+    label: Practice 1
+    type: practice
+    start: '2026-11-27T13:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Qatar Grand Prix Practice 1
+      date: '2026-11-27'
+      time: '13:30:00'
+      venue: Lusail International Circuit
+      country: Qatar
+      round: 21
+      season: '2026'
+  - id_event: '2408218'
+    label: Practice 2
+    type: practice
+    start: '2026-11-27T17:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Qatar Grand Prix Practice 2
+      date: '2026-11-27'
+      time: '17:00:00'
+      venue: Lusail International Circuit
+      country: Qatar
+      round: 21
+      season: '2026'
+  - id_event: '2408219'
+    label: Practice 3
+    type: practice
+    start: '2026-11-28T14:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Qatar Grand Prix Practice 3
+      date: '2026-11-28'
+      time: '14:30:00'
+      venue: Lusail International Circuit
+      country: Qatar
+      round: 21
+      season: '2026'
+  - id_event: '2408220'
+    label: Qualifying
+    type: qualifying
+    start: '2026-11-28T18:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Qatar Grand Prix Qualifying
+      date: '2026-11-28'
+      time: '18:00:00'
+      venue: Lusail International Circuit
+      country: Qatar
+      round: 21
+      season: '2026'
+  - id_event: '2408221'
+    label: Race
+    type: race
+    start: '2026-11-29T16:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Qatar Grand Prix
+      date: '2026-11-29'
+      time: '16:00:00'
+      venue: Lusail International Circuit
+      country: Qatar
+      round: 21
+      season: '2026'
+- name: Abu Dhabi Grand Prix
   location: Yas Marina Circuit, United Arab Emirates
-  status: CONFIRMED
   round: 22
-  source:
-    name: Abu Dhabi Grand Prix Practice 1
-    date: '2026-12-04'
-    time: 09:30:00
-    venue: Yas Marina Circuit
-    country: United Arab Emirates
-    round: 22
-    season: '2026'
-- id_event: '2408223'
-  summary: Abu Dhabi Grand Prix Practice 2
-  start: '2026-12-04T13:00:00+00:00'
-  location: Yas Marina Circuit, United Arab Emirates
-  status: CONFIRMED
-  round: 22
-  source:
-    name: Abu Dhabi Grand Prix Practice 2
-    date: '2026-12-04'
-    time: '13:00:00'
-    venue: Yas Marina Circuit
-    country: United Arab Emirates
-    round: 22
-    season: '2026'
-- id_event: '2408224'
-  summary: Abu Dhabi Grand Prix Practice 3
-  start: '2026-12-05T10:30:00+00:00'
-  location: Yas Marina Circuit, United Arab Emirates
-  status: CONFIRMED
-  round: 22
-  source:
-    name: Abu Dhabi Grand Prix Practice 3
-    date: '2026-12-05'
-    time: '10:30:00'
-    venue: Yas Marina Circuit
-    country: United Arab Emirates
-    round: 22
-    season: '2026'
-- id_event: '2408225'
-  summary: Abu Dhabi Grand Prix Qualifying
-  start: '2026-12-05T14:00:00+00:00'
-  location: Yas Marina Circuit, United Arab Emirates
-  status: CONFIRMED
-  round: 22
-  source:
-    name: Abu Dhabi Grand Prix Qualifying
-    date: '2026-12-05'
-    time: '14:00:00'
-    venue: Yas Marina Circuit
-    country: United Arab Emirates
-    round: 22
-    season: '2026'
-- id_event: '2408226'
-  summary: Abu Dhabi Grand Prix
-  start: '2026-12-06T13:00:00+00:00'
-  location: Yas Marina Circuit, United Arab Emirates
-  status: CONFIRMED
-  round: 22
-  source:
-    name: Abu Dhabi Grand Prix
-    date: '2026-12-06'
-    time: '13:00:00'
-    venue: Yas Marina Circuit
-    country: United Arab Emirates
-    round: 22
-    season: '2026'
+  sessions:
+  - id_event: '2408222'
+    label: Practice 1
+    type: practice
+    start: '2026-12-04T09:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Abu Dhabi Grand Prix Practice 1
+      date: '2026-12-04'
+      time: 09:30:00
+      venue: Yas Marina Circuit
+      country: United Arab Emirates
+      round: 22
+      season: '2026'
+  - id_event: '2408223'
+    label: Practice 2
+    type: practice
+    start: '2026-12-04T13:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Abu Dhabi Grand Prix Practice 2
+      date: '2026-12-04'
+      time: '13:00:00'
+      venue: Yas Marina Circuit
+      country: United Arab Emirates
+      round: 22
+      season: '2026'
+  - id_event: '2408224'
+    label: Practice 3
+    type: practice
+    start: '2026-12-05T10:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Abu Dhabi Grand Prix Practice 3
+      date: '2026-12-05'
+      time: '10:30:00'
+      venue: Yas Marina Circuit
+      country: United Arab Emirates
+      round: 22
+      season: '2026'
+  - id_event: '2408225'
+    label: Qualifying
+    type: qualifying
+    start: '2026-12-05T14:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Abu Dhabi Grand Prix Qualifying
+      date: '2026-12-05'
+      time: '14:00:00'
+      venue: Yas Marina Circuit
+      country: United Arab Emirates
+      round: 22
+      season: '2026'
+  - id_event: '2408226'
+    label: Race
+    type: race
+    start: '2026-12-06T13:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Abu Dhabi Grand Prix
+      date: '2026-12-06'
+      time: '13:00:00'
+      venue: Yas Marina Circuit
+      country: United Arab Emirates
+      round: 22
+      season: '2026'

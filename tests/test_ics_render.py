@@ -14,7 +14,7 @@ def _published(uid, series="wec", summary="S"):
         start=datetime(2026, 4, 19, 13, tzinfo=timezone.utc), all_day_date=None,
         time_confirmed=True, duration_seconds=3600, location="L", description="D",
         status=EventStatus.CONFIRMED, sequence=1, dtstamp=NOW, last_modified=NOW,
-        fingerprint="fp", alarms=["-1d"], event_key="1",
+        fingerprint="fp", alarms=["-1d"], session_key="1",
     )
 
 

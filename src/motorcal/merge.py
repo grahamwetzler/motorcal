@@ -11,16 +11,16 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
-from motorcal.classify import classify_event
 from motorcal.config import (
     Config,
     EventConfig,
     GlobalConfig,
     RetentionConfig,
     SeriesConfig,
+    SessionConfig,
     parse_duration,
 )
-from motorcal.models import EventStatus, PublishedEvent, SessionType, event_uid
+from motorcal.models import EventStatus, PublishedEvent, SessionType, session_uid
 from motorcal.state import State, VersionState
 
 
@@ -103,22 +103,23 @@ def resolve_alarms(
 def build_description(
     *,
     event: EventConfig,
+    session: SessionConfig,
     race_only: bool,
-    session_type: SessionType,
     time_confirmed: bool,
 ) -> str:
-    """Build the human-readable DESCRIPTION text for one published event."""
-    source = event.source
+    """Build the human-readable DESCRIPTION text for one published session.
+
+    The venue and country the provider reports are not repeated here: they are the
+    event's `location`, which the VEVENT already carries in its own LOCATION field.
+    """
+    source = session.source
     lines: list[str] = []
-    if source and source.venue:
-        lines.append(f"Venue: {source.venue}")
-    if source and source.country:
-        lines.append(f"Country: {source.country}")
-    if event.round is not None:
-        lines.append(f"Round: {event.round}")
+    round_number = event.round_of(session)
+    if round_number is not None:
+        lines.append(f"Round: {round_number}")
 
     lines.append("Source: TheSportsDB" if source else "Source: local event")
-    if race_only and session_type == SessionType.RACE:
+    if race_only and session.type == SessionType.RACE:
         lines.append("This series' feed includes race sessions only.")
 
     if source is None:
@@ -128,8 +129,8 @@ def build_description(
     else:
         lines.append("Time confirmed by source.")
 
-    if event.note:
-        lines.append(f"Note: {event.note}")
+    if session.note:
+        lines.append(f"Note: {session.note}")
     return "\n".join(lines)
 
 
@@ -163,6 +164,7 @@ def _resolve_status(
 
 def build_published_event(
     event: EventConfig,
+    session: SessionConfig,
     *,
     series: str,
     series_config: SeriesConfig,
@@ -170,42 +172,44 @@ def build_published_event(
     previous: VersionState | None,
     now: datetime,
 ) -> PublishedEvent:
-    """Build (or rebuild) the published state for one configured event."""
-    uid = event_uid(event, globals_.uid_domain)
-    session_type = classify_event(series, event.summary, event.round or 0)
-    time_confirmed = event.start is not None
+    """Build (or rebuild) the published state for one session of one race event."""
+    uid = session_uid(session, globals_.uid_domain)
+    session_type = session.type
+    time_confirmed = session.start is not None
 
-    summary = event.summary
-    if not time_confirmed and event.source is not None:
-        # The provider hasn't announced a time. A manual all-day event is
+    # The published title: "{event} {session}", which the ICS layer prefixes with
+    # the series name. A session with no label of its own is just the event.
+    summary = " ".join(part for part in (event.name, session.label) if part)
+    if not time_confirmed and session.source is not None:
+        # The provider hasn't announced a time. A manual all-day session is
         # deliberate, so it never gets the suffix.
         summary += globals_.unknown_time.summary_suffix
 
     if time_confirmed:
-        start: datetime | None = datetime.fromisoformat(event.start.replace("Z", "+00:00"))
+        start: datetime | None = datetime.fromisoformat(session.start.replace("Z", "+00:00"))
         all_day_date: str | None = None
         duration_seconds = resolve_duration(
-            session_type, own_duration=event.duration,
+            session_type, own_duration=session.duration,
             series_config=series_config, globals_=globals_,
         )
         alarms = resolve_alarms(
-            session_type, own_alarms=event.alarms, time_confirmed=True,
+            session_type, own_alarms=session.alarms, time_confirmed=True,
             series_config=series_config, globals_=globals_,
         )
     else:
-        start, all_day_date = None, event.date
+        start, all_day_date = None, session.date
         duration_seconds, alarms = None, []
 
     is_future_or_active = _event_effective_end(start, all_day_date, duration_seconds) >= now
     status = _resolve_status(
-        is_disappeared=event.disappeared_at is not None,
+        is_disappeared=session.disappeared_at is not None,
         is_future_or_active=is_future_or_active,
-        configured_status=EventStatus(event.status),
+        configured_status=EventStatus(session.status),
         previous_status=EventStatus(previous.status) if previous else None,
     )
 
     description = build_description(
-        event=event, race_only=series_config.race_only, session_type=session_type,
+        event=event, session=session, race_only=series_config.race_only,
         time_confirmed=time_confirmed,
     )
     fingerprint = compute_fingerprint(
@@ -228,7 +232,7 @@ def build_published_event(
         start=start, all_day_date=all_day_date, time_confirmed=time_confirmed,
         duration_seconds=duration_seconds, location=event.location, description=description,
         status=status, sequence=sequence, dtstamp=dtstamp, last_modified=last_modified,
-        fingerprint=fingerprint, alarms=alarms, event_key=event.key,
+        fingerprint=fingerprint, alarms=alarms, session_key=session.key,
     )
 
 
@@ -253,10 +257,11 @@ def rebuild_publication(
 
     for series, series_config in config.series.items():
         published[series] = []
-        for event in series_config.events:
+        for event, session in series_config.iter_sessions():
             built = build_published_event(
-                event, series=series, series_config=series_config, globals_=config.globals,
-                previous=state.versions.get(event_uid(event, config.globals.uid_domain)),
+                event, session, series=series, series_config=series_config,
+                globals_=config.globals,
+                previous=state.versions.get(session_uid(session, config.globals.uid_domain)),
                 now=now,
             )
             published[series].append(built)
@@ -290,7 +295,11 @@ def _prune_expired(
     *,
     now: datetime,
 ) -> int:
-    """Drop events past their retention window from the config, the ledger, and the feed."""
+    """Drop sessions past their retention window from the config, the ledger, and the feed.
+
+    A race event that loses its last session goes with them -- an empty weekend
+    would publish nothing and only clutter the series file.
+    """
     retention: RetentionConfig = config.globals.retention
     pruned = 0
 
@@ -311,14 +320,16 @@ def _prune_expired(
             )
             if now > effective_end + timedelta(days=days):
                 expired_uids.add(built.uid)
-                expired_keys.add(built.event_key)
+                expired_keys.add(built.session_key)
 
         if not expired_uids:
             continue
 
         published[series] = [e for e in events if e.uid not in expired_uids]
+        for event in config.series[series].events:
+            event.sessions = [s for s in event.sessions if s.key not in expired_keys]
         config.series[series].events = [
-            e for e in config.series[series].events if e.key not in expired_keys
+            event for event in config.series[series].events if event.sessions
         ]
         for uid in expired_uids:
             state.versions.pop(uid, None)

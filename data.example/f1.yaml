@@ -1,29 +1,39 @@
-# One series. The filename stem ("f1") is the series key and the feed path:
-# this file is served at /f1.ics
 league_id: 4370
 name: Formula 1
 max_round: 30
 race_only: false
-
-# Optional per-series session lengths, overriding defaults.durations.
-# durations:
-#   race: "2h"
-
-# The event list. A refresh merges TheSportsDB into this list and rewrites the
-# file, so comments here will not survive -- use an event's `note:` field for
-# anything you want to keep.
 events:
-  # A provider-backed event. `id_event` and `source:` are machine-owned;
-  # everything else is yours. Change a field and the next refresh will leave it
-  # alone, even if TheSportsDB changes its own value.
-  - id_event: "2408107"
-    summary: Australian Grand Prix
+- name: Pre-season testing
+  location: Bahrain International Circuit
+  sessions:
+  - uid: f1-2026-preseason-test
+    type: testing
+    date: '2026-02-11'
+    note: dates announced, times TBA
+- name: Australian Grand Prix
+  location: Melbourne Grand Prix Circuit, Australia
+  round: 1
+  sessions:
+  - id_event: '2408110'
+    label: Qualifying
+    type: qualifying
+    start: '2026-03-07T05:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: Australian Grand Prix Qualifying
+      date: '2026-03-07'
+      time: 05:00:00
+      venue: Melbourne Grand Prix Circuit
+      country: Australia
+      round: 1
+      season: '2026'
+  - id_event: '2408111'
+    label: Race
+    type: race
     start: '2026-03-08T04:00:00+00:00'
     duration: 2h
-    location: Melbourne Grand Prix Circuit, Australia
     status: CONFIRMED
     note: start time confirmed against the official timetable
-    round: 1
     source:
       name: Australian Grand Prix
       date: '2026-03-08'
@@ -32,11 +42,3 @@ events:
       country: Australia
       round: 1
       season: '2026'
-
-  # A manual event: give it a `uid` instead of an `id_event` and no `source:`.
-  # Refreshes never touch it. Use `date:` instead of `start:` for an all-day entry.
-  - uid: f1-2026-preseason-test
-    summary: Pre-season testing
-    date: '2026-02-11'
-    location: Bahrain International Circuit
-    note: dates announced, times TBA

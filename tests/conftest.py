@@ -8,6 +8,7 @@ from motorcal.config import (
     GlobalConfig,
     RetentionConfig,
     SeriesConfig,
+    SessionConfig,
     SourceSettings,
     SourceSnapshot,
     UnknownTimeConfig,
@@ -74,18 +75,48 @@ def source_snapshot(
     )
 
 
-def source_event(id_event: str = "1", *, disappeared_at: str | None = None, **snapshot_kwargs):
-    """A provider-backed event whose fields still match its source snapshot."""
-    from motorcal.sync import event_from_source
+def source_session(
+    id_event: str = "1", *, event_name: str = "6 Hours of Imola",
+    disappeared_at: str | None = None, **snapshot_kwargs
+) -> SessionConfig:
+    """A provider-backed session whose fields still match its source snapshot."""
+    from motorcal.sync import session_from_source
 
-    event = event_from_source(source_snapshot(**snapshot_kwargs), id_event)
-    event.disappeared_at = disappeared_at
-    return event
+    session = session_from_source(source_snapshot(**snapshot_kwargs), id_event, event_name)
+    session.disappeared_at = disappeared_at
+    return session
 
 
-def manual_event(uid: str = "my-event", *, summary: str = "Test Day", **kwargs) -> EventConfig:
-    kwargs.setdefault("date", "2026-05-01")
-    return EventConfig(uid=uid, summary=summary, **kwargs)
+def manual_session(uid: str = "my-session", **kwargs) -> SessionConfig:
+    if not kwargs.get("start"):
+        kwargs.setdefault("date", "2026-05-01")
+    return SessionConfig(uid=uid, **kwargs)
+
+
+def source_event(
+    id_event: str = "1", *, event_name: str | None = None,
+    disappeared_at: str | None = None, **snapshot_kwargs
+) -> EventConfig:
+    """A race event of one provider-backed session, all still matching its source.
+
+    `event_name` names the weekend when it differs from the session's own name --
+    which is how a non-race session ends up with a label at all.
+    """
+    from motorcal.sync import derive_event, session_from_source
+
+    source = source_snapshot(**snapshot_kwargs)
+    values = derive_event([source])
+    name = event_name or values["name"]
+    session = session_from_source(source, id_event, name)
+    session.disappeared_at = disappeared_at
+    return EventConfig(
+        name=name, location=values["location"], round=values["round"], sessions=[session],
+    )
+
+
+def manual_event(uid: str = "my-event", *, name: str = "Test Day", **kwargs) -> EventConfig:
+    """A race event of one manual session."""
+    return EventConfig(name=name, sessions=[manual_session(uid, **kwargs)])
 
 
 def provider_event(

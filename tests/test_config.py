@@ -5,6 +5,7 @@ from tests.conftest import UID_DOMAIN, make_config, make_series, source_event, w
 from motorcal.config import (
     ConfigError,
     EventConfig,
+    SessionConfig,
     load_config,
     parse_alarm_offset,
     parse_duration,
@@ -154,31 +155,36 @@ def test_state_yaml_sharing_the_directory_is_ignored(tmp_path):
 # --------------------------------------------------------------- event schema
 
 
-def test_an_event_needs_exactly_one_of_id_event_or_uid():
+def test_a_session_needs_exactly_one_of_id_event_or_uid():
     with pytest.raises(ValueError, match="exactly one of id_event or uid"):
-        EventConfig(summary="X", date="2026-01-01")
+        SessionConfig(date="2026-01-01")
     with pytest.raises(ValueError, match="exactly one of id_event or uid"):
-        EventConfig(id_event="1", uid="mine", summary="X", date="2026-01-01")
+        SessionConfig(id_event="1", uid="mine", date="2026-01-01")
 
 
-def test_an_event_needs_exactly_one_of_start_or_date():
+def test_a_session_needs_exactly_one_of_start_or_date():
     with pytest.raises(ValueError, match="exactly one of start or date"):
-        EventConfig(uid="mine", summary="X")
+        SessionConfig(uid="mine")
     with pytest.raises(ValueError, match="exactly one of start or date"):
-        EventConfig(uid="mine", summary="X", start="2026-01-01T00:00:00Z", date="2026-01-01")
+        SessionConfig(uid="mine", start="2026-01-01T00:00:00Z", date="2026-01-01")
 
 
-def test_an_event_rejects_a_bad_duration():
+def test_an_event_needs_at_least_one_session():
+    with pytest.raises(ValueError, match="has no sessions"):
+        EventConfig(name="Empty Weekend")
+
+
+def test_a_session_rejects_a_bad_duration():
     with pytest.raises(ValueError):
-        EventConfig(uid="mine", summary="X", date="2026-01-01", duration="ages")
+        SessionConfig(uid="mine", date="2026-01-01", duration="ages")
 
 
-def test_an_event_rejects_a_bad_status():
+def test_a_session_rejects_a_bad_status():
     with pytest.raises(ValueError):
-        EventConfig(uid="mine", summary="X", date="2026-01-01", status="MAYBE")
+        SessionConfig(uid="mine", date="2026-01-01", status="MAYBE")
 
 
-def test_duplicate_event_keys_within_a_series_are_rejected(tmp_path):
+def test_duplicate_session_keys_within_a_series_are_rejected(tmp_path):
     config_dir = _dir(tmp_path)
     raw = yaml.safe_load((config_dir / "wec.yaml").read_text())
     raw["events"].append(dict(raw["events"][0]))
@@ -207,8 +213,9 @@ def test_save_series_omits_empty_optional_fields(tmp_path):
 
     raw = yaml.safe_load((config_dir / "wec.yaml").read_text())
 
-    assert "uid" not in raw["events"][0]  # provider-backed: no uid to write
-    assert "note" not in raw["events"][0]
+    session = raw["events"][0]["sessions"][0]
+    assert "uid" not in session  # provider-backed: no uid to write
+    assert "note" not in session
 
 
 def test_save_series_leaves_no_temporary_files(tmp_path):

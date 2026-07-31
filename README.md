@@ -6,9 +6,10 @@ and publishes one ICS feed per series that you can subscribe to from any
 calendar app.
 
 **The data directory is the source of truth.** One YAML file per series holds
-that series' settings *and* its full event list. A refresh merges TheSportsDB
-into those files without clobbering anything you changed by hand. There is no
-separate database, no patch layer, no override file — you edit the event.
+that series' settings *and* its full event list — one entry per race weekend,
+each with the list of sessions it runs. A refresh merges TheSportsDB into those
+files without clobbering anything you changed by hand. There is no separate
+database, no patch layer, no override file — you edit the event.
 
 Feeds are exposed to the internet via a Cloudflare Tunnel, so nothing needs to
 be port-forwarded. They are **not** access-controlled — anyone who knows your
@@ -63,37 +64,92 @@ container's user (uid 1000) — e.g. `chown -R 1000:1000 data`.
 
 ### One event
 
+An event is a race weekend. Whatever the whole weekend shares — its name, where
+it happens, which round it is — is stored once on the event; everything that
+differs per session lives on the session.
+
 ```yaml
 events:
-  - id_event: "2421035"          # provider identity; machine-owned
-    summary: 6 Hours of Imola
-    start: '2026-04-19T13:00:00+00:00'
-    duration: 6h
+  - name: 6 Hours of Imola
     location: Imola, Italy
-    status: CONFIRMED
-    note: start time from the official timetable
     round: 1
-    source:                      # what TheSportsDB last said; machine-owned
-      name: 6 Hours of Imola
-      date: '2026-04-19'
-      time: null
-      venue: Imola
-      country: Italy
-      round: 1
-      season: '2026'
+    sessions:
+      - id_event: "2467176"        # provider identity; machine-owned
+        label: Qualifying
+        type: qualifying
+        start: '2026-04-18T12:30:00+00:00'
+        source:                    # what TheSportsDB last said; machine-owned
+          name: 6 Hours of Imola Qualifying
+          date: '2026-04-18'
+          time: '12:30:00'
+          venue: Imola Circuit
+          country: Italy
+          round: 1
+          season: '2026'
+      - id_event: "2421035"
+        label: Race
+        type: race
+        start: '2026-04-19T13:00:00+00:00'
+        duration: 6h
+        status: CONFIRMED
+        note: start time from the official timetable
+        source:
+          name: 6 Hours of Imola
+          date: '2026-04-19'
+          time: null
+          venue: Imola Circuit
+          country: Italy
+          round: 1
+          season: '2026'
+```
+
+Each session is published as `{series}: {event name} {label}` — "WEC: 6 Hours of
+Imola Qualifying". Drop the `label:` and you get just the event name, which is
+how a one-session weekend with nothing to distinguish reads best.
+
+`type:` is what the feed filters on (`?practices=false`), and what duration and
+alarm defaults are looked up by. It is guessed from the label when the session
+first appears; correct it by hand and your value stands.
+
+An event holds every session of its weekend, including a double-header's second
+race. `round:` on the event is the weekend's first championship round; a session
+running for a later one says so itself:
+
+```yaml
+  - name: Snap-on
+    location: Milwaukee Mile, United States
+    round: 16
+    sessions:
+      - uid: indycar-2026-milwaukee-qualifying
+        label: INDYCAR Weekend Qualifying
+        type: qualifying
+        start: '2026-08-29T15:00:00+00:00'
+      - id_event: "2402411"
+        label: Makers and Fixers 250
+        type: race
+        start: '2026-08-29T18:30:00+00:00'
+      - id_event: "2402412"
+        label: Milwaukee Mile 250
+        type: race
+        start: '2026-08-30T17:00:00+00:00'
+        round: 17                # a second race, for the next round
 ```
 
 Use `start:` for a confirmed time or `date:` for an all-day entry — exactly one.
-A provider event with only `date:` is published with a "(time TBC)" suffix, since
-that means the time hasn't been announced yet.
+A provider session with only `date:` is published with a "(time TBC)" suffix,
+since that means the time hasn't been announced yet.
 
-To add your own event, give it a `uid:` instead of an `id_event:` and no
-`source:`. Refreshes never touch it.
+To add your own session, give it a `uid:` instead of an `id_event:` and no
+`source:`. Refreshes never touch it. Put it in the weekend it belongs to, or in
+an event of its own:
 
 ```yaml
-  - uid: f1-2026-preseason-test
-    summary: Pre-season testing
-    date: '2026-02-11'
+  - name: Pre-season testing
+    location: Bahrain International Circuit
+    sessions:
+      - uid: f1-2026-preseason-test
+        type: testing
+        date: '2026-02-11'
 ```
 
 ### How your edits survive a refresh
@@ -107,10 +163,15 @@ if TheSportsDB later changes its own.
 Concretely: if the provider has no time yet and you fill in `start:` from the
 official timetable, a later fetch that still has no time leaves your value alone.
 If the provider *does* announce a time, you keep yours; delete your `start:` to
-opt back into tracking upstream.
+opt back into tracking upstream. The same holds for an event's `name:` and
+`location:`, whose baseline is what the provider called that whole weekend.
 
 Fields the provider never owns at all — `duration`, `status`, `note`, `alarms` —
 are always yours.
+
+New sessions join the weekend that already holds the round they belong to, so a
+qualifying session you added by hand keeps sitting next to the race when the
+provider finally publishes one of its own.
 
 **Comments inside a series file do not survive a rewrite.** Use an event's
 `note:` field for anything you want to keep; it's published in the calendar

@@ -71,14 +71,14 @@ def test_reload_succeeds_and_rebuilds(tmp_path):
 def test_reload_picks_up_a_hand_edited_event(tmp_path):
     config_dir, config = _dir(tmp_path)
     text = (config_dir / "wec.yaml").read_text().replace(
-        "summary: 6 Hours of Imola", "summary: 6 Hours of Imola (edited)"
+        "name: 6 Hours of Imola", "name: 6 Hours of Imola (edited)"
     )
     (config_dir / "wec.yaml").write_text(text)
 
     result = check_and_reload_config(config_dir, make_state(), None, config, UID_DOMAIN, NOW)
 
     assert result.reloaded is True
-    assert result.published["wec"][0].summary == "6 Hours of Imola (edited)"
+    assert result.published["wec"][0].summary == "6 Hours of Imola (edited) Race"
 
 
 def test_reload_picks_up_a_new_series_file(tmp_path):

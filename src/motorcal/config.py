@@ -195,24 +195,27 @@ class SourceSnapshot(StrictModel):
     season: str
 
 
-class EventConfig(StrictModel):
-    """One event, exactly as published (before defaults are resolved).
+class SessionConfig(StrictModel):
+    """One session of a race event: a practice, a qualifying, the race itself.
 
-    Provider-backed events carry `id_event` and `source`; manual events carry a
+    Everything here is specific to this session; whatever the whole weekend shares
+    (name, location, round) lives once on the `EventConfig` holding it.
+
+    Provider-backed sessions carry `id_event` and `source`; manual sessions carry a
     `uid` you choose and are never touched by a refresh.
     """
 
     id_event: str | None = None
     uid: str | None = None
-    summary: str
+    label: str = ""  # appended to the event name: "Practice 1", "Qualifying", "Race"
+    type: SessionType = SessionType.UNKNOWN
     start: str | None = None  # confirmed time, ISO 8601
     date: str | None = None  # all-day, "YYYY-MM-DD" -- the time is not yet known
     duration: str | None = None
-    location: str | None = None
     status: str = EventStatus.CONFIRMED.value
     note: str | None = None
     alarms: list[str] | None = None  # None = fall back to series/global defaults
-    round: int | None = None
+    round: int | None = None  # only when it differs from the event's -- see EventConfig
     disappeared_at: str | None = None
     source: SourceSnapshot | None = None
 
@@ -236,17 +239,51 @@ class EventConfig(StrictModel):
         return value
 
     @model_validator(mode="after")
-    def validate_identity_and_timing(self) -> "EventConfig":
+    def validate_identity_and_timing(self) -> "SessionConfig":
         if bool(self.id_event) == bool(self.uid):
-            raise ValueError("An event must set exactly one of id_event or uid")
+            raise ValueError("A session must set exactly one of id_event or uid")
         if bool(self.start) == bool(self.date):
-            raise ValueError("An event must set exactly one of start or date")
+            raise ValueError("A session must set exactly one of start or date")
         return self
 
     @property
     def key(self) -> str:
-        """The identity this event is matched on within its series file."""
+        """The identity this session is matched on within its series file."""
         return self.id_event or self.uid  # type: ignore[return-value]
+
+    @property
+    def when(self) -> str:
+        """Sort key: whichever of start/date is set, both ISO and so both ordered."""
+        return self.start or self.date or ""
+
+
+class EventConfig(StrictModel):
+    """One race event -- a weekend -- and its list of sessions.
+
+    Name, location and round are stored once here rather than repeated on every
+    session, and each published session is summarised as "{name} {label}".
+
+    `round` is the weekend's first championship round. A double-header runs two
+    rounds over one weekend; its second race carries its own `round` to say so.
+    """
+
+    name: str
+    location: str | None = None
+    round: int | None = None
+    sessions: list[SessionConfig] = []
+
+    def round_of(self, session: SessionConfig) -> int | None:
+        return session.round if session.round is not None else self.round
+
+    @model_validator(mode="after")
+    def validate_has_sessions(self) -> "EventConfig":
+        if not self.sessions:
+            raise ValueError(f"Event {self.name!r} has no sessions")
+        return self
+
+    @property
+    def when(self) -> str:
+        return min((session.when for session in self.sessions), default="")
 
 
 class SeriesConfig(StrictModel):
@@ -266,13 +303,17 @@ class SeriesConfig(StrictModel):
         return _validate_alerts_dict(value) if value is not None else None
 
     @model_validator(mode="after")
-    def validate_unique_event_keys(self) -> "SeriesConfig":
+    def validate_unique_session_keys(self) -> "SeriesConfig":
         seen: set[str] = set()
-        for event in self.events:
-            if event.key in seen:
-                raise ValueError(f"Duplicate event id_event/uid in this series: {event.key!r}")
-            seen.add(event.key)
+        for _, session in self.iter_sessions():
+            if session.key in seen:
+                raise ValueError(f"Duplicate session id_event/uid in this series: {session.key!r}")
+            seen.add(session.key)
         return self
+
+    def iter_sessions(self) -> list[tuple[EventConfig, SessionConfig]]:
+        """Every (event, session) pair in this series, in file order."""
+        return [(event, session) for event in self.events for session in event.sessions]
 
 
 # --------------------------------------------------------------------------- loading
@@ -350,10 +391,10 @@ def save_series(config_dir: Path, series: str, config: SeriesConfig) -> None:
     that list sorted by date so the file stays readable and diffs stay small.
     """
     path = series_path(config_dir, series)
-    payload = config.model_dump(exclude_none=True, exclude_defaults=False)
-    # Events carry a lot of optional fields; drop the empty ones per-event so a
+    payload = config.model_dump(mode="json", exclude_none=True, exclude_defaults=False)
+    # Sessions carry a lot of optional fields; drop the empty ones per-session so a
     # hand-written file doesn't grow a wall of `null`s the first time it's rewritten.
-    payload["events"] = [event.model_dump(exclude_none=True) for event in config.events]
+    payload["events"] = [event.model_dump(mode="json", exclude_none=True) for event in config.events]
 
     fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{series}-", suffix=".tmp")
     try:

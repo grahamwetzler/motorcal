@@ -84,8 +84,11 @@ def test_rebuild_publishes_manual_events_alongside_provider_ones():
     assert _find(published, f"local-mine@{UID_DOMAIN}") is not None
 
 
-def test_rebuild_reports_unknown_classified_events():
-    config = _config(wec_events=[source_event("1", name="Drivers Parade", time="13:00:00")])
+def test_rebuild_reports_unknown_classified_sessions():
+    config = _config(wec_events=[
+        source_event("1", name="Drivers Parade", event_name="6 Hours of Imola",
+                     time="13:00:00")
+    ])
 
     published, report = rebuild_publication(config, make_state(), now=NOW)
 
@@ -112,7 +115,7 @@ def test_rebuild_is_idempotent_for_unchanged_input():
     assert second["wec"][0].dtstamp == first["wec"][0].dtstamp
 
 
-def test_a_long_past_event_is_pruned_from_the_config_and_the_ledger():
+def test_a_long_past_session_takes_its_emptied_event_with_it():
     config = _config(wec_events=[source_event("1", date="2026-01-01", time="13:00:00")])
     state = make_state()
     rebuild_publication(config, state, now=NOW)

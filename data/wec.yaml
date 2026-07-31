@@ -8,847 +8,819 @@ durations:
   hyperpole: 10m
   race: 360m
 events:
-- id_event: '2467175'
-  summary: 6 Hours of Imola Free Practice 3
-  start: '2026-04-18T08:30:00+00:00'
+- name: 6 Hours of Imola
   location: Imola Circuit, Italy
-  status: CONFIRMED
   round: 1
-  source:
-    name: 6 Hours of Imola Free Practice 3
-    date: '2026-04-18'
-    time: 08:30:00
-    venue: Imola Circuit
-    country: Italy
-    round: 1
-    season: '2026'
-- id_event: '2467176'
-  summary: 6 Hours of Imola Qualifying
-  start: '2026-04-18T12:30:00+00:00'
-  location: Imola Circuit, Italy
-  status: CONFIRMED
-  round: 1
-  source:
-    name: 6 Hours of Imola Qualifying
-    date: '2026-04-18'
-    time: '12:30:00'
-    venue: Imola Circuit
-    country: Italy
-    round: 1
-    season: '2026'
-- id_event: '2421035'
-  summary: 6 Hours of Imola
-  date: '2026-04-19'
-  location: Imola Circuit, Italy
-  status: CONFIRMED
-  round: 1
-  source:
-    name: 6 Hours of Imola
+  sessions:
+  - id_event: '2467175'
+    label: Free Practice 3
+    type: practice
+    start: '2026-04-18T08:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Imola Free Practice 3
+      date: '2026-04-18'
+      time: 08:30:00
+      venue: Imola Circuit
+      country: Italy
+      round: 1
+      season: '2026'
+  - id_event: '2467176'
+    label: Qualifying
+    type: qualifying
+    start: '2026-04-18T12:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Imola Qualifying
+      date: '2026-04-18'
+      time: '12:30:00'
+      venue: Imola Circuit
+      country: Italy
+      round: 1
+      season: '2026'
+  - id_event: '2421035'
+    label: Race
+    type: race
     date: '2026-04-19'
-    time: 00:00:00
-    venue: Imola Circuit
-    country: Italy
-    round: 1
-    season: '2026'
-- id_event: '2490507'
-  summary: 6 Hours of Spa Francorchamps Free Practice 1
-  start: '2026-05-07T09:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Imola
+      date: '2026-04-19'
+      time: 00:00:00
+      venue: Imola Circuit
+      country: Italy
+      round: 1
+      season: '2026'
+- name: 6 Hours of Spa Francorchamps
   location: Circuit de Spa-Francorchamps, Belgium
-  status: CONFIRMED
   round: 2
-  source:
-    name: 6 Hours of Spa Francorchamps Free Practice 1
-    date: '2026-05-07'
-    time: 09:00:00
-    venue: Circuit de Spa-Francorchamps
-    country: Belgium
-    round: 2
-    season: '2026'
-- id_event: '2490509'
-  summary: 6 Hours of Spa Francorchamps Free Practice 2
-  start: '2026-05-07T13:40:00+00:00'
-  location: Circuit de Spa-Francorchamps, Belgium
-  status: CONFIRMED
-  round: 2
-  source:
-    name: 6 Hours of Spa Francorchamps Free Practice 2
-    date: '2026-05-07'
-    time: '13:40:00'
-    venue: Circuit de Spa-Francorchamps
-    country: Belgium
-    round: 2
-    season: '2026'
-- id_event: '2472303'
-  summary: 6 Hours of Spa Francorchamps Free Practice 3
-  start: '2026-05-08T08:10:00+00:00'
-  location: Circuit de Spa-Francorchamps, Belgium
-  status: CONFIRMED
-  round: 2
-  source:
-    name: 6 Hours of Spa Francorchamps Free Practice 3
-    date: '2026-05-08'
-    time: 08:10:00
-    venue: Circuit de Spa-Francorchamps
-    country: Belgium
-    round: 2
-    season: '2026'
-- id_event: '2472304'
-  summary: 6 Hours of Spa Francorchamps Qualifying - LMGT3
-  start: '2026-05-08T12:30:00+00:00'
-  location: Circuit de Spa-Francorchamps, Belgium
-  status: CONFIRMED
-  round: 2
-  source:
-    name: 6 Hours of Spa Francorchamps Qualifying - LMGT3
-    date: '2026-05-08'
-    time: '12:30:00'
-    venue: Circuit de Spa-Francorchamps
-    country: Belgium
-    round: 2
-    season: '2026'
-- id_event: '2490515'
-  summary: 6 Hours of Spa Francorchamps Hyperpole - LMGT3
-  start: '2026-05-08T12:55:00+00:00'
-  location: Circuit de Spa-Francorchamps, Belgium
-  status: CONFIRMED
-  round: 2
-  source:
-    name: 6 Hours of Spa Francorchamps Hyperpole - LMGT3
-    date: '2026-05-08'
-    time: '12:55:00'
-    venue: Circuit de Spa-Francorchamps
-    country: Belgium
-    round: 2
-    season: '2026'
-- id_event: '2490513'
-  summary: 6 Hours of Spa Francorchamps Qualifying - Hypercar
-  start: '2026-05-08T13:20:00+00:00'
-  location: Circuit de Spa-Francorchamps, Belgium
-  status: CONFIRMED
-  round: 2
-  source:
-    name: 6 Hours of Spa Francorchamps Qualifying - Hypercar
-    date: '2026-05-08'
-    time: '13:20:00'
-    venue: Circuit de Spa-Francorchamps
-    country: Belgium
-    round: 2
-    season: '2026'
-- id_event: '2490516'
-  summary: 6 Hours of Spa Francorchamps Hyperpole - Hypercar
-  start: '2026-05-08T13:45:00+00:00'
-  location: Circuit de Spa-Francorchamps, Belgium
-  status: CONFIRMED
-  round: 2
-  source:
-    name: 6 Hours of Spa Francorchamps Hyperpole - Hypercar
-    date: '2026-05-08'
-    time: '13:45:00'
-    venue: Circuit de Spa-Francorchamps
-    country: Belgium
-    round: 2
-    season: '2026'
-- id_event: '2421036'
-  summary: 6 Hours of Spa Francorchamps
-  date: '2026-05-09'
-  location: Circuit de Spa-Francorchamps, Belgium
-  status: CONFIRMED
-  round: 2
-  source:
-    name: 6 Hours of Spa Francorchamps
+  sessions:
+  - id_event: '2490507'
+    label: Free Practice 1
+    type: practice
+    start: '2026-05-07T09:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Spa Francorchamps Free Practice 1
+      date: '2026-05-07'
+      time: 09:00:00
+      venue: Circuit de Spa-Francorchamps
+      country: Belgium
+      round: 2
+      season: '2026'
+  - id_event: '2490509'
+    label: Free Practice 2
+    type: practice
+    start: '2026-05-07T13:40:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Spa Francorchamps Free Practice 2
+      date: '2026-05-07'
+      time: '13:40:00'
+      venue: Circuit de Spa-Francorchamps
+      country: Belgium
+      round: 2
+      season: '2026'
+  - id_event: '2472303'
+    label: Free Practice 3
+    type: practice
+    start: '2026-05-08T08:10:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Spa Francorchamps Free Practice 3
+      date: '2026-05-08'
+      time: 08:10:00
+      venue: Circuit de Spa-Francorchamps
+      country: Belgium
+      round: 2
+      season: '2026'
+  - id_event: '2472304'
+    label: Qualifying - LMGT3
+    type: qualifying
+    start: '2026-05-08T12:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Spa Francorchamps Qualifying - LMGT3
+      date: '2026-05-08'
+      time: '12:30:00'
+      venue: Circuit de Spa-Francorchamps
+      country: Belgium
+      round: 2
+      season: '2026'
+  - id_event: '2490515'
+    label: Hyperpole - LMGT3
+    type: hyperpole
+    start: '2026-05-08T12:55:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Spa Francorchamps Hyperpole - LMGT3
+      date: '2026-05-08'
+      time: '12:55:00'
+      venue: Circuit de Spa-Francorchamps
+      country: Belgium
+      round: 2
+      season: '2026'
+  - id_event: '2490513'
+    label: Qualifying - Hypercar
+    type: qualifying
+    start: '2026-05-08T13:20:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Spa Francorchamps Qualifying - Hypercar
+      date: '2026-05-08'
+      time: '13:20:00'
+      venue: Circuit de Spa-Francorchamps
+      country: Belgium
+      round: 2
+      season: '2026'
+  - id_event: '2490516'
+    label: Hyperpole - Hypercar
+    type: hyperpole
+    start: '2026-05-08T13:45:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Spa Francorchamps Hyperpole - Hypercar
+      date: '2026-05-08'
+      time: '13:45:00'
+      venue: Circuit de Spa-Francorchamps
+      country: Belgium
+      round: 2
+      season: '2026'
+  - id_event: '2421036'
+    label: Race
+    type: race
     date: '2026-05-09'
-    time: 00:00:00
-    venue: Circuit de Spa-Francorchamps
-    country: Belgium
-    round: 2
-    season: '2026'
-- id_event: '2490495'
-  summary: 24 Hours of Le Mans Free Practice 1
-  start: '2026-06-10T12:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Spa Francorchamps
+      date: '2026-05-09'
+      time: 00:00:00
+      venue: Circuit de Spa-Francorchamps
+      country: Belgium
+      round: 2
+      season: '2026'
+- name: 24 Hours of Le Mans
   location: Circuit de la Sarthe, France
-  status: CONFIRMED
   round: 3
-  source:
-    name: 24 Hours of Le Mans Free Practice 1
-    date: '2026-06-10'
-    time: '12:00:00'
-    venue: Circuit de la Sarthe
-    country: France
-    round: 3
-    season: '2026'
-- id_event: '2490496'
-  summary: "24 Hours of Le Mans Hyperpole Qualifying \u2013 LMP2 & LMGT3"
-  start: '2026-06-10T16:45:00+00:00'
-  location: Circuit de la Sarthe, France
-  status: CONFIRMED
-  round: 3
-  source:
-    name: "24 Hours of Le Mans Hyperpole Qualifying \u2013 LMP2 & LMGT3"
-    date: '2026-06-10'
-    time: '16:45:00'
-    venue: Circuit de la Sarthe
-    country: France
-    round: 3
-    season: '2026'
-- id_event: '2490497'
-  summary: "24 Hours of Le Mans Hyperpole Qualifying \u2013 Hypercar"
-  start: '2026-06-10T17:30:00+00:00'
-  location: Circuit de la Sarthe, France
-  status: CONFIRMED
-  round: 3
-  source:
-    name: "24 Hours of Le Mans Hyperpole Qualifying \u2013 Hypercar"
-    date: '2026-06-10'
-    time: '17:30:00'
-    venue: Circuit de la Sarthe
-    country: France
-    round: 3
-    season: '2026'
-- id_event: '2490498'
-  summary: 24 Hours of Le Mans Free Practice 2
-  start: '2026-06-10T20:00:00+00:00'
-  location: Circuit de la Sarthe, France
-  status: CONFIRMED
-  round: 3
-  source:
-    name: 24 Hours of Le Mans Free Practice 2
-    date: '2026-06-10'
-    time: '20:00:00'
-    venue: Circuit de la Sarthe
-    country: France
-    round: 3
-    season: '2026'
-- id_event: '2490499'
-  summary: 24 Hours of Le Mans Free Practice 3
-  start: '2026-06-11T12:45:00+00:00'
-  location: Circuit de la Sarthe, France
-  status: CONFIRMED
-  round: 3
-  source:
-    name: 24 Hours of Le Mans Free Practice 3
-    date: '2026-06-11'
-    time: '12:45:00'
-    venue: Circuit de la Sarthe
-    country: France
-    round: 3
-    season: '2026'
-- id_event: '2490500'
-  summary: 24 Hours of Le Mans Hyperpole 1 - LMP2 & LMGT3
-  start: '2026-06-11T18:00:00+00:00'
-  location: Circuit de la Sarthe, France
-  status: CONFIRMED
-  round: 3
-  source:
-    name: 24 Hours of Le Mans Hyperpole 1 - LMP2 & LMGT3
-    date: '2026-06-11'
-    time: '18:00:00'
-    venue: Circuit de la Sarthe
-    country: France
-    round: 3
-    season: '2026'
-- id_event: '2490501'
-  summary: 24 Hours of Le Mans Hyperpole 2 - LMP2 & LMGT3
-  start: '2026-06-11T18:35:00+00:00'
-  location: Circuit de la Sarthe, France
-  status: CONFIRMED
-  round: 3
-  source:
-    name: 24 Hours of Le Mans Hyperpole 2 - LMP2 & LMGT3
-    date: '2026-06-11'
-    time: '18:35:00'
-    venue: Circuit de la Sarthe
-    country: France
-    round: 3
-    season: '2026'
-- id_event: '2490502'
-  summary: 24 Hours of Le Mans Hyperpole 1 - Hypercar
-  start: '2026-06-11T19:05:00+00:00'
-  location: Circuit de la Sarthe, France
-  status: CONFIRMED
-  round: 3
-  source:
-    name: 24 Hours of Le Mans Hyperpole 1 - Hypercar
-    date: '2026-06-11'
-    time: '19:05:00'
-    venue: Circuit de la Sarthe
-    country: France
-    round: 3
-    season: '2026'
-- id_event: '2490503'
-  summary: 24 Hours of Le Mans Hyperpole 2 - Hypercar
-  start: '2026-06-11T19:40:00+00:00'
-  location: Circuit de la Sarthe, France
-  status: CONFIRMED
-  round: 3
-  source:
-    name: 24 Hours of Le Mans Hyperpole 2 - Hypercar
-    date: '2026-06-11'
-    time: '19:40:00'
-    venue: Circuit de la Sarthe
-    country: France
-    round: 3
-    season: '2026'
-- id_event: '2490504'
-  summary: 24 Hours of Le Mans Free Practice 4
-  start: '2026-06-11T21:00:00+00:00'
-  location: Circuit de la Sarthe, France
-  status: CONFIRMED
-  round: 3
-  source:
-    name: 24 Hours of Le Mans Free Practice 4
-    date: '2026-06-11'
-    time: '21:00:00'
-    venue: Circuit de la Sarthe
-    country: France
-    round: 3
-    season: '2026'
-- id_event: '2421037'
-  summary: 24 Hours of Le Mans
-  start: '2026-06-13T14:00:00+00:00'
-  duration: 1440m
-  location: Circuit de la Sarthe, France
-  status: CONFIRMED
-  round: 3
-  source:
-    name: 24 Hours of Le Mans
-    date: '2026-06-13'
-    time: '14:00:00'
-    venue: Circuit de la Sarthe
-    country: France
-    round: 3
-    season: '2026'
-- id_event: '2490505'
-  summary: "6 Hours of S\xE3o Paulo Free Practice 1"
-  start: '2026-07-10T14:00:00+00:00'
+  sessions:
+  - id_event: '2490495'
+    label: Free Practice 1
+    type: practice
+    start: '2026-06-10T12:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 24 Hours of Le Mans Free Practice 1
+      date: '2026-06-10'
+      time: '12:00:00'
+      venue: Circuit de la Sarthe
+      country: France
+      round: 3
+      season: '2026'
+  - id_event: '2490496'
+    label: "Hyperpole Qualifying \u2013 LMP2 & LMGT3"
+    type: hyperpole
+    start: '2026-06-10T16:45:00+00:00'
+    status: CONFIRMED
+    source:
+      name: "24 Hours of Le Mans Hyperpole Qualifying \u2013 LMP2 & LMGT3"
+      date: '2026-06-10'
+      time: '16:45:00'
+      venue: Circuit de la Sarthe
+      country: France
+      round: 3
+      season: '2026'
+  - id_event: '2490497'
+    label: "Hyperpole Qualifying \u2013 Hypercar"
+    type: hyperpole
+    start: '2026-06-10T17:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: "24 Hours of Le Mans Hyperpole Qualifying \u2013 Hypercar"
+      date: '2026-06-10'
+      time: '17:30:00'
+      venue: Circuit de la Sarthe
+      country: France
+      round: 3
+      season: '2026'
+  - id_event: '2490498'
+    label: Free Practice 2
+    type: practice
+    start: '2026-06-10T20:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 24 Hours of Le Mans Free Practice 2
+      date: '2026-06-10'
+      time: '20:00:00'
+      venue: Circuit de la Sarthe
+      country: France
+      round: 3
+      season: '2026'
+  - id_event: '2490499'
+    label: Free Practice 3
+    type: practice
+    start: '2026-06-11T12:45:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 24 Hours of Le Mans Free Practice 3
+      date: '2026-06-11'
+      time: '12:45:00'
+      venue: Circuit de la Sarthe
+      country: France
+      round: 3
+      season: '2026'
+  - id_event: '2490500'
+    label: Hyperpole 1 - LMP2 & LMGT3
+    type: hyperpole
+    start: '2026-06-11T18:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 24 Hours of Le Mans Hyperpole 1 - LMP2 & LMGT3
+      date: '2026-06-11'
+      time: '18:00:00'
+      venue: Circuit de la Sarthe
+      country: France
+      round: 3
+      season: '2026'
+  - id_event: '2490501'
+    label: Hyperpole 2 - LMP2 & LMGT3
+    type: hyperpole
+    start: '2026-06-11T18:35:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 24 Hours of Le Mans Hyperpole 2 - LMP2 & LMGT3
+      date: '2026-06-11'
+      time: '18:35:00'
+      venue: Circuit de la Sarthe
+      country: France
+      round: 3
+      season: '2026'
+  - id_event: '2490502'
+    label: Hyperpole 1 - Hypercar
+    type: hyperpole
+    start: '2026-06-11T19:05:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 24 Hours of Le Mans Hyperpole 1 - Hypercar
+      date: '2026-06-11'
+      time: '19:05:00'
+      venue: Circuit de la Sarthe
+      country: France
+      round: 3
+      season: '2026'
+  - id_event: '2490503'
+    label: Hyperpole 2 - Hypercar
+    type: hyperpole
+    start: '2026-06-11T19:40:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 24 Hours of Le Mans Hyperpole 2 - Hypercar
+      date: '2026-06-11'
+      time: '19:40:00'
+      venue: Circuit de la Sarthe
+      country: France
+      round: 3
+      season: '2026'
+  - id_event: '2490504'
+    label: Free Practice 4
+    type: practice
+    start: '2026-06-11T21:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: 24 Hours of Le Mans Free Practice 4
+      date: '2026-06-11'
+      time: '21:00:00'
+      venue: Circuit de la Sarthe
+      country: France
+      round: 3
+      season: '2026'
+  - id_event: '2421037'
+    label: Race
+    type: race
+    start: '2026-06-13T14:00:00+00:00'
+    duration: 1440m
+    status: CONFIRMED
+    source:
+      name: 24 Hours of Le Mans
+      date: '2026-06-13'
+      time: '14:00:00'
+      venue: Circuit de la Sarthe
+      country: France
+      round: 3
+      season: '2026'
+- name: "6 Hours of S\xE3o Paulo"
   location: Interlagos Circuit, Brazil
-  status: CONFIRMED
   round: 4
-  source:
-    name: "6 Hours of S\xE3o Paulo Free Practice 1"
-    date: '2026-07-10'
-    time: '14:00:00'
-    venue: Interlagos Circuit
-    country: Brazil
-    round: 4
-    season: '2026'
-- id_event: '2490506'
-  summary: "6 Hours of S\xE3o Paulo Free Practice 2"
-  start: '2026-07-10T18:50:00+00:00'
-  location: Interlagos Circuit, Brazil
-  status: CONFIRMED
-  round: 4
-  source:
-    name: "6 Hours of S\xE3o Paulo Free Practice 2"
-    date: '2026-07-10'
-    time: '18:50:00'
-    venue: Interlagos Circuit
-    country: Brazil
-    round: 4
-    season: '2026'
-- id_event: '2490508'
-  summary: "6 Hours of S\xE3o Paulo Free Practice 3"
-  start: '2026-07-11T13:10:00+00:00'
-  location: Interlagos Circuit, Brazil
-  status: CONFIRMED
-  round: 4
-  source:
-    name: "6 Hours of S\xE3o Paulo Free Practice 3"
-    date: '2026-07-11'
-    time: '13:10:00'
-    venue: Interlagos Circuit
-    country: Brazil
-    round: 4
-    season: '2026'
-- id_event: '2490510'
-  summary: "6 Hours of S\xE3o Paulo Qualifying - LMGT3"
-  start: '2026-07-11T17:30:00+00:00'
-  location: Interlagos Circuit, Brazil
-  status: CONFIRMED
-  round: 4
-  source:
-    name: "6 Hours of S\xE3o Paulo Qualifying - LMGT3"
-    date: '2026-07-11'
-    time: '17:30:00'
-    venue: Interlagos Circuit
-    country: Brazil
-    round: 4
-    season: '2026'
-- id_event: '2490511'
-  summary: "6 Hours of S\xE3o Paulo Hyperpole - LMGT3"
-  start: '2026-07-11T17:50:00+00:00'
-  location: Interlagos Circuit, Brazil
-  status: CONFIRMED
-  round: 4
-  source:
-    name: "6 Hours of S\xE3o Paulo Hyperpole - LMGT3"
-    date: '2026-07-11'
-    time: '17:50:00'
-    venue: Interlagos Circuit
-    country: Brazil
-    round: 4
-    season: '2026'
-- id_event: '2490512'
-  summary: "6 Hours of S\xE3o Paulo Qualifying - Hypercar"
-  start: '2026-07-11T18:25:00+00:00'
-  location: Interlagos Circuit, Brazil
-  status: CONFIRMED
-  round: 4
-  source:
-    name: "6 Hours of S\xE3o Paulo Qualifying - Hypercar"
-    date: '2026-07-11'
-    time: '18:25:00'
-    venue: Interlagos Circuit
-    country: Brazil
-    round: 4
-    season: '2026'
-- id_event: '2490514'
-  summary: "6 Hours of S\xE3o Paulo Hyperpole - Hypercar"
-  start: '2026-07-11T18:45:00+00:00'
-  location: Interlagos Circuit, Brazil
-  status: CONFIRMED
-  round: 4
-  source:
-    name: "6 Hours of S\xE3o Paulo Hyperpole - Hypercar"
-    date: '2026-07-11'
-    time: '18:45:00'
-    venue: Interlagos Circuit
-    country: Brazil
-    round: 4
-    season: '2026'
-- id_event: '2421038'
-  summary: "6 Hours of S\xE3o Paulo"
-  start: '2026-07-12T16:30:00+00:00'
-  location: Interlagos Circuit, Brazil
-  status: CONFIRMED
-  round: 4
-  source:
-    name: "6 Hours of S\xE3o Paulo"
-    date: '2026-07-12'
-    time: '16:30:00'
-    venue: Interlagos Circuit
-    country: Brazil
-    round: 4
-    season: '2026'
-- id_event: '2490517'
-  summary: Lone Star Le Mans Free Practice 1
-  date: '2026-09-04'
+  sessions:
+  - id_event: '2490505'
+    label: Free Practice 1
+    type: practice
+    start: '2026-07-10T14:00:00+00:00'
+    status: CONFIRMED
+    source:
+      name: "6 Hours of S\xE3o Paulo Free Practice 1"
+      date: '2026-07-10'
+      time: '14:00:00'
+      venue: Interlagos Circuit
+      country: Brazil
+      round: 4
+      season: '2026'
+  - id_event: '2490506'
+    label: Free Practice 2
+    type: practice
+    start: '2026-07-10T18:50:00+00:00'
+    status: CONFIRMED
+    source:
+      name: "6 Hours of S\xE3o Paulo Free Practice 2"
+      date: '2026-07-10'
+      time: '18:50:00'
+      venue: Interlagos Circuit
+      country: Brazil
+      round: 4
+      season: '2026'
+  - id_event: '2490508'
+    label: Free Practice 3
+    type: practice
+    start: '2026-07-11T13:10:00+00:00'
+    status: CONFIRMED
+    source:
+      name: "6 Hours of S\xE3o Paulo Free Practice 3"
+      date: '2026-07-11'
+      time: '13:10:00'
+      venue: Interlagos Circuit
+      country: Brazil
+      round: 4
+      season: '2026'
+  - id_event: '2490510'
+    label: Qualifying - LMGT3
+    type: qualifying
+    start: '2026-07-11T17:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: "6 Hours of S\xE3o Paulo Qualifying - LMGT3"
+      date: '2026-07-11'
+      time: '17:30:00'
+      venue: Interlagos Circuit
+      country: Brazil
+      round: 4
+      season: '2026'
+  - id_event: '2490511'
+    label: Hyperpole - LMGT3
+    type: hyperpole
+    start: '2026-07-11T17:50:00+00:00'
+    status: CONFIRMED
+    source:
+      name: "6 Hours of S\xE3o Paulo Hyperpole - LMGT3"
+      date: '2026-07-11'
+      time: '17:50:00'
+      venue: Interlagos Circuit
+      country: Brazil
+      round: 4
+      season: '2026'
+  - id_event: '2490512'
+    label: Qualifying - Hypercar
+    type: qualifying
+    start: '2026-07-11T18:25:00+00:00'
+    status: CONFIRMED
+    source:
+      name: "6 Hours of S\xE3o Paulo Qualifying - Hypercar"
+      date: '2026-07-11'
+      time: '18:25:00'
+      venue: Interlagos Circuit
+      country: Brazil
+      round: 4
+      season: '2026'
+  - id_event: '2490514'
+    label: Hyperpole - Hypercar
+    type: hyperpole
+    start: '2026-07-11T18:45:00+00:00'
+    status: CONFIRMED
+    source:
+      name: "6 Hours of S\xE3o Paulo Hyperpole - Hypercar"
+      date: '2026-07-11'
+      time: '18:45:00'
+      venue: Interlagos Circuit
+      country: Brazil
+      round: 4
+      season: '2026'
+  - id_event: '2421038'
+    label: Race
+    type: race
+    start: '2026-07-12T16:30:00+00:00'
+    status: CONFIRMED
+    source:
+      name: "6 Hours of S\xE3o Paulo"
+      date: '2026-07-12'
+      time: '16:30:00'
+      venue: Interlagos Circuit
+      country: Brazil
+      round: 4
+      season: '2026'
+- name: Lone Star Le Mans
   location: Circuit of the Americas, United States
-  status: CONFIRMED
   round: 5
-  source:
-    name: Lone Star Le Mans Free Practice 1
+  sessions:
+  - id_event: '2490517'
+    label: Free Practice 1
+    type: practice
     date: '2026-09-04'
-    time: 00:00:00
-    venue: Circuit of the Americas
-    country: United States
-    round: 5
-    season: '2026'
-- id_event: '2490519'
-  summary: Lone Star Le Mans Free Practice 2
-  date: '2026-09-04'
-  location: Circuit of the Americas, United States
-  status: CONFIRMED
-  round: 5
-  source:
-    name: Lone Star Le Mans Free Practice 2
+    status: CONFIRMED
+    source:
+      name: Lone Star Le Mans Free Practice 1
+      date: '2026-09-04'
+      time: 00:00:00
+      venue: Circuit of the Americas
+      country: United States
+      round: 5
+      season: '2026'
+  - id_event: '2490519'
+    label: Free Practice 2
+    type: practice
     date: '2026-09-04'
-    time: 00:00:00
-    venue: Circuit of the Americas
-    country: United States
-    round: 5
-    season: '2026'
-- id_event: '2490521'
-  summary: Lone Star Le Mans Free Practice 3
-  date: '2026-09-05'
-  location: Circuit of the Americas, United States
-  status: CONFIRMED
-  round: 5
-  source:
-    name: Lone Star Le Mans Free Practice 3
+    status: CONFIRMED
+    source:
+      name: Lone Star Le Mans Free Practice 2
+      date: '2026-09-04'
+      time: 00:00:00
+      venue: Circuit of the Americas
+      country: United States
+      round: 5
+      season: '2026'
+  - id_event: '2490521'
+    label: Free Practice 3
+    type: practice
     date: '2026-09-05'
-    time: 00:00:00
-    venue: Circuit of the Americas
-    country: United States
-    round: 5
-    season: '2026'
-- id_event: '2490522'
-  summary: Lone Star Le Mans Qualifying - LMGT3
-  date: '2026-09-05'
-  location: Circuit of the Americas, United States
-  status: CONFIRMED
-  round: 5
-  source:
-    name: Lone Star Le Mans Qualifying - LMGT3
+    status: CONFIRMED
+    source:
+      name: Lone Star Le Mans Free Practice 3
+      date: '2026-09-05'
+      time: 00:00:00
+      venue: Circuit of the Americas
+      country: United States
+      round: 5
+      season: '2026'
+  - id_event: '2490522'
+    label: Qualifying - LMGT3
+    type: qualifying
     date: '2026-09-05'
-    time: 00:00:00
-    venue: Circuit of the Americas
-    country: United States
-    round: 5
-    season: '2026'
-- id_event: '2490523'
-  summary: Lone Star Le Mans Hyperpole - LMGT3
-  date: '2026-09-05'
-  location: Circuit of the Americas, United States
-  status: CONFIRMED
-  round: 5
-  source:
-    name: Lone Star Le Mans Hyperpole - LMGT3
+    status: CONFIRMED
+    source:
+      name: Lone Star Le Mans Qualifying - LMGT3
+      date: '2026-09-05'
+      time: 00:00:00
+      venue: Circuit of the Americas
+      country: United States
+      round: 5
+      season: '2026'
+  - id_event: '2490523'
+    label: Hyperpole - LMGT3
+    type: hyperpole
     date: '2026-09-05'
-    time: 00:00:00
-    venue: Circuit of the Americas
-    country: United States
-    round: 5
-    season: '2026'
-- id_event: '2490524'
-  summary: Lone Star Le Mans Hyperpole - Hypercar
-  date: '2026-09-05'
-  location: Circuit of the Americas, United States
-  status: CONFIRMED
-  round: 5
-  source:
-    name: Lone Star Le Mans Hyperpole - Hypercar
+    status: CONFIRMED
+    source:
+      name: Lone Star Le Mans Hyperpole - LMGT3
+      date: '2026-09-05'
+      time: 00:00:00
+      venue: Circuit of the Americas
+      country: United States
+      round: 5
+      season: '2026'
+  - id_event: '2490524'
+    label: Hyperpole - Hypercar
+    type: hyperpole
     date: '2026-09-05'
-    time: 00:00:00
-    venue: Circuit of the Americas
-    country: United States
-    round: 5
-    season: '2026'
-- id_event: '2421039'
-  summary: Lone Star Le Mans
-  date: '2026-09-06'
-  duration: 360m
-  location: Circuit of the Americas, United States
-  status: CONFIRMED
-  round: 5
-  source:
-    name: Lone Star Le Mans
+    status: CONFIRMED
+    source:
+      name: Lone Star Le Mans Hyperpole - Hypercar
+      date: '2026-09-05'
+      time: 00:00:00
+      venue: Circuit of the Americas
+      country: United States
+      round: 5
+      season: '2026'
+  - id_event: '2421039'
+    label: Race
+    type: race
     date: '2026-09-06'
-    time: 00:00:00
-    venue: Circuit of the Americas
-    country: United States
-    round: 5
-    season: '2026'
-- id_event: '2490525'
-  summary: 6 Hours of Fuji Free Practice 1
-  date: '2026-09-25'
+    duration: 360m
+    status: CONFIRMED
+    source:
+      name: Lone Star Le Mans
+      date: '2026-09-06'
+      time: 00:00:00
+      venue: Circuit of the Americas
+      country: United States
+      round: 5
+      season: '2026'
+- name: 6 Hours of Fuji
   location: Fuji Speedway, Japan
-  status: CONFIRMED
   round: 6
-  source:
-    name: 6 Hours of Fuji Free Practice 1
+  sessions:
+  - id_event: '2490525'
+    label: Free Practice 1
+    type: practice
     date: '2026-09-25'
-    time: 00:00:00
-    venue: Fuji Speedway
-    country: Japan
-    round: 6
-    season: '2026'
-- id_event: '2490526'
-  summary: 6 Hours of Fuji Free Practice 2
-  date: '2026-09-25'
-  location: Fuji Speedway, Japan
-  status: CONFIRMED
-  round: 6
-  source:
-    name: 6 Hours of Fuji Free Practice 2
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Fuji Free Practice 1
+      date: '2026-09-25'
+      time: 00:00:00
+      venue: Fuji Speedway
+      country: Japan
+      round: 6
+      season: '2026'
+  - id_event: '2490526'
+    label: Free Practice 2
+    type: practice
     date: '2026-09-25'
-    time: 00:00:00
-    venue: Fuji Speedway
-    country: Japan
-    round: 6
-    season: '2026'
-- id_event: '2490527'
-  summary: 6 Hours of Fuji Free Practice 3
-  date: '2026-09-26'
-  location: Fuji Speedway, Japan
-  status: CONFIRMED
-  round: 6
-  source:
-    name: 6 Hours of Fuji Free Practice 3
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Fuji Free Practice 2
+      date: '2026-09-25'
+      time: 00:00:00
+      venue: Fuji Speedway
+      country: Japan
+      round: 6
+      season: '2026'
+  - id_event: '2490527'
+    label: Free Practice 3
+    type: practice
     date: '2026-09-26'
-    time: 00:00:00
-    venue: Fuji Speedway
-    country: Japan
-    round: 6
-    season: '2026'
-- id_event: '2490528'
-  summary: 6 Hours of Fuji Qualifying - LMGT3
-  date: '2026-09-26'
-  location: Fuji Speedway, Japan
-  status: CONFIRMED
-  round: 6
-  source:
-    name: 6 Hours of Fuji Qualifying - LMGT3
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Fuji Free Practice 3
+      date: '2026-09-26'
+      time: 00:00:00
+      venue: Fuji Speedway
+      country: Japan
+      round: 6
+      season: '2026'
+  - id_event: '2490528'
+    label: Qualifying - LMGT3
+    type: qualifying
     date: '2026-09-26'
-    time: 00:00:00
-    venue: Fuji Speedway
-    country: Japan
-    round: 6
-    season: '2026'
-- id_event: '2490529'
-  summary: 6 Hours of Fuji Qualifying - Hypercar
-  date: '2026-09-26'
-  location: Fuji Speedway, Japan
-  status: CONFIRMED
-  round: 6
-  source:
-    name: 6 Hours of Fuji Qualifying - Hypercar
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Fuji Qualifying - LMGT3
+      date: '2026-09-26'
+      time: 00:00:00
+      venue: Fuji Speedway
+      country: Japan
+      round: 6
+      season: '2026'
+  - id_event: '2490529'
+    label: Qualifying - Hypercar
+    type: qualifying
     date: '2026-09-26'
-    time: 00:00:00
-    venue: Fuji Speedway
-    country: Japan
-    round: 6
-    season: '2026'
-- id_event: '2490530'
-  summary: 6 Hours of Fuji Hyperpole - Hypercar
-  date: '2026-09-26'
-  location: Fuji Speedway, Japan
-  status: CONFIRMED
-  round: 6
-  source:
-    name: 6 Hours of Fuji Hyperpole - Hypercar
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Fuji Qualifying - Hypercar
+      date: '2026-09-26'
+      time: 00:00:00
+      venue: Fuji Speedway
+      country: Japan
+      round: 6
+      season: '2026'
+  - id_event: '2490530'
+    label: Hyperpole - Hypercar
+    type: hyperpole
     date: '2026-09-26'
-    time: 00:00:00
-    venue: Fuji Speedway
-    country: Japan
-    round: 6
-    season: '2026'
-- id_event: '2421041'
-  summary: 6 Hours of Fuji
-  date: '2026-09-27'
-  location: Fuji Speedway, Japan
-  status: CONFIRMED
-  round: 6
-  source:
-    name: 6 Hours of Fuji
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Fuji Hyperpole - Hypercar
+      date: '2026-09-26'
+      time: 00:00:00
+      venue: Fuji Speedway
+      country: Japan
+      round: 6
+      season: '2026'
+  - id_event: '2421041'
+    label: Race
+    type: race
     date: '2026-09-27'
-    time: 00:00:00
-    venue: Fuji Speedway
-    country: Japan
-    round: 6
-    season: '2026'
-- id_event: '2490531'
-  summary: 6 Hours of Barcelona Free Practice 1
-  date: '2026-10-16'
+    status: CONFIRMED
+    source:
+      name: 6 Hours of Fuji
+      date: '2026-09-27'
+      time: 00:00:00
+      venue: Fuji Speedway
+      country: Japan
+      round: 6
+      season: '2026'
+- name: 6 Hours of Barcelona
   location: Circuit de Barcelona-Catalunya, Spain
-  status: CONFIRMED
   round: 7
-  source:
-    name: Qatar 1812 KM Free Practice 1
-    date: '2026-10-22'
-    time: 00:00:00
-    venue: Losail International Circuit
-    country: Qatar
-    round: 7
-    season: '2026'
-- id_event: '2490532'
-  summary: 6 Hours of Barcelona Free Practice 2
-  date: '2026-10-16'
-  location: Circuit de Barcelona-Catalunya, Spain
-  status: CONFIRMED
-  round: 7
-  source:
-    name: Qatar 1812 KM Free Practice 2
-    date: '2026-10-22'
-    time: 00:00:00
-    venue: Losail International Circuit
-    country: Qatar
-    round: 7
-    season: '2026'
-- id_event: '2490533'
-  summary: 6 Hours of Barcelona Free Practice 3
-  date: '2026-10-17'
-  location: Circuit de Barcelona-Catalunya, Spain
-  status: CONFIRMED
-  round: 7
-  source:
-    name: Qatar 1812 KM Free Practice 3
-    date: '2026-10-23'
-    time: 00:00:00
-    venue: Losail International Circuit
-    country: Qatar
-    round: 7
-    season: '2026'
-- id_event: '2490534'
-  summary: 6 Hours of Barcelona Qualifying - LMGT3
-  date: '2026-10-17'
-  location: Circuit de Barcelona-Catalunya, Spain
-  status: CONFIRMED
-  round: 7
-  source:
-    name: Qatar 1812 KM Qualifying - LMGT3
-    date: '2026-10-23'
-    time: 00:00:00
-    venue: Losail International Circuit
-    country: Qatar
-    round: 7
-    season: '2026'
-- id_event: '2490535'
-  summary: 6 Hours of Barcelona Hyperpole - LMGT3
-  date: '2026-10-17'
-  location: Circuit de Barcelona-Catalunya, Spain
-  status: CONFIRMED
-  round: 7
-  source:
-    name: Qatar 1812 KM Hyperpole - LMGT3
-    date: '2026-10-23'
-    time: 00:00:00
-    venue: Losail International Circuit
-    country: Qatar
-    round: 7
-    season: '2026'
-- id_event: '2490536'
-  summary: 6 Hours of Barcelona Qualifying - Hypercar
-  date: '2026-10-17'
-  location: Circuit de Barcelona-Catalunya, Spain
-  status: CONFIRMED
-  round: 7
-  source:
-    name: Qatar 1812 KM Qualifying - Hypercar
-    date: '2026-10-23'
-    time: 00:00:00
-    venue: Losail International Circuit
-    country: Qatar
-    round: 7
-    season: '2026'
-- id_event: '2490537'
-  summary: 6 Hours of Barcelona Hyperpole - Hypercar
-  date: '2026-10-17'
-  location: Circuit de Barcelona-Catalunya, Spain
-  status: CONFIRMED
-  round: 7
-  source:
-    name: Qatar 1812 KM Hyperpole - Hypercar
-    date: '2026-10-23'
-    time: 00:00:00
-    venue: Losail International Circuit
-    country: Qatar
-    round: 7
-    season: '2026'
-- id_event: '2421034'
-  summary: 6 Hours of Barcelona
-  date: '2026-10-18'
-  duration: 360m
-  location: Circuit de Barcelona-Catalunya, Spain
-  status: CONFIRMED
-  round: 7
-  source:
-    name: Qatar 1812 KM
-    date: '2026-10-24'
-    time: 00:00:00
-    venue: Losail International Circuit
-    country: Qatar
-    round: 7
-    season: '2026'
-- id_event: '2490543'
-  summary: 6 Hours of Monza Free Practice 1
-  date: '2026-11-06'
+  sessions:
+  - id_event: '2490531'
+    label: Free Practice 1
+    type: practice
+    date: '2026-10-16'
+    status: CONFIRMED
+    source:
+      name: Qatar 1812 KM Free Practice 1
+      date: '2026-10-22'
+      time: 00:00:00
+      venue: Losail International Circuit
+      country: Qatar
+      round: 7
+      season: '2026'
+  - id_event: '2490532'
+    label: Free Practice 2
+    type: practice
+    date: '2026-10-16'
+    status: CONFIRMED
+    source:
+      name: Qatar 1812 KM Free Practice 2
+      date: '2026-10-22'
+      time: 00:00:00
+      venue: Losail International Circuit
+      country: Qatar
+      round: 7
+      season: '2026'
+  - id_event: '2490533'
+    label: Free Practice 3
+    type: practice
+    date: '2026-10-17'
+    status: CONFIRMED
+    source:
+      name: Qatar 1812 KM Free Practice 3
+      date: '2026-10-23'
+      time: 00:00:00
+      venue: Losail International Circuit
+      country: Qatar
+      round: 7
+      season: '2026'
+  - id_event: '2490534'
+    label: Qualifying - LMGT3
+    type: qualifying
+    date: '2026-10-17'
+    status: CONFIRMED
+    source:
+      name: Qatar 1812 KM Qualifying - LMGT3
+      date: '2026-10-23'
+      time: 00:00:00
+      venue: Losail International Circuit
+      country: Qatar
+      round: 7
+      season: '2026'
+  - id_event: '2490535'
+    label: Hyperpole - LMGT3
+    type: hyperpole
+    date: '2026-10-17'
+    status: CONFIRMED
+    source:
+      name: Qatar 1812 KM Hyperpole - LMGT3
+      date: '2026-10-23'
+      time: 00:00:00
+      venue: Losail International Circuit
+      country: Qatar
+      round: 7
+      season: '2026'
+  - id_event: '2490536'
+    label: Qualifying - Hypercar
+    type: qualifying
+    date: '2026-10-17'
+    status: CONFIRMED
+    source:
+      name: Qatar 1812 KM Qualifying - Hypercar
+      date: '2026-10-23'
+      time: 00:00:00
+      venue: Losail International Circuit
+      country: Qatar
+      round: 7
+      season: '2026'
+  - id_event: '2490537'
+    label: Hyperpole - Hypercar
+    type: hyperpole
+    date: '2026-10-17'
+    status: CONFIRMED
+    source:
+      name: Qatar 1812 KM Hyperpole - Hypercar
+      date: '2026-10-23'
+      time: 00:00:00
+      venue: Losail International Circuit
+      country: Qatar
+      round: 7
+      season: '2026'
+  - id_event: '2421034'
+    label: Race
+    type: race
+    date: '2026-10-18'
+    duration: 360m
+    status: CONFIRMED
+    source:
+      name: Qatar 1812 KM
+      date: '2026-10-24'
+      time: 00:00:00
+      venue: Losail International Circuit
+      country: Qatar
+      round: 7
+      season: '2026'
+- name: 6 Hours of Monza
   location: Autodromo Nazionale Monza, Italy
-  status: CONFIRMED
   round: 8
-  source:
-    name: 8 Hours of Bahrain Free Practice 1
-    date: '2026-11-05'
-    time: 00:00:00
-    venue: Bahrain International Circuit
-    country: Bahrain
-    round: 8
-    season: '2026'
-- id_event: '2490544'
-  summary: 6 Hours of Monza Free Practice 2
-  date: '2026-11-06'
-  location: Autodromo Nazionale Monza, Italy
-  status: CONFIRMED
-  round: 8
-  source:
-    name: 8 Hours of Bahrain Free Practice 2
-    date: '2026-11-05'
-    time: 00:00:00
-    venue: Bahrain International Circuit
-    country: Bahrain
-    round: 8
-    season: '2026'
-- id_event: '2490545'
-  summary: 6 Hours of Monza Free Practice 3
-  date: '2026-11-07'
-  location: Autodromo Nazionale Monza, Italy
-  status: CONFIRMED
-  round: 8
-  source:
-    name: 8 Hours of Bahrain Free Practice 3
+  sessions:
+  - id_event: '2490543'
+    label: Free Practice 1
+    type: practice
     date: '2026-11-06'
-    time: 00:00:00
-    venue: Bahrain International Circuit
-    country: Bahrain
-    round: 8
-    season: '2026'
-- id_event: '2490546'
-  summary: 6 Hours of Monza Qualifying - LMGT3
-  date: '2026-11-07'
-  location: Autodromo Nazionale Monza, Italy
-  status: CONFIRMED
-  round: 8
-  source:
-    name: 8 Hours of Bahrain Qualifying - LMGT3
+    status: CONFIRMED
+    source:
+      name: 8 Hours of Bahrain Free Practice 1
+      date: '2026-11-05'
+      time: 00:00:00
+      venue: Bahrain International Circuit
+      country: Bahrain
+      round: 8
+      season: '2026'
+  - id_event: '2490544'
+    label: Free Practice 2
+    type: practice
     date: '2026-11-06'
-    time: 00:00:00
-    venue: Bahrain International Circuit
-    country: Bahrain
-    round: 8
-    season: '2026'
-- id_event: '2490547'
-  summary: 6 Hours of Monza Hyperpole - LMGT3
-  date: '2026-11-07'
-  location: Autodromo Nazionale Monza, Italy
-  status: CONFIRMED
-  round: 8
-  source:
-    name: 8 Hours of Bahrain Hyperpole - LMGT3
-    date: '2026-11-06'
-    time: 00:00:00
-    venue: Bahrain International Circuit
-    country: Bahrain
-    round: 8
-    season: '2026'
-- id_event: '2490548'
-  summary: 6 Hours of Monza Qualifying - Hypercar
-  date: '2026-11-07'
-  location: Autodromo Nazionale Monza, Italy
-  status: CONFIRMED
-  round: 8
-  source:
-    name: 8 Hours of Bahrain Qualifying - Hypercar
-    date: '2026-11-06'
-    time: 00:00:00
-    venue: Bahrain International Circuit
-    country: Bahrain
-    round: 8
-    season: '2026'
-- id_event: '2490549'
-  summary: 6 Hours of Monza Hyperpole - Hypercar
-  date: '2026-11-07'
-  location: Autodromo Nazionale Monza, Italy
-  status: CONFIRMED
-  round: 8
-  source:
-    name: 8 Hours of Bahrain Hyperpole - Hypercar
-    date: '2026-11-06'
-    time: 00:00:00
-    venue: Bahrain International Circuit
-    country: Bahrain
-    round: 8
-    season: '2026'
-- id_event: '2421042'
-  summary: 6 Hours of Monza
-  date: '2026-11-08'
-  duration: 360m
-  location: Autodromo Nazionale Monza, Italy
-  status: CONFIRMED
-  round: 8
-  source:
-    name: 8 Hours of Bahrain
+    status: CONFIRMED
+    source:
+      name: 8 Hours of Bahrain Free Practice 2
+      date: '2026-11-05'
+      time: 00:00:00
+      venue: Bahrain International Circuit
+      country: Bahrain
+      round: 8
+      season: '2026'
+  - id_event: '2490545'
+    label: Free Practice 3
+    type: practice
     date: '2026-11-07'
-    time: 00:00:00
-    venue: Bahrain International Circuit
-    country: Bahrain
-    round: 8
-    season: '2026'
+    status: CONFIRMED
+    source:
+      name: 8 Hours of Bahrain Free Practice 3
+      date: '2026-11-06'
+      time: 00:00:00
+      venue: Bahrain International Circuit
+      country: Bahrain
+      round: 8
+      season: '2026'
+  - id_event: '2490546'
+    label: Qualifying - LMGT3
+    type: qualifying
+    date: '2026-11-07'
+    status: CONFIRMED
+    source:
+      name: 8 Hours of Bahrain Qualifying - LMGT3
+      date: '2026-11-06'
+      time: 00:00:00
+      venue: Bahrain International Circuit
+      country: Bahrain
+      round: 8
+      season: '2026'
+  - id_event: '2490547'
+    label: Hyperpole - LMGT3
+    type: hyperpole
+    date: '2026-11-07'
+    status: CONFIRMED
+    source:
+      name: 8 Hours of Bahrain Hyperpole - LMGT3
+      date: '2026-11-06'
+      time: 00:00:00
+      venue: Bahrain International Circuit
+      country: Bahrain
+      round: 8
+      season: '2026'
+  - id_event: '2490548'
+    label: Qualifying - Hypercar
+    type: qualifying
+    date: '2026-11-07'
+    status: CONFIRMED
+    source:
+      name: 8 Hours of Bahrain Qualifying - Hypercar
+      date: '2026-11-06'
+      time: 00:00:00
+      venue: Bahrain International Circuit
+      country: Bahrain
+      round: 8
+      season: '2026'
+  - id_event: '2490549'
+    label: Hyperpole - Hypercar
+    type: hyperpole
+    date: '2026-11-07'
+    status: CONFIRMED
+    source:
+      name: 8 Hours of Bahrain Hyperpole - Hypercar
+      date: '2026-11-06'
+      time: 00:00:00
+      venue: Bahrain International Circuit
+      country: Bahrain
+      round: 8
+      season: '2026'
+  - id_event: '2421042'
+    label: Race
+    type: race
+    date: '2026-11-08'
+    duration: 360m
+    status: CONFIRMED
+    source:
+      name: 8 Hours of Bahrain
+      date: '2026-11-07'
+      time: 00:00:00
+      venue: Bahrain International Circuit
+      country: Bahrain
+      round: 8
+      season: '2026'

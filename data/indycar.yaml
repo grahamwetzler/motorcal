@@ -5,328 +5,374 @@ race_only: true
 durations:
   race: 120m
 events:
-- id_event: '2402397'
-  summary: Firestone Grand Prix of St. Petersburg
-  start: '2026-03-01T17:00:00+00:00'
+- name: Firestone Grand Prix of St. Petersburg
   location: Streets of St. Petersburg, United States
-  status: CONFIRMED
-  alarms:
-  - '0'
   round: 1
-  source:
-    name: Firestone Grand Prix of St. Petersburg
-    date: '2026-03-01'
-    time: '17:00:00'
-    venue: Streets of St. Petersburg
-    country: United States
-    round: 1
-    season: '2026'
-- id_event: '2402398'
-  summary: Good Ranchers 250
-  start: '2026-03-07T20:00:00+00:00'
+  sessions:
+  - id_event: '2402397'
+    label: Race
+    type: race
+    start: '2026-03-01T17:00:00+00:00'
+    status: CONFIRMED
+    alarms:
+    - '0'
+    source:
+      name: Firestone Grand Prix of St. Petersburg
+      date: '2026-03-01'
+      time: '17:00:00'
+      venue: Streets of St. Petersburg
+      country: United States
+      round: 1
+      season: '2026'
+- name: Good Ranchers 250
   location: Phoenix Raceway, United States
-  status: CONFIRMED
-  alarms:
-  - '0'
   round: 2
-  source:
-    name: Good Ranchers 250
-    date: '2026-03-07'
-    time: '20:00:00'
-    venue: Phoenix Raceway
-    country: United States
-    round: 2
-    season: '2026'
-- id_event: '2402399'
-  summary: Java House Grand Prix of Arlington
-  start: '2026-03-15T15:30:00+00:00'
+  sessions:
+  - id_event: '2402398'
+    label: Race
+    type: race
+    start: '2026-03-07T20:00:00+00:00'
+    status: CONFIRMED
+    alarms:
+    - '0'
+    source:
+      name: Good Ranchers 250
+      date: '2026-03-07'
+      time: '20:00:00'
+      venue: Phoenix Raceway
+      country: United States
+      round: 2
+      season: '2026'
+- name: Java House Grand Prix of Arlington
   location: United States
-  status: CONFIRMED
-  alarms:
-  - '0'
   round: 3
-  source:
-    name: Java House Grand Prix of Arlington
-    date: '2026-03-15'
-    time: '17:15:00'
-    country: United States
-    round: 3
-    season: '2026'
-- id_event: '2402400'
-  summary: Childrens of Alabama Indy Grand Prix
-  start: '2026-03-29T17:00:00+00:00'
+  sessions:
+  - id_event: '2402399'
+    label: Race
+    type: race
+    start: '2026-03-15T15:30:00+00:00'
+    status: CONFIRMED
+    alarms:
+    - '0'
+    source:
+      name: Java House Grand Prix of Arlington
+      date: '2026-03-15'
+      time: '17:15:00'
+      country: United States
+      round: 3
+      season: '2026'
+- name: Childrens of Alabama Indy Grand Prix
   location: Barber Motorsports Park, United States
-  status: CONFIRMED
-  alarms:
-  - '0'
   round: 4
-  source:
-    name: Childrens of Alabama Indy Grand Prix
-    date: '2026-03-29'
-    time: '18:00:00'
-    venue: Barber Motorsports Park
-    country: United States
-    round: 4
-    season: '2026'
-- id_event: '2402401'
-  summary: Acura Grand Prix of Long Beach
-  start: '2026-04-19T21:30:00+00:00'
+  sessions:
+  - id_event: '2402400'
+    label: Race
+    type: race
+    start: '2026-03-29T17:00:00+00:00'
+    status: CONFIRMED
+    alarms:
+    - '0'
+    source:
+      name: Childrens of Alabama Indy Grand Prix
+      date: '2026-03-29'
+      time: '18:00:00'
+      venue: Barber Motorsports Park
+      country: United States
+      round: 4
+      season: '2026'
+- name: Acura Grand Prix of Long Beach
   location: United States
-  status: CONFIRMED
-  alarms:
-  - '0'
   round: 5
-  source:
-    name: Acura Grand Prix of Long Beach
-    date: '2026-04-19'
-    time: 00:00:00
-    country: United States
-    round: 5
-    season: '2026'
-- id_event: '2402402'
-  summary: Sonsio Grand Prix
-  start: '2026-05-09T20:30:00+00:00'
+  sessions:
+  - id_event: '2402401'
+    label: Race
+    type: race
+    start: '2026-04-19T21:30:00+00:00'
+    status: CONFIRMED
+    alarms:
+    - '0'
+    source:
+      name: Acura Grand Prix of Long Beach
+      date: '2026-04-19'
+      time: 00:00:00
+      country: United States
+      round: 5
+      season: '2026'
+- name: Sonsio Grand Prix
   location: United States
-  status: CONFIRMED
-  alarms:
-  - '0'
   round: 6
-  source:
-    name: Sonsio Grand Prix
-    date: '2026-05-09'
-    time: 00:00:00
-    country: United States
-    round: 6
-    season: '2026'
-- id_event: '2402403'
-  summary: 110th Running of the Indianapolis 500
-  start: '2026-05-24T16:30:00+00:00'
-  duration: 180m
+  sessions:
+  - id_event: '2402402'
+    label: Race
+    type: race
+    start: '2026-05-09T20:30:00+00:00'
+    status: CONFIRMED
+    alarms:
+    - '0'
+    source:
+      name: Sonsio Grand Prix
+      date: '2026-05-09'
+      time: 00:00:00
+      country: United States
+      round: 6
+      season: '2026'
+- name: 110th Running of the Indianapolis 500
   location: United States
-  status: CONFIRMED
-  alarms:
-  - '0'
   round: 7
-  source:
-    name: 110th Running of the Indianapolis 500
-    date: '2026-05-24'
-    time: '16:30:00'
-    country: United States
-    round: 7
-    season: '2026'
-- id_event: '2402404'
-  summary: Chevrolet Detroit Grand Prix
-  start: '2026-05-31T16:30:00+00:00'
+  sessions:
+  - id_event: '2402403'
+    label: Race
+    type: race
+    start: '2026-05-24T16:30:00+00:00'
+    duration: 180m
+    status: CONFIRMED
+    alarms:
+    - '0'
+    source:
+      name: 110th Running of the Indianapolis 500
+      date: '2026-05-24'
+      time: '16:30:00'
+      country: United States
+      round: 7
+      season: '2026'
+- name: Chevrolet Detroit Grand Prix
   location: Streets of Detroit, United States
-  status: CONFIRMED
-  alarms:
-  - '0'
   round: 8
-  source:
-    name: Chevrolet Detroit Grand Prix
-    date: '2026-05-31'
-    time: 00:00:00
-    venue: Streets of Detroit
-    country: United States
-    round: 8
-    season: '2026'
-- id_event: '2402405'
-  summary: Bommarito Automotive Group 500
-  start: '2026-06-08T01:00:00+00:00'
-  duration: 150m
+  sessions:
+  - id_event: '2402404'
+    label: Race
+    type: race
+    start: '2026-05-31T16:30:00+00:00'
+    status: CONFIRMED
+    alarms:
+    - '0'
+    source:
+      name: Chevrolet Detroit Grand Prix
+      date: '2026-05-31'
+      time: 00:00:00
+      venue: Streets of Detroit
+      country: United States
+      round: 8
+      season: '2026'
+- name: Bommarito Automotive Group 500
   location: World Wide Technology Raceway, United States
-  status: CONFIRMED
-  alarms:
-  - '0'
   round: 9
-  source:
-    name: Bommarito Automotive Group 500
-    date: '2026-06-07'
-    time: 00:00:00
-    venue: World Wide Technology Raceway
-    country: United States
-    round: 9
-    season: '2026'
-- id_event: '2402406'
-  summary: XPEL Grand Prix at Road America
-  start: '2026-06-21T18:00:00+00:00'
+  sessions:
+  - id_event: '2402405'
+    label: Race
+    type: race
+    start: '2026-06-08T01:00:00+00:00'
+    duration: 150m
+    status: CONFIRMED
+    alarms:
+    - '0'
+    source:
+      name: Bommarito Automotive Group 500
+      date: '2026-06-07'
+      time: 00:00:00
+      venue: World Wide Technology Raceway
+      country: United States
+      round: 9
+      season: '2026'
+- name: XPEL Grand Prix at Road America
   location: Road America, United States
-  status: CONFIRMED
-  alarms:
-  - '0'
   round: 10
-  source:
-    name: XPEL Grand Prix at Road America
-    date: '2026-06-21'
-    time: '18:00:00'
-    venue: Road America
-    country: United States
-    round: 10
-    season: '2026'
-- id_event: '2402407'
-  summary: Honda Indy 200 at Mid Ohio
-  start: '2026-07-05T16:30:00+00:00'
+  sessions:
+  - id_event: '2402406'
+    label: Race
+    type: race
+    start: '2026-06-21T18:00:00+00:00'
+    status: CONFIRMED
+    alarms:
+    - '0'
+    source:
+      name: XPEL Grand Prix at Road America
+      date: '2026-06-21'
+      time: '18:00:00'
+      venue: Road America
+      country: United States
+      round: 10
+      season: '2026'
+- name: Honda Indy 200 at Mid Ohio
   location: Mid-Ohio Sports Car Course, United States
-  status: CONFIRMED
-  alarms:
-  - '0'
   round: 11
-  source:
-    name: Honda Indy 200 at Mid Ohio
-    date: '2026-07-05'
-    time: '16:52:00'
-    venue: Mid-Ohio Sports Car Course
-    country: United States
-    round: 11
-    season: '2026'
-- id_event: '2402408'
-  summary: Borchetta Bourbon Music City Grand Prix
-  start: '2026-07-20T19:00:00+00:00'
+  sessions:
+  - id_event: '2402407'
+    label: Race
+    type: race
+    start: '2026-07-05T16:30:00+00:00'
+    status: CONFIRMED
+    alarms:
+    - '0'
+    source:
+      name: Honda Indy 200 at Mid Ohio
+      date: '2026-07-05'
+      time: '16:52:00'
+      venue: Mid-Ohio Sports Car Course
+      country: United States
+      round: 11
+      season: '2026'
+- name: Borchetta Bourbon Music City Grand Prix
   location: Nashville Superspeedway, United States
-  status: CONFIRMED
-  note: Rescheduled from Sunday to Monday 3pm ET due to rain
-  alarms:
-  - '0'
   round: 12
-  source:
-    name: Borchetta Bourbon Music City Grand Prix
-    date: '2026-07-20'
-    time: 00:00:00
-    venue: Nashville Superspeedway
-    country: United States
-    round: 12
-    season: '2026'
-- uid: indycar-2026-portland-qualifying
-  summary: OnlyBulls Grand Prix of Portland Qualifying
-  start: '2026-08-08T23:00:00+00:00'
+  sessions:
+  - id_event: '2402408'
+    label: Race
+    type: race
+    start: '2026-07-20T19:00:00+00:00'
+    status: CONFIRMED
+    note: Rescheduled from Sunday to Monday 3pm ET due to rain
+    alarms:
+    - '0'
+    source:
+      name: Borchetta Bourbon Music City Grand Prix
+      date: '2026-07-20'
+      time: 00:00:00
+      venue: Nashville Superspeedway
+      country: United States
+      round: 12
+      season: '2026'
+- name: OnlyBulls Grand Prix of Portland
   location: Portland International Raceway, United States
-  status: CONFIRMED
-  note: Added manually from indycar.com; not yet in TheSportsDB
-  alarms:
-  - '0'
   round: 13
-- id_event: '2402409'
-  summary: OnlyBulls Grand Prix of Portland
-  start: '2026-08-09T20:00:00+00:00'
-  location: Portland International Raceway, United States
-  status: CONFIRMED
-  alarms:
-  - '0'
-  round: 13
-  source:
-    name: BITNILE.com Grand Prix of Portland
-    date: '2026-08-09'
-    time: 00:00:00
-    venue: Portland International Raceway
-    country: United States
-    round: 13
-    season: '2026'
-- uid: indycar-2026-markham-qualifying
-  summary: Ontario Honda Dealers Indy at Markham Qualifying
-  start: '2026-08-15T18:25:00+00:00'
+  sessions:
+  - uid: indycar-2026-portland-qualifying
+    label: Qualifying
+    type: qualifying
+    start: '2026-08-08T23:00:00+00:00'
+    status: CONFIRMED
+    note: Added manually from indycar.com; not yet in TheSportsDB
+    alarms:
+    - '0'
+  - id_event: '2402409'
+    label: Race
+    type: race
+    start: '2026-08-09T20:00:00+00:00'
+    status: CONFIRMED
+    alarms:
+    - '0'
+    source:
+      name: BITNILE.com Grand Prix of Portland
+      date: '2026-08-09'
+      time: 00:00:00
+      venue: Portland International Raceway
+      country: United States
+      round: 13
+      season: '2026'
+- name: Ontario Honda Dealers Indy at Markham
   location: Streets of Markham, Canada
-  status: CONFIRMED
-  note: Added manually from indycar.com; not yet in TheSportsDB
-  alarms:
-  - '0'
   round: 14
-- id_event: '2402410'
-  summary: Ontario Honda Dealers Indy at Markham
-  start: '2026-08-16T16:00:00+00:00'
-  location: Canada
-  status: CONFIRMED
-  alarms:
-  - '0'
-  round: 14
-  source:
-    name: Ontario Honda Dealers Indy at Markham
-    date: '2026-08-16'
-    time: 00:00:00
-    country: Canada
-    round: 14
-    season: '2026'
-- uid: indycar-2026-washington-dc-qualifying
-  summary: Freedom 250 Grand Prix of Washington, D.C. Qualifying
-  start: '2026-08-22T21:00:00+00:00'
-  duration: 90m
+  sessions:
+  - uid: indycar-2026-markham-qualifying
+    label: Qualifying
+    type: qualifying
+    start: '2026-08-15T18:25:00+00:00'
+    status: CONFIRMED
+    note: Added manually from indycar.com; not yet in TheSportsDB
+    alarms:
+    - '0'
+  - id_event: '2402410'
+    label: Race
+    type: race
+    start: '2026-08-16T16:00:00+00:00'
+    status: CONFIRMED
+    alarms:
+    - '0'
+    source:
+      name: Ontario Honda Dealers Indy at Markham
+      date: '2026-08-16'
+      time: 00:00:00
+      country: Canada
+      round: 14
+      season: '2026'
+- name: Freedom 250 Grand Prix of Washington, D.C.
   location: Streets of Washington, United States
-  status: CONFIRMED
-  note: Added manually from indycar.com; not yet in TheSportsDB
-  alarms:
-  - '0'
   round: 15
-- uid: indycar-2026-washington-dc
-  summary: Freedom 250 Grand Prix of Washington, D.C.
-  start: '2026-08-23T17:00:00+00:00'
-  location: Streets of Washington, United States
-  status: CONFIRMED
-  note: Inaugural race, added manually from indycar.com; not yet in TheSportsDB
-  alarms:
-  - '0'
-  round: 15
-- uid: indycar-2026-milwaukee-qualifying
-  summary: Snap-on INDYCAR Weekend Qualifying
-  start: '2026-08-29T15:00:00+00:00'
+  sessions:
+  - uid: indycar-2026-washington-dc-qualifying
+    label: Qualifying
+    type: qualifying
+    start: '2026-08-22T21:00:00+00:00'
+    duration: 90m
+    status: CONFIRMED
+    note: Added manually from indycar.com; not yet in TheSportsDB
+    alarms:
+    - '0'
+  - uid: indycar-2026-washington-dc
+    label: Race
+    type: race
+    start: '2026-08-23T17:00:00+00:00'
+    status: CONFIRMED
+    note: Inaugural race, added manually from indycar.com; not yet in TheSportsDB
+    alarms:
+    - '0'
+- name: Snap-on Milwaukee 250
   location: Milwaukee Mile, United States
-  status: CONFIRMED
-  note: Single qualifying session sets the grid for both Milwaukee races (rounds 16 and 17); added manually
-    from indycar.com, not yet in TheSportsDB
-  alarms:
-  - '0'
   round: 16
-- id_event: '2402411'
-  summary: Snap-on Makers and Fixers 250
-  start: '2026-08-29T18:30:00+00:00'
-  location: Milwaukee Mile, United States
-  status: CONFIRMED
-  alarms:
-  - '0'
-  round: 16
-  source:
-    name: 'Snap On Milwaukee 250 Race #1'
-    date: '2026-08-29'
-    time: 00:00:00
-    venue: Milwaukee Mile
-    country: United States
-    round: 15
-    season: '2026'
-- id_event: '2402412'
-  summary: Snap-on Milwaukee Mile 250
-  start: '2026-08-30T17:00:00+00:00'
-  location: Milwaukee Mile, United States
-  status: CONFIRMED
-  alarms:
-  - '0'
-  round: 17
-  source:
-    name: 'Snap On Milwaukee 250 Race #2'
-    date: '2026-08-30'
-    time: 00:00:00
-    venue: Milwaukee Mile
-    country: United States
-    round: 16
-    season: '2026'
-- uid: indycar-2026-monterey-qualifying
-  summary: IndyCar Grand Prix of Monterey Qualifying
-  start: '2026-09-05T20:30:00+00:00'
-  location: WeatherTech Raceway Laguna Seca, United States
-  status: CONFIRMED
-  note: Added manually from indycar.com; not yet in TheSportsDB
-  alarms:
-  - '0'
-  round: 18
-- id_event: '2402413'
-  summary: IndyCar Grand Prix of Monterey
-  start: '2026-09-06T18:30:00+00:00'
-  location: United States
-  status: CONFIRMED
-  alarms:
-  - '0'
-  round: 18
-  source:
-    name: IndyCar Grand Prix of Monterey
-    date: '2026-09-06'
-    time: 00:00:00
-    country: United States
+  sessions:
+  - uid: indycar-2026-milwaukee-qualifying
+    label: Qualifying
+    type: qualifying
+    start: '2026-08-29T15:00:00+00:00'
+    status: CONFIRMED
+    note: Single qualifying session sets the grid for both Milwaukee races (rounds 16 and 17); added manually
+      from indycar.com, not yet in TheSportsDB
+    alarms:
+    - '0'
+  - id_event: '2402411'
+    label: 'Race #1'
+    type: race
+    start: '2026-08-29T18:30:00+00:00'
+    status: CONFIRMED
+    alarms:
+    - '0'
+    source:
+      name: 'Snap On Milwaukee 250 Race #1'
+      date: '2026-08-29'
+      time: 00:00:00
+      venue: Milwaukee Mile
+      country: United States
+      round: 15
+      season: '2026'
+  - id_event: '2402412'
+    label: 'Race #2'
+    type: race
+    start: '2026-08-30T17:00:00+00:00'
+    status: CONFIRMED
+    alarms:
+    - '0'
     round: 17
-    season: '2026'
+    source:
+      name: 'Snap On Milwaukee 250 Race #2'
+      date: '2026-08-30'
+      time: 00:00:00
+      venue: Milwaukee Mile
+      country: United States
+      round: 16
+      season: '2026'
+- name: IndyCar Grand Prix of Monterey
+  location: WeatherTech Raceway Laguna Seca, United States
+  round: 18
+  sessions:
+  - uid: indycar-2026-monterey-qualifying
+    label: Qualifying
+    type: qualifying
+    start: '2026-09-05T20:30:00+00:00'
+    status: CONFIRMED
+    note: Added manually from indycar.com; not yet in TheSportsDB
+    alarms:
+    - '0'
+  - id_event: '2402413'
+    label: Race
+    type: race
+    start: '2026-09-06T18:30:00+00:00'
+    status: CONFIRMED
+    alarms:
+    - '0'
+    source:
+      name: IndyCar Grand Prix of Monterey
+      date: '2026-09-06'
+      time: 00:00:00
+      country: United States
+      round: 17
+      season: '2026'
