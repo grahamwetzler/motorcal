@@ -115,7 +115,9 @@ def write_config_dir(tmp_path, config: Config):
     config_dir = tmp_path / "config"
     config_dir.mkdir(exist_ok=True)
     (config_dir / "motorcal.yaml").write_text(
-        yaml.safe_dump(config.globals.model_dump(mode="json"), sort_keys=False)
+        yaml.safe_dump(
+            config.globals.model_dump(mode="json", exclude={"uid_domain"}), sort_keys=False
+        )
     )
     for series, series_config in config.series.items():
         save_series(config_dir, series, series_config)

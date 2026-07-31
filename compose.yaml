@@ -7,6 +7,7 @@ services:
     restart: unless-stopped
     environment:
       THESPORTSDB_API_KEY: "${THESPORTSDB_API_KEY:?THESPORTSDB_API_KEY must be set}"
+      UID_DOMAIN: "${UID_DOMAIN:?UID_DOMAIN must be set}"
     volumes:
       - ./data:/data
     container_name: app

@@ -1,4 +1,3 @@
-uid_domain: motorcal.wetzler.dev
 source:
   rate_limit_per_min: 28
   refresh_cron: 17 */6 * * *

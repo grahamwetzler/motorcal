@@ -23,6 +23,8 @@ jobs:
         with:
           enable-cache: true
       - run: uv run motorcal validate-config --config data
+        env:
+          UID_DOMAIN: ci.example.com
 
   build-and-push:
     needs: [test, validate-config]

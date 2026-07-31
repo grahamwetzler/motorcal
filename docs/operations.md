@@ -76,18 +76,16 @@ hot-reload poller performs the same validation automatically and keeps the
 previous bundle active on failure (see `check_and_reload_config` in
 `src/motorcal/refresh.py`); running this by hand just catches mistakes earlier.
 
-## Changing `uid_domain`
+## Changing `UID_DOMAIN`
 
-`uid_domain` is baked into every event's stable ICS `UID`, so changing it would
-republish the entire calendar under fresh UIDs and duplicate every event in
-subscribers' clients. Enforced twice:
+`UID_DOMAIN` (the environment variable, not a file -- see `.env`) is baked into
+every event's stable ICS `UID`, so changing it would republish the entire
+calendar under fresh UIDs and duplicate every event in subscribers' clients.
+On startup, `motorcal serve` compares it against the `uid_domain:` recorded in
+`state.yaml` and refuses to start if they differ.
 
-- The hot-reload poller rejects any reload that changes it and logs a warning.
-- On startup, `motorcal serve` compares `motorcal.yaml` against the `uid_domain:`
-  recorded in `state.yaml` and refuses to start if they differ.
-
-To actually change it, accept that subscribers must re-add the calendar URL, then
-edit `state.yaml`'s `uid_domain:` and clear its `versions:` block. Every
+To actually change it, accept that subscribers must re-add the calendar URL,
+then edit `state.yaml`'s `uid_domain:` and clear its `versions:` block. Every
 still-retained event will appear twice in existing subscribers' calendars until
 the old copies expire.
 

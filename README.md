@@ -116,13 +116,14 @@ description too.
 
 ## Environment variables
 
-Set these in a `.env` file next to `compose.yaml`. Both are required —
-`compose.yaml` fails fast at startup if either is unset.
+Set these in a `.env` file next to `compose.yaml`. All three are required —
+`compose.yaml` fails fast at startup if any is unset.
 
 | Variable | Description |
 | --- | --- |
 | `THESPORTSDB_API_KEY` | TheSportsDB API key. Use a real (paid or free-tier) key, not the shared public `"3"` test key, for anything other than throwaway testing. |
 | `CLOUDFLARE_TUNNEL_TOKEN` | Token for a Cloudflare Tunnel (Zero Trust dashboard → Networks → Tunnels → create a tunnel → choose the Docker connector → copy the token shown, not the certificate). |
+| `UID_DOMAIN` | Domain baked into every event's stable ICS UID. Pick it once — changing it later republishes and duplicates every event for subscribers (see `docs/operations.md`, "Changing UID_DOMAIN"). |
 
 Validate config changes before restarting:
 
@@ -143,5 +144,5 @@ costs.
 
 ## More
 
-See `docs/operations.md` for backups, forcing a refresh, changing `uid_domain`,
+See `docs/operations.md` for backups, forcing a refresh, changing `UID_DOMAIN`,
 and interpreting stale/incomplete/suspicious-empty refresh states.
