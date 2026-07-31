@@ -243,7 +243,7 @@ class RebuildReport:
 def rebuild_publication(
     config: Config, state: State, *, now: datetime
 ) -> tuple[dict[str, list[PublishedEvent]], RebuildReport]:
-    """Rebuild every published event from the config directory and the version ledger.
+    """Rebuild every published event from the data directory and the version ledger.
 
     Mutates `state.versions` (and prunes expired entries from both the config and
     the ledger) but writes nothing to disk.

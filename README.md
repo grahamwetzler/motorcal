@@ -5,7 +5,7 @@ weekends from TheSportsDB, classifies sessions (practice/qualifying/race/etc.),
 and publishes one ICS feed per series that you can subscribe to from any
 calendar app.
 
-**The config directory is the source of truth.** One YAML file per series holds
+**The data directory is the source of truth.** One YAML file per series holds
 that series' settings *and* its full event list. A refresh merges TheSportsDB
 into those files without clobbering anything you changed by hand. There is no
 separate database, no patch layer, no override file — you edit the event.
@@ -23,10 +23,10 @@ anything else in there.
    cp .env.example .env
    ```
 
-2. Copy the example config directory and adjust it:
+2. Copy the example data directory and adjust it:
 
    ```bash
-   cp -r config.example config
+   cp -r data.example data
    ```
 
    Add one file per series you want. The filename is the series key and the feed
@@ -40,23 +40,24 @@ anything else in there.
 
 4. Subscribe at `https://<your-domain>/<series>.ics`.
 
-5. Edit events by hand in the series YAML files under `config/`. Changes are
+5. Edit events by hand in the series YAML files under `data/`. Changes are
    picked up within ~30 seconds.
 
-## The config directory
+## The data directory
 
 ```
-config/
-  motorcal.yaml     # settings no single series owns
+data/
+  defaults.yaml     # settings no single series owns
   f1.yaml           # everything about F1: settings + events
   wec.yaml
   indycar.yaml
   imsa.yaml
+  state.yaml        # machine-owned, gitignored -- see "State" below
 ```
 
-`compose.yaml` mounts `./config` into the container read-write, because the
+`compose.yaml` mounts `./data` into the container read-write, because the
 refresh cycle writes back into it. The host directory must be writable by the
-container's user (uid 1000) — e.g. `chown -R 1000:1000 config`.
+container's user (uid 1000) — e.g. `chown -R 1000:1000 data`.
 
 ### One event
 
@@ -115,26 +116,27 @@ description too.
 
 ## Environment variables
 
-Set these in a `.env` file next to `compose.yaml`. Both are required —
-`compose.yaml` fails fast at startup if either is unset.
+Set these in a `.env` file next to `compose.yaml`. All three are required —
+`compose.yaml` fails fast at startup if any is unset.
 
 | Variable | Description |
 | --- | --- |
 | `THESPORTSDB_API_KEY` | TheSportsDB API key. Use a real (paid or free-tier) key, not the shared public `"3"` test key, for anything other than throwaway testing. |
 | `CLOUDFLARE_TUNNEL_TOKEN` | Token for a Cloudflare Tunnel (Zero Trust dashboard → Networks → Tunnels → create a tunnel → choose the Docker connector → copy the token shown, not the certificate). |
+| `UID_DOMAIN` | Domain baked into every event's stable ICS UID. Pick it once — changing it later republishes and duplicates every event for subscribers (see `docs/operations.md`, "Changing UID_DOMAIN"). |
 
 Validate config changes before restarting:
 
 ```bash
-docker compose exec app motorcal validate-config --config /config
+docker compose exec app motorcal validate-config --config /data
 ```
 
 The running app also hot-reloads on change and keeps the previous configuration
 active if validation fails.
 
-## Data
+## State
 
-`./motorcal-data/state.yaml` is the only machine-owned file. It holds the
+`./data/state.yaml` is the only machine-owned file. It holds the
 uid_domain binding, per-scope fetch times, and the version ledger that keeps
 calendar clients from re-notifying subscribers on every refresh. You never need
 to read it; `cp` is a valid backup. See `docs/operations.md` for what losing it
@@ -142,5 +144,5 @@ costs.
 
 ## More
 
-See `docs/operations.md` for backups, forcing a refresh, changing `uid_domain`,
+See `docs/operations.md` for backups, forcing a refresh, changing `UID_DOMAIN`,
 and interpreting stale/incomplete/suspicious-empty refresh states.

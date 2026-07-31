@@ -22,7 +22,9 @@ jobs:
       - uses: astral-sh/setup-uv@v9.0.0
         with:
           enable-cache: true
-      - run: uv run motorcal validate-config --config config
+      - run: uv run motorcal validate-config --config data
+        env:
+          UID_DOMAIN: ci.example.com
 
   build-and-push:
     needs: [test, validate-config]

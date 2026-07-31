@@ -148,20 +148,20 @@ def test_a_refresh_merges_into_what_is_on_disk_not_a_stale_copy(monkeypatch, tmp
 
     # Cycle one populates the file, and we keep the resulting config object around
     # to stand in for the stale `app.state.config` the bug used to reuse.
-    stale = load_config(config_dir)
+    stale = load_config(config_dir, uid_domain=UID_DOMAIN)
     run_refresh_cycle(stale, state, api_key="3", now=NOW)
     save_series(config_dir, "wec", stale.series["wec"])
 
     # Someone edits the file directly, the way a person would.
-    on_disk = load_config(config_dir)
+    on_disk = load_config(config_dir, uid_domain=UID_DOMAIN)
     on_disk.series["wec"].events[0].summary = "Edited by hand"
     save_series(config_dir, "wec", on_disk.series["wec"])
 
     # Cycle two, done correctly: re-read, merge, write back.
-    fresh = load_config(config_dir)
+    fresh = load_config(config_dir, uid_domain=UID_DOMAIN)
     run_refresh_cycle(fresh, state, api_key="3", now=datetime(2026, 1, 2, tzinfo=timezone.utc))
     save_series(config_dir, "wec", fresh.series["wec"])
 
-    assert load_config(config_dir).series["wec"].events[0].summary == "Edited by hand"
+    assert load_config(config_dir, uid_domain=UID_DOMAIN).series["wec"].events[0].summary == "Edited by hand"
     # And the stale copy, had it been used, would indeed have clobbered it.
     assert stale.series["wec"].events[0].summary == "6 Hours of Imola"

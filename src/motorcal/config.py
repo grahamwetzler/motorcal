@@ -1,6 +1,6 @@
 """Configuration schema and loader.
 
-The config directory is the source of truth. `motorcal.yaml` holds the settings
+The data directory is the source of truth. `defaults.yaml` holds the settings
 that can't belong to any one series; every other `*.yaml` file is one series,
 keyed by its filename stem, holding that series' settings and its full event list.
 
@@ -22,7 +22,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError, field_validator, mo
 
 from motorcal.models import EventStatus, SessionType
 
-GLOBAL_FILENAME = "motorcal.yaml"
+GLOBAL_FILENAME = "defaults.yaml"
 
 _DURATION_RE = re.compile(r"^([1-9]\d*)(h|m)$")
 _ALARM_OFFSET_RE = re.compile(r"^0$|^-[1-9]\d*[dhm]$")
@@ -160,7 +160,12 @@ class DefaultsConfig(StrictModel):
 
 
 class GlobalConfig(StrictModel):
-    """Everything in config/motorcal.yaml -- the settings no single series owns."""
+    """Everything in data/defaults.yaml -- the settings no single series owns.
+
+    `uid_domain` is the one exception: it's baked into every ICS UID, so getting
+    it wrong is unusually costly (see `load_config`), and it's set via the
+    UID_DOMAIN environment variable instead of living in the file.
+    """
 
     uid_domain: str
     source: SourceSettings
@@ -245,7 +250,7 @@ class EventConfig(StrictModel):
 
 
 class SeriesConfig(StrictModel):
-    """One config/<series>.yaml. The series key is the filename stem."""
+    """One data/<series>.yaml. The series key is the filename stem."""
 
     league_id: int
     name: str
@@ -274,7 +279,7 @@ class SeriesConfig(StrictModel):
 
 
 class Config(StrictModel):
-    """The whole config directory: globals plus every series, keyed by filename stem."""
+    """The whole data directory: globals plus every series, keyed by filename stem."""
 
     globals: GlobalConfig
     series: dict[str, SeriesConfig]
@@ -286,22 +291,35 @@ class Config(StrictModel):
 _SERIES_KEY_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 
 
-def load_config(config_dir: Path) -> Config:
-    """Load and validate a whole config directory. Raises ConfigError on any failure."""
+def load_config(config_dir: Path, *, uid_domain: str) -> Config:
+    """Load and validate a whole data directory. Raises ConfigError on any failure.
+
+    `uid_domain` comes from the caller (the UID_DOMAIN environment variable in
+    practice), not the file -- getting it wrong silently republishes every event
+    under new UIDs, so it must never be something a stray edit to defaults.yaml
+    can change.
+    """
     config_dir = Path(config_dir)
     if not config_dir.is_dir():
         raise ConfigError(f"Config directory not found: {config_dir}")
 
     global_path = config_dir / GLOBAL_FILENAME
     raw_globals = _load_yaml_mapping(global_path, "config")
+    if "uid_domain" in raw_globals:
+        raise ConfigError(
+            f"{global_path} must not set uid_domain -- set the UID_DOMAIN "
+            "environment variable instead"
+        )
     try:
-        globals_ = GlobalConfig.model_validate(raw_globals)
+        globals_ = GlobalConfig.model_validate({**raw_globals, "uid_domain": uid_domain})
     except ValidationError as exc:
         raise ConfigError(f"Invalid configuration in {global_path}: {exc}") from exc
 
     series: dict[str, SeriesConfig] = {}
     for path in sorted(config_dir.glob("*.yaml")):
-        if path.name == GLOBAL_FILENAME or path.name.startswith("."):
+        # state.yaml (and its dated backups, see docs/operations.md) share this
+        # directory but aren't series data -- skip them like the global file.
+        if path.name == GLOBAL_FILENAME or path.name.startswith(".") or path.name.startswith("state"):
             continue
         key = path.stem
         if not _SERIES_KEY_RE.match(key):

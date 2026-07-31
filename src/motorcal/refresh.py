@@ -142,14 +142,15 @@ def check_and_reload_config(
     state: State,
     previous_hash: str | None,
     previous_config: Config,
+    uid_domain: str,
     now: datetime,
 ) -> ReloadResult:
     """Detect a config change, validate the whole directory, and rebuild.
 
     `state` must be a throwaway copy: it is mutated during the rebuild, and on any
     failure the caller discards it, leaving the previous config, state, and served
-    feeds untouched. `uid_domain` is immutable configuration -- a runtime change is
-    rejected outright, since applying it would republish every event under a new UID.
+    feeds untouched. `uid_domain` comes from the caller's environment, not a file,
+    so it cannot change between calls -- there is nothing here to reject.
     """
     new_hash = config_bundle_hash(config_dir)
     if new_hash == previous_hash:
@@ -165,16 +166,9 @@ def check_and_reload_config(
         )
 
     try:
-        new_config = load_config(config_dir)
+        new_config = load_config(config_dir, uid_domain=uid_domain)
     except ConfigError as exc:
         return rejected(str(exc))
-
-    if new_config.globals.uid_domain != previous_config.globals.uid_domain:
-        return rejected(
-            "uid_domain cannot be changed at runtime "
-            f"({previous_config.globals.uid_domain!r} -> "
-            f"{new_config.globals.uid_domain!r}); restart the service to apply this change"
-        )
 
     try:
         published, report = rebuild_publication(new_config, state, now=now)

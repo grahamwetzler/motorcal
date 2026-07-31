@@ -1,7 +1,6 @@
 # Settings that don't belong to any single series.
 # Every other *.yaml in this directory is one series, keyed by its filename.
-
-uid_domain: racing.example.com
+# uid_domain is NOT set here -- it's the required UID_DOMAIN environment variable.
 
 source:
   rate_limit_per_min: 28

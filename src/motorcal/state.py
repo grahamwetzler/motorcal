@@ -1,6 +1,6 @@
-"""The machine-only sidecar: motorcal-data/state.yaml.
+"""The machine-only sidecar: data/state.yaml.
 
-Everything a human writes lives in the config directory. This file holds only what
+Everything a human writes lives in the data directory. This file holds only what
 the app must remember and nobody should have to read: which uid_domain the feed is
 keyed under, when each scope was last fetched completely, and the per-UID version
 ledger that keeps ICS SEQUENCE/DTSTAMP stable so calendar clients don't re-notify

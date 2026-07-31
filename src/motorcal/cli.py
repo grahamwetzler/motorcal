@@ -37,8 +37,13 @@ def _cmd_serve(args: argparse.Namespace) -> int:
     state_path = Path(args.state)
     config_dir = Path(args.config)
 
+    uid_domain = os.environ.get("UID_DOMAIN")
+    if not uid_domain:
+        print("UID_DOMAIN must be set", file=sys.stderr)
+        return 1
+
     try:
-        config = load_config(config_dir)
+        config = load_config(config_dir, uid_domain=uid_domain)
     except ConfigError as exc:
         print(f"Invalid configuration: {exc}", file=sys.stderr)
         return 1
@@ -50,19 +55,18 @@ def _cmd_serve(args: argparse.Namespace) -> int:
 
     state = state_module.load(state_path)
 
-    # uid_domain is baked into every event's stable ICS UID. A hot reload already
-    # rejects changing it at runtime; bind it to the state file on first use so a
-    # full restart with an edited motorcal.yaml can't sail through and silently
-    # duplicate every event under new UIDs.
+    # uid_domain is baked into every event's stable ICS UID. Bind it to the state
+    # file on first use so a restart with a changed UID_DOMAIN can't sail through
+    # and silently duplicate every event under new UIDs.
     if state.uid_domain is None:
-        state.uid_domain = config.globals.uid_domain
-    elif state.uid_domain != config.globals.uid_domain:
+        state.uid_domain = uid_domain
+    elif state.uid_domain != uid_domain:
         print(
-            f"uid_domain has changed ({state.uid_domain!r} -> "
-            f"{config.globals.uid_domain!r}) since this state file was created. "
-            "Changing it would duplicate every published event under new UIDs. "
-            "Revert motorcal.yaml, or perform an explicit migration (see "
-            "docs/operations.md) before restarting with the new domain.",
+            f"uid_domain has changed ({state.uid_domain!r} -> {uid_domain!r}) since "
+            "this state file was created. Changing it would duplicate every "
+            "published event under new UIDs. Revert UID_DOMAIN, or perform an "
+            "explicit migration (see docs/operations.md) before restarting with "
+            "the new domain.",
             file=sys.stderr,
         )
         return 1
@@ -92,16 +96,9 @@ def _cmd_serve(args: argparse.Namespace) -> int:
         # are being rejected (a typo in one series file), that snapshot is stale
         # indefinitely and the revert would span every series.
         try:
-            working_config = load_config(config_dir)
+            working_config = load_config(config_dir, uid_domain=uid_domain)
         except ConfigError as exc:
             _logger.warning("Refresh skipped, config is currently invalid: %s", exc)
-            return
-        if working_config.globals.uid_domain != app.state.data.uid_domain:
-            _logger.warning(
-                "Refresh skipped: uid_domain on disk (%r) does not match the one this "
-                "state file is bound to (%r)",
-                working_config.globals.uid_domain, app.state.data.uid_domain,
-            )
             return
 
         working_state = app.state.data.model_copy(deep=True)
@@ -134,7 +131,7 @@ def _cmd_serve(args: argparse.Namespace) -> int:
         now = datetime.now(timezone.utc)
         working_state = app.state.data.model_copy(deep=True)
         result = check_and_reload_config(
-            config_dir, working_state, app.state.bundle_hash, app.state.config, now
+            config_dir, working_state, app.state.bundle_hash, app.state.config, uid_domain, now
         )
         app.state.bundle_hash = result.bundle_hash
         if result.diagnostics is not None and result.diagnostics["unknown_events"]:
@@ -163,8 +160,13 @@ def _cmd_serve(args: argparse.Namespace) -> int:
 
 
 def _cmd_validate_config(args: argparse.Namespace) -> int:
+    uid_domain = os.environ.get("UID_DOMAIN")
+    if not uid_domain:
+        print("UID_DOMAIN must be set", file=sys.stderr)
+        return 1
+
     try:
-        config = load_config(Path(args.config))
+        config = load_config(Path(args.config), uid_domain=uid_domain)
     except ConfigError as exc:
         print(f"Invalid configuration: {exc}", file=sys.stderr)
         return 1
@@ -180,15 +182,15 @@ def _build_parser() -> argparse.ArgumentParser:
     serve_parser = subparsers.add_parser(
         "serve", help="Run the scheduler and HTTP server (feeds on :8000)"
     )
-    serve_parser.add_argument("--config", required=True, help="Path to the config directory")
+    serve_parser.add_argument("--config", required=True, help="Path to the data directory")
     serve_parser.add_argument("--state", required=True, help="Path to state.yaml")
     serve_parser.set_defaults(func=_cmd_serve)
 
     validate_config_parser = subparsers.add_parser(
-        "validate-config", help="Validate the config directory without activating it"
+        "validate-config", help="Validate the data directory without activating it"
     )
     validate_config_parser.add_argument(
-        "--config", required=True, help="Path to the config directory"
+        "--config", required=True, help="Path to the data directory"
     )
     validate_config_parser.set_defaults(func=_cmd_validate_config)
 

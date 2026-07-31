@@ -1,6 +1,6 @@
 import pytest
 import yaml
-from tests.conftest import make_config, make_series, source_event, write_config_dir
+from tests.conftest import UID_DOMAIN, make_config, make_series, source_event, write_config_dir
 
 from motorcal.config import (
     ConfigError,
@@ -11,7 +11,7 @@ from motorcal.config import (
     save_series,
 )
 
-EXAMPLE_DIR = "config.example"
+EXAMPLE_DIR = "data.example"
 
 
 def _dir(tmp_path):
@@ -47,7 +47,7 @@ def test_parse_alarm_offset_rejects_a_positive_offset():
 
 
 def test_the_shipped_example_directory_is_valid():
-    config = load_config(EXAMPLE_DIR)
+    config = load_config(EXAMPLE_DIR, uid_domain=UID_DOMAIN)
 
     assert config.globals.uid_domain == "racing.example.com"
     assert "f1" in config.series
@@ -59,14 +59,14 @@ def test_the_series_key_comes_from_the_filename(tmp_path):
     config_dir = _dir(tmp_path)
     (config_dir / "wec.yaml").rename(config_dir / "endurance.yaml")
 
-    config = load_config(config_dir)
+    config = load_config(config_dir, uid_domain=UID_DOMAIN)
 
     assert set(config.series) == {"endurance"}
 
 
 def test_a_missing_directory_is_an_error(tmp_path):
     with pytest.raises(ConfigError):
-        load_config(tmp_path / "nope")
+        load_config(tmp_path / "nope", uid_domain=UID_DOMAIN)
 
 
 def test_a_directory_with_no_series_files_is_an_error(tmp_path):
@@ -74,45 +74,45 @@ def test_a_directory_with_no_series_files_is_an_error(tmp_path):
     (config_dir / "wec.yaml").unlink()
 
     with pytest.raises(ConfigError, match="No series files"):
-        load_config(config_dir)
+        load_config(config_dir, uid_domain=UID_DOMAIN)
 
 
 def test_a_missing_globals_file_is_an_error(tmp_path):
     config_dir = _dir(tmp_path)
-    (config_dir / "motorcal.yaml").unlink()
+    (config_dir / "defaults.yaml").unlink()
 
     with pytest.raises(ConfigError):
-        load_config(config_dir)
+        load_config(config_dir, uid_domain=UID_DOMAIN)
 
 
 def test_an_unknown_top_level_key_is_rejected(tmp_path):
     config_dir = _dir(tmp_path)
-    (config_dir / "motorcal.yaml").write_text(
-        (config_dir / "motorcal.yaml").read_text() + "surprise: true\n"
+    (config_dir / "defaults.yaml").write_text(
+        (config_dir / "defaults.yaml").read_text() + "surprise: true\n"
     )
 
     with pytest.raises(ConfigError):
-        load_config(config_dir)
+        load_config(config_dir, uid_domain=UID_DOMAIN)
 
 
 def test_a_malformed_refresh_cron_is_rejected(tmp_path):
     config_dir = _dir(tmp_path)
-    raw = yaml.safe_load((config_dir / "motorcal.yaml").read_text())
+    raw = yaml.safe_load((config_dir / "defaults.yaml").read_text())
     raw["source"]["refresh_cron"] = "not a cron"
-    (config_dir / "motorcal.yaml").write_text(yaml.safe_dump(raw))
+    (config_dir / "defaults.yaml").write_text(yaml.safe_dump(raw))
 
     with pytest.raises(ConfigError):
-        load_config(config_dir)
+        load_config(config_dir, uid_domain=UID_DOMAIN)
 
 
 def test_a_bad_alarm_offset_is_rejected(tmp_path):
     config_dir = _dir(tmp_path)
-    raw = yaml.safe_load((config_dir / "motorcal.yaml").read_text())
+    raw = yaml.safe_load((config_dir / "defaults.yaml").read_text())
     raw["defaults"]["alerts"] = {"race": ["1 day"]}
-    (config_dir / "motorcal.yaml").write_text(yaml.safe_dump(raw))
+    (config_dir / "defaults.yaml").write_text(yaml.safe_dump(raw))
 
     with pytest.raises(ConfigError):
-        load_config(config_dir)
+        load_config(config_dir, uid_domain=UID_DOMAIN)
 
 
 def test_a_series_filename_that_is_not_a_valid_key_is_rejected(tmp_path):
@@ -120,7 +120,7 @@ def test_a_series_filename_that_is_not_a_valid_key_is_rejected(tmp_path):
     (config_dir / "wec.yaml").rename(config_dir / "Formula One.yaml")
 
     with pytest.raises(ConfigError, match="series key"):
-        load_config(config_dir)
+        load_config(config_dir, uid_domain=UID_DOMAIN)
 
 
 def test_dotfiles_are_ignored(tmp_path):
@@ -128,7 +128,27 @@ def test_dotfiles_are_ignored(tmp_path):
     config_dir = _dir(tmp_path)
     (config_dir / ".wec-abc.tmp.yaml").write_text("garbage: true\n")
 
-    assert set(load_config(config_dir).series) == {"wec"}
+    assert set(load_config(config_dir, uid_domain=UID_DOMAIN).series) == {"wec"}
+
+
+def test_uid_domain_in_motorcal_yaml_is_rejected(tmp_path):
+    """uid_domain comes from the UID_DOMAIN env var, never the file."""
+    config_dir = _dir(tmp_path)
+    (config_dir / "defaults.yaml").write_text(
+        (config_dir / "defaults.yaml").read_text() + "uid_domain: sneaky.example.com\n"
+    )
+
+    with pytest.raises(ConfigError, match="uid_domain"):
+        load_config(config_dir, uid_domain=UID_DOMAIN)
+
+
+def test_state_yaml_sharing_the_directory_is_ignored(tmp_path):
+    """state.yaml (and dated backups) live alongside series files; not series data."""
+    config_dir = _dir(tmp_path)
+    (config_dir / "state.yaml").write_text("uid_domain: x\n")
+    (config_dir / "state-2026-07-31.yaml").write_text("uid_domain: x\n")
+
+    assert set(load_config(config_dir, uid_domain=UID_DOMAIN).series) == {"wec"}
 
 
 # --------------------------------------------------------------- event schema
@@ -166,7 +186,7 @@ def test_duplicate_event_keys_within_a_series_are_rejected(tmp_path):
     (config_dir / "wec.yaml").write_text(yaml.safe_dump(raw))
 
     with pytest.raises(ConfigError, match="Duplicate"):
-        load_config(config_dir)
+        load_config(config_dir, uid_domain=UID_DOMAIN)
 
 
 # --------------------------------------------------------------- round-tripping
@@ -174,16 +194,16 @@ def test_duplicate_event_keys_within_a_series_are_rejected(tmp_path):
 
 def test_save_series_round_trips_through_load(tmp_path):
     config_dir = _dir(tmp_path)
-    original = load_config(config_dir).series["wec"]
+    original = load_config(config_dir, uid_domain=UID_DOMAIN).series["wec"]
 
     save_series(config_dir, "wec", original)
 
-    assert load_config(config_dir).series["wec"] == original
+    assert load_config(config_dir, uid_domain=UID_DOMAIN).series["wec"] == original
 
 
 def test_save_series_omits_empty_optional_fields(tmp_path):
     config_dir = _dir(tmp_path)
-    save_series(config_dir, "wec", load_config(config_dir).series["wec"])
+    save_series(config_dir, "wec", load_config(config_dir, uid_domain=UID_DOMAIN).series["wec"])
 
     raw = yaml.safe_load((config_dir / "wec.yaml").read_text())
 
@@ -193,6 +213,6 @@ def test_save_series_omits_empty_optional_fields(tmp_path):
 
 def test_save_series_leaves_no_temporary_files(tmp_path):
     config_dir = _dir(tmp_path)
-    save_series(config_dir, "wec", load_config(config_dir).series["wec"])
+    save_series(config_dir, "wec", load_config(config_dir, uid_domain=UID_DOMAIN).series["wec"])
 
-    assert sorted(p.name for p in config_dir.iterdir()) == ["motorcal.yaml", "wec.yaml"]
+    assert sorted(p.name for p in config_dir.iterdir()) == ["defaults.yaml", "wec.yaml"]
