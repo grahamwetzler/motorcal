@@ -204,6 +204,33 @@ def test_duplicate_session_keys_within_a_series_are_rejected(tmp_path):
         load_config(config_dir, uid_domain=UID_DOMAIN)
 
 
+def test_duplicate_session_uids_across_two_series_are_rejected(tmp_path):
+    """A UID keys the version ledger and identifies the event in /all.ics, so it has
+    to be unique across the whole directory, not just within one series file."""
+    config_dir = _dir(tmp_path)
+    save_series(
+        config_dir, "f1",
+        make_series(league_id=4370, name="F1", events=[source_event("1", time="13:00:00")]),
+    )
+
+    with pytest.raises(ConfigError, match="Duplicate session uid"):
+        load_config(config_dir, uid_domain=UID_DOMAIN)
+
+
+def test_a_manual_uid_may_match_another_series_provider_id(tmp_path):
+    """`local-` and `thesportsdb-` prefixes keep these apart -- not a collision."""
+    config_dir = _dir(tmp_path)
+    save_series(
+        config_dir, "f1",
+        make_series(
+            league_id=4370, name="F1",
+            events=[EventConfig(name="Test Day", sessions=[SessionConfig(uid="1", date="2026-03-01")])],
+        ),
+    )
+
+    assert set(load_config(config_dir, uid_domain=UID_DOMAIN).series) == {"wec", "f1"}
+
+
 # --------------------------------------------------------------- round-tripping
 
 

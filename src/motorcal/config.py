@@ -20,7 +20,7 @@ import yaml
 from apscheduler.triggers.cron import CronTrigger
 from pydantic import BaseModel, ConfigDict, ValidationError, field_validator, model_validator
 
-from motorcal.models import EventStatus, SessionType
+from motorcal.models import EventStatus, SessionType, session_uid
 
 GLOBAL_FILENAME = "defaults.yaml"
 # Served at /all.ics as every series combined, so no series file may claim it.
@@ -383,6 +383,21 @@ def load_config(config_dir: Path, *, uid_domain: str) -> Config:
 
     if not series:
         raise ConfigError(f"No series files found in {config_dir} (expected e.g. f1.yaml)")
+
+    # SeriesConfig only enforces uniqueness within its own file, but a UID is global:
+    # the version ledger is keyed by it, so two sessions sharing one would overwrite
+    # each other's sequence, and the combined feed would emit two VEVENTs a calendar
+    # client is entitled to treat as the same event.
+    owner: dict[str, str] = {}
+    for key, series_config in series.items():
+        for _, session in series_config.iter_sessions():
+            uid = session_uid(session, uid_domain)
+            if uid in owner:
+                raise ConfigError(
+                    f"Duplicate session uid {session.key!r} in {key}.yaml: already used in "
+                    f"{owner[uid]}.yaml. A uid must be unique across the whole data directory."
+                )
+            owner[uid] = key
 
     return Config(globals=globals_, series=series)
 
