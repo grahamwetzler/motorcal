@@ -12,6 +12,15 @@ events:
   location: Sebring International Raceway, United States
   round: 2
   sessions:
+  - uid: imsa-2026-sebring-qualifying
+    label: Qualifying
+    type: qualifying
+    start: '2026-03-20T15:25:00+00:00'
+    duration: 75m
+    status: CONFIRMED
+    note: Added manually from imsa.com; not yet in TheSportsDB
+    alarms:
+    - '0'
   - id_event: '2415565'
     type: race
     start: '2026-03-21T14:00:00+00:00'
@@ -29,6 +38,15 @@ events:
   location: Long Beach Street Circuit, United States
   round: 3
   sessions:
+  - uid: imsa-2026-long-beach-qualifying
+    label: Qualifying
+    type: qualifying
+    start: '2026-04-18T00:25:00+00:00'
+    duration: 35m
+    status: CONFIRMED
+    note: Added manually from imsa.com; not yet in TheSportsDB
+    alarms:
+    - '0'
   - id_event: '2415566'
     type: race
     start: '2026-04-18T20:05:00+00:00'
@@ -46,6 +64,15 @@ events:
   location: Laguna Seca, United States
   round: 4
   sessions:
+  - uid: imsa-2026-laguna-seca-qualifying
+    label: Qualifying
+    type: qualifying
+    start: '2026-05-02T22:10:00+00:00'
+    duration: 60m
+    status: CONFIRMED
+    note: Added manually from imsa.com; not yet in TheSportsDB
+    alarms:
+    - '0'
   - id_event: '2415567'
     type: race
     date: '2026-05-03'
@@ -62,6 +89,15 @@ events:
   location: Detroit Street Circuit, United States
   round: 5
   sessions:
+  - uid: imsa-2026-detroit-qualifying
+    label: Qualifying
+    type: qualifying
+    start: '2026-05-29T20:50:00+00:00'
+    duration: 35m
+    status: CONFIRMED
+    note: Added manually from imsa.com; not yet in TheSportsDB
+    alarms:
+    - '0'
   - id_event: '2415568'
     type: race
     date: '2026-05-30'
@@ -79,6 +115,15 @@ events:
   location: Watkins Glen International, United States
   round: 6
   sessions:
+  - uid: imsa-2026-watkins-glen-qualifying
+    label: Qualifying
+    type: qualifying
+    start: '2026-06-27T19:40:00+00:00'
+    duration: 75m
+    status: CONFIRMED
+    note: Added manually from imsa.com; not yet in TheSportsDB
+    alarms:
+    - '0'
   - id_event: '2415569'
     type: race
     start: '2026-06-28T16:00:00+00:00'
@@ -96,6 +141,15 @@ events:
   location: Canadian Tire Motorsport Park, Canada
   round: 7
   sessions:
+  - uid: imsa-2026-ctmp-qualifying
+    label: Qualifying
+    type: qualifying
+    start: '2026-07-11T20:00:00+00:00'
+    duration: 65m
+    status: CONFIRMED
+    note: Added manually from imsa.com; not yet in TheSportsDB
+    alarms:
+    - '0'
   - id_event: '2415570'
     type: race
     start: '2026-07-12T18:00:00+00:00'
@@ -112,6 +166,15 @@ events:
   location: Road America, United States
   round: 8
   sessions:
+  - uid: imsa-2026-road-america-qualifying
+    label: Qualifying
+    type: qualifying
+    start: '2026-08-01T20:25:00+00:00'
+    duration: 75m
+    status: CONFIRMED
+    note: Added manually from imsa.com; not yet in TheSportsDB
+    alarms:
+    - '0'
   - id_event: '2415571'
     type: race
     start: '2026-08-02T15:30:00+00:00'
@@ -129,6 +192,15 @@ events:
   location: Virginia International Raceway, United States
   round: 9
   sessions:
+  - uid: imsa-2026-vir-qualifying
+    label: Qualifying
+    type: qualifying
+    start: '2026-08-22T20:45:00+00:00'
+    duration: 40m
+    status: CONFIRMED
+    note: Added manually from imsa.com; not yet in TheSportsDB
+    alarms:
+    - '0'
   - id_event: '2415572'
     type: race
     start: '2026-08-23T16:00:00+00:00'
@@ -145,6 +217,15 @@ events:
   location: Indianapolis Motor Speedway, United States
   round: 10
   sessions:
+  - uid: imsa-2026-indianapolis-qualifying
+    label: Qualifying
+    type: qualifying
+    start: '2026-09-19T21:00:00+00:00'
+    duration: 80m
+    status: CONFIRMED
+    note: Added manually from imsa.com; not yet in TheSportsDB
+    alarms:
+    - '0'
   - id_event: '2415573'
     type: race
     start: '2026-09-20T19:00:00+00:00'
@@ -161,6 +242,15 @@ events:
   location: Michelin Raceway Road Atlanta, United States
   round: 11
   sessions:
+  - uid: imsa-2026-road-atlanta-qualifying
+    label: Qualifying
+    type: qualifying
+    start: '2026-10-02T18:15:00+00:00'
+    duration: 80m
+    status: CONFIRMED
+    note: Added manually from imsa.com; not yet in TheSportsDB
+    alarms:
+    - '0'
   - id_event: '2415574'
     type: race
     start: '2026-10-03T16:00:00+00:00'
