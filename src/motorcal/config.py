@@ -1,6 +1,6 @@
 """Configuration schema and loader.
 
-The config directory is the source of truth. `motorcal.yaml` holds the settings
+The data directory is the source of truth. `motorcal.yaml` holds the settings
 that can't belong to any one series; every other `*.yaml` file is one series,
 keyed by its filename stem, holding that series' settings and its full event list.
 
@@ -160,7 +160,7 @@ class DefaultsConfig(StrictModel):
 
 
 class GlobalConfig(StrictModel):
-    """Everything in config/motorcal.yaml -- the settings no single series owns."""
+    """Everything in data/motorcal.yaml -- the settings no single series owns."""
 
     uid_domain: str
     source: SourceSettings
@@ -245,7 +245,7 @@ class EventConfig(StrictModel):
 
 
 class SeriesConfig(StrictModel):
-    """One config/<series>.yaml. The series key is the filename stem."""
+    """One data/<series>.yaml. The series key is the filename stem."""
 
     league_id: int
     name: str
@@ -274,7 +274,7 @@ class SeriesConfig(StrictModel):
 
 
 class Config(StrictModel):
-    """The whole config directory: globals plus every series, keyed by filename stem."""
+    """The whole data directory: globals plus every series, keyed by filename stem."""
 
     globals: GlobalConfig
     series: dict[str, SeriesConfig]
@@ -287,7 +287,7 @@ _SERIES_KEY_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 
 
 def load_config(config_dir: Path) -> Config:
-    """Load and validate a whole config directory. Raises ConfigError on any failure."""
+    """Load and validate a whole data directory. Raises ConfigError on any failure."""
     config_dir = Path(config_dir)
     if not config_dir.is_dir():
         raise ConfigError(f"Config directory not found: {config_dir}")
@@ -301,7 +301,9 @@ def load_config(config_dir: Path) -> Config:
 
     series: dict[str, SeriesConfig] = {}
     for path in sorted(config_dir.glob("*.yaml")):
-        if path.name == GLOBAL_FILENAME or path.name.startswith("."):
+        # state.yaml (and its dated backups, see docs/operations.md) share this
+        # directory but aren't series data -- skip them like the global file.
+        if path.name == GLOBAL_FILENAME or path.name.startswith(".") or path.name.startswith("state"):
             continue
         key = path.stem
         if not _SERIES_KEY_RE.match(key):

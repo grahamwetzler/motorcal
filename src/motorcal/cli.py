@@ -180,15 +180,15 @@ def _build_parser() -> argparse.ArgumentParser:
     serve_parser = subparsers.add_parser(
         "serve", help="Run the scheduler and HTTP server (feeds on :8000)"
     )
-    serve_parser.add_argument("--config", required=True, help="Path to the config directory")
+    serve_parser.add_argument("--config", required=True, help="Path to the data directory")
     serve_parser.add_argument("--state", required=True, help="Path to state.yaml")
     serve_parser.set_defaults(func=_cmd_serve)
 
     validate_config_parser = subparsers.add_parser(
-        "validate-config", help="Validate the config directory without activating it"
+        "validate-config", help="Validate the data directory without activating it"
     )
     validate_config_parser.add_argument(
-        "--config", required=True, help="Path to the config directory"
+        "--config", required=True, help="Path to the data directory"
     )
     validate_config_parser.set_defaults(func=_cmd_validate_config)
 

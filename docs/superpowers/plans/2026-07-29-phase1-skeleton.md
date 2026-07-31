@@ -959,7 +959,7 @@ git commit -m "Add overrides schema (patches + synthetic events) and example ove
 ### Task 5: Captured TheSportsDB fixtures
 
 **Context:** Real sample responses were already captured from `https://www.thesportsdb.com/api/v1/json/3/eventsround.php` (the public TheSportsDB test key `3`) for season `2026` and are sitting in
-`/private/tmp/claude-501/-Users-graham-Developer-motorsports-calendar/43dffb51-cffe-469e-97cd-67bcc3a8f97e/scratchpad/fixtures_raw/`.
+`/path/to/fixtures_raw/`.
 This task copies them into the repo's fixture corpus with descriptive names and adds a smoke test proving the corpus is loadable JSON with the expected shape. These fixtures are the raw material Phase 3 (provider) and Phase 4 (classification) will consume — do not reshape their contents, only rename/organize them.
 
 Observed naming patterns worth preserving verbatim (do not "clean up" or re-type these — copy the files as-is):
@@ -996,7 +996,7 @@ Observed naming patterns worth preserving verbatim (do not "clean up" or re-type
 
 ```bash
 mkdir -p tests/fixtures/thesportsdb
-RAW=/private/tmp/claude-501/-Users-graham-Developer-motorsports-calendar/43dffb51-cffe-469e-97cd-67bcc3a8f97e/scratchpad/fixtures_raw
+RAW=/path/to/fixtures_raw
 cp "$RAW/league4370_r1_2026.json"   tests/fixtures/thesportsdb/f1_r1_2026.json
 cp "$RAW/league4370_r2_2026.json"   tests/fixtures/thesportsdb/f1_r2_2026_sprint.json
 cp "$RAW/league4370_r500_2026.json" tests/fixtures/thesportsdb/f1_r500_2026_testing.json

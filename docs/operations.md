@@ -2,10 +2,10 @@
 
 ## Where things live
 
-- `config/` is the source of truth: `motorcal.yaml` plus one file per series,
+- `data/` is the source of truth: `motorcal.yaml` plus one file per series,
   each holding that series' settings and its full event list. Both you and the
   refresh cycle write here.
-- `motorcal-data/state.yaml` is the machine-only sidecar: the uid_domain
+- `data/state.yaml` is the machine-only sidecar: the uid_domain
   binding, per-scope fetch times, and the per-UID version ledger
   (`fingerprint`/`sequence`/`dtstamp`) that stops calendar clients re-notifying
   subscribers on every refresh.
@@ -33,23 +33,23 @@ calendar description.
 ## Backups
 
 ```bash
-cp -r config config-$(date +%F)
-cp motorcal-data/state.yaml motorcal-data/state-$(date +%F).yaml
+cp -r data data-$(date +%F)
+cp data/state.yaml data/state-$(date +%F).yaml
 ```
 
-Restoring `config/` restores your events. Restoring an older `state.yaml` rolls
+Restoring `data/` restores your events. Restoring an older `state.yaml` rolls
 `sequence` numbers back, and a calendar client that already saw a *higher*
 `SEQUENCE` for a UID may ignore the restored update — if that matters, hand-edit
 the `versions:` block and raise every `sequence` above the highest value clients
 could have seen (they're UTC Unix minutes).
 
 Losing `state.yaml` entirely is recoverable: the next refresh rebuilds it from
-`config/`, and every UID stays the same, but every event gets a fresh `dtstamp`
+`data/`, and every UID stays the same, but every event gets a fresh `dtstamp`
 so subscribers see the whole calendar as modified once.
 
 ## Adding a series
 
-Drop a new `config/<key>.yaml` in place with `league_id`, `name`, and
+Drop a new `data/<key>.yaml` in place with `league_id`, `name`, and
 `max_round`. The filename stem is the series key and the feed path, so
 `indycar.yaml` is served at `/indycar.ics`. The hot-reload picks it up without a
 restart; the first scheduled refresh fills in its events.
@@ -60,14 +60,14 @@ no longer configured are simply not published — nothing is deleted.
 ## Forcing an immediate refresh
 
 There is no "refresh now" command, and restarting doesn't force one. Temporarily
-set `source.refresh_cron` in `config/motorcal.yaml` to `"* * * * *"`, wait for
+set `source.refresh_cron` in `data/motorcal.yaml` to `"* * * * *"`, wait for
 the reload (~30s) and the cycle to run, then restore the original expression. No
 restart needed for either edit.
 
 ## Validating configuration without activating it
 
 ```bash
-docker compose exec app motorcal validate-config --config /config
+docker compose exec app motorcal validate-config --config /data
 ```
 
 Schema-validates the whole directory exactly as the running app would, without
@@ -104,7 +104,7 @@ private by default even though the repo is public. Open the package's
 GitHub settings and set visibility to Public, or `docker compose pull` will
 fail with 403s.
 
-To move this to a new machine: copy `compose.yaml`, `.env`, and `config/`
+To move this to a new machine: copy `compose.yaml`, `.env`, and `data/`
 over and run `docker compose up -d`. No git checkout or build step required
 — everything pulls from GHCR.
 

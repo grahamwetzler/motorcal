@@ -11,7 +11,7 @@ from motorcal.config import (
     save_series,
 )
 
-EXAMPLE_DIR = "config.example"
+EXAMPLE_DIR = "data.example"
 
 
 def _dir(tmp_path):
@@ -127,6 +127,15 @@ def test_dotfiles_are_ignored(tmp_path):
     """A crashed atomic write leaves a .tmp file behind; it must not become a series."""
     config_dir = _dir(tmp_path)
     (config_dir / ".wec-abc.tmp.yaml").write_text("garbage: true\n")
+
+    assert set(load_config(config_dir).series) == {"wec"}
+
+
+def test_state_yaml_sharing_the_directory_is_ignored(tmp_path):
+    """state.yaml (and dated backups) live alongside series files; not series data."""
+    config_dir = _dir(tmp_path)
+    (config_dir / "state.yaml").write_text("uid_domain: x\n")
+    (config_dir / "state-2026-07-31.yaml").write_text("uid_domain: x\n")
 
     assert set(load_config(config_dir).series) == {"wec"}
 

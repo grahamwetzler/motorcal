@@ -8,8 +8,7 @@ services:
     environment:
       THESPORTSDB_API_KEY: "${THESPORTSDB_API_KEY:?THESPORTSDB_API_KEY must be set}"
     volumes:
-      - ./config:/config
-      - ./motorcal-data:/data
+      - ./data:/data
     container_name: app
     labels:
       - com.centurylinklabs.watchtower.enable=true
