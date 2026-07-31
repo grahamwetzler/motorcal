@@ -6,7 +6,7 @@ from datetime import date, datetime, timedelta
 
 from icalendar import Alarm, Calendar, Event
 
-from motorcal.config import SeriesConfig, parse_alarm_offset
+from motorcal.config import Config, SeriesConfig, parse_alarm_offset
 from motorcal.models import PublishedEvent
 
 PRODID = "-//motorcal//motorsports-calendar//EN"
@@ -61,17 +61,13 @@ def build_vevent(
     return event
 
 
-def build_calendar(series_config: SeriesConfig, vevents: list[Event]) -> Calendar:
-    """Assemble one deterministic VCALENDAR for a series from its rendered VEVENTs."""
+def _calendar(calname: str, caldesc: str, vevents: list[Event]) -> Calendar:
+    """Assemble one deterministic VCALENDAR from already-rendered VEVENTs."""
     calendar = Calendar()
     calendar.add("prodid", PRODID)
     calendar.add("version", "2.0")
     calendar.add("method", "PUBLISH")
-    calendar.add("x-wr-calname", series_config.name)
-
-    caldesc = f"{series_config.name} calendar"
-    if series_config.race_only:
-        caldesc += " (race sessions only)"
+    calendar.add("x-wr-calname", calname)
     calendar.add("x-wr-caldesc", caldesc)
 
     calendar.add("refresh-interval;value=duration", "PT1H")
@@ -81,6 +77,14 @@ def build_calendar(series_config: SeriesConfig, vevents: list[Event]) -> Calenda
         calendar.add_component(vevent)
 
     return calendar
+
+
+def build_calendar(series_config: SeriesConfig, vevents: list[Event]) -> Calendar:
+    """Assemble one deterministic VCALENDAR for a series from its rendered VEVENTs."""
+    caldesc = f"{series_config.name} calendar"
+    if series_config.race_only:
+        caldesc += " (race sessions only)"
+    return _calendar(series_config.name, caldesc, vevents)
 
 
 def _to_vevent(event: PublishedEvent, series_name: str) -> Event:
@@ -108,6 +112,23 @@ def render_calendar_bytes(
     return build_calendar(
         series_config, [_to_vevent(e, series_config.name) for e in events]
     ).to_ical()
+
+
+def render_combined_bytes(
+    config: Config, published: dict[str, list[PublishedEvent]]
+) -> bytes:
+    """Render every series' events into the one combined feed.
+
+    Each event keeps its own series' display name, which `build_vevent` already
+    puts in front of every summary, so the series stay legible once mixed.
+    """
+    vevents = [
+        _to_vevent(event, config.series[series].name)
+        for series, events in published.items()
+        if series in config.series
+        for event in events
+    ]
+    return _calendar("Motorsports", "All series", vevents).to_ical()
 
 
 def compute_content_hash(ics_bytes: bytes) -> str:

@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
-from tests.conftest import make_series
-from motorcal.ics import compute_content_hash, render_calendar_bytes
+from tests.conftest import make_config, make_series
+from motorcal.ics import compute_content_hash, render_calendar_bytes, render_combined_bytes
 from motorcal.models import EventStatus, PublishedEvent, SessionType
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
@@ -49,6 +49,39 @@ def test_render_calendar_bytes_handles_an_empty_series():
 
     assert b"BEGIN:VCALENDAR" in ics_bytes
     assert b"BEGIN:VEVENT" not in ics_bytes
+
+
+def test_render_combined_bytes_carries_every_series_under_its_own_name():
+    config = make_config(
+        series={"wec": make_series(), "f1": make_series(league_id=4370, name="F1")}
+    )
+    published = {"wec": [_published("u1", summary="Imola")], "f1": [_published("u2", summary="Bahrain")]}
+
+    ics_bytes = render_combined_bytes(config, published)
+
+    assert b"X-WR-CALNAME:Motorsports" in ics_bytes
+    assert b"SUMMARY:WEC: Imola" in ics_bytes
+    assert b"SUMMARY:F1: Bahrain" in ics_bytes
+
+
+def test_render_combined_bytes_skips_series_the_config_no_longer_has():
+    """published can outlive a series a config reload dropped; it must not KeyError."""
+    config = make_config(series={"wec": make_series()})
+    published = {"wec": [_published("u1")], "gone": [_published("u2")]}
+
+    ics_bytes = render_combined_bytes(config, published)
+
+    assert b"UID:u1" in ics_bytes
+    assert b"UID:u2" not in ics_bytes
+
+
+def test_render_combined_bytes_is_deterministic_regardless_of_series_order():
+    config = make_config(
+        series={"wec": make_series(), "f1": make_series(league_id=4370, name="F1")}
+    )
+    wec, f1 = {"wec": [_published("u1")]}, {"f1": [_published("u2", series="f1")]}
+
+    assert render_combined_bytes(config, {**wec, **f1}) == render_combined_bytes(config, {**f1, **wec})
 
 
 def test_compute_content_hash_is_stable_for_identical_bytes():

@@ -115,3 +115,62 @@ def test_filtered_request_returns_503_when_series_has_no_feed_at_all():
     response = _client({}, {}).get("/wec.ics", params={"practices": "false"})
 
     assert response.status_code == 503
+
+
+# ------------------------------------------------------------------- /all.ics
+
+
+def _combined_client(feeds=None, published=None):
+    config = make_config(series={"wec": make_series(), "f1": make_series(league_id=4370, name="F1")})
+    app = create_app(config)
+    app.state.publication = Publication(
+        config=config, feeds=feeds or {}, published=published or {}
+    )
+    return TestClient(app)
+
+
+def test_all_ics_serves_the_precomputed_combined_feed():
+    response = _combined_client({"all": ICS}).get("/all.ics")
+
+    assert response.status_code == 200
+    assert response.content == ICS
+    assert "etag" in response.headers
+
+
+def test_all_ics_is_not_shadowed_by_the_series_route():
+    """The series route would match "all" as a path parameter and 404 on it."""
+    assert _combined_client({}).get("/all.ics").status_code != 404
+
+
+def test_all_ics_with_no_combined_feed_returns_503():
+    assert _combined_client({}, {}).get("/all.ics").status_code == 503
+
+
+def test_all_ics_filtered_request_returns_503_when_there_is_no_combined_feed():
+    response = _combined_client({}, {}).get("/all.ics", params={"practices": "false"})
+
+    assert response.status_code == 503
+
+
+def test_all_ics_filter_applies_across_every_series():
+    published = {
+        "wec": [_event("wec-practice", SessionType.PRACTICE), _event("wec-race", SessionType.RACE)],
+        "f1": [_event("f1-practice", SessionType.PRACTICE), _event("f1-race", SessionType.RACE)],
+    }
+    response = _combined_client({"all": ICS}, published).get(
+        "/all.ics", params={"practices": "false"}
+    )
+
+    assert b"UID:wec-practice" not in response.content
+    assert b"UID:f1-practice" not in response.content
+    assert b"UID:wec-race" in response.content
+    assert b"UID:f1-race" in response.content
+
+
+def test_all_ics_conditional_request_with_matching_etag_returns_304():
+    client = _combined_client({"all": ICS})
+    first = client.get("/all.ics")
+
+    second = client.get("/all.ics", headers={"If-None-Match": first.headers["etag"]})
+
+    assert second.status_code == 304

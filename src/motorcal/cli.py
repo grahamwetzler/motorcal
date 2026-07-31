@@ -11,8 +11,8 @@ from pathlib import Path
 import uvicorn
 
 from motorcal import state as state_module
-from motorcal.config import Config, ConfigError, load_config, save_series
-from motorcal.ics import render_calendar_bytes
+from motorcal.config import COMBINED_SERIES_KEY, Config, ConfigError, load_config, save_series
+from motorcal.ics import render_calendar_bytes, render_combined_bytes
 from motorcal.merge import rebuild_publication
 from motorcal.refresh import (
     build_scheduler,
@@ -27,10 +27,12 @@ _logger = logging.getLogger("motorcal.serve")
 
 
 def _render_feeds(config: Config, published) -> dict[str, bytes]:
-    return {
+    feeds = {
         series: render_calendar_bytes(series_config, published.get(series, []))
         for series, series_config in config.series.items()
     }
+    feeds[COMBINED_SERIES_KEY] = render_combined_bytes(config, published)
+    return feeds
 
 
 def _cmd_serve(args: argparse.Namespace) -> int:
