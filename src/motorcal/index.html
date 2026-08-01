@@ -201,10 +201,16 @@ function offsets(text) {
 
 function buildURL(state) {
   const all = SERIES.map(s => s.key);
-  const picked = state.series.length ? state.series : all;
+  const picked = state.series;
   const one = picked.length === 1;
   const params = [];
   const bad = [];
+  // An unticked group is not a shortcut for "everything". Omitting the parameter
+  // would hand back a feed carrying every series or every session -- the exact
+  // opposite of what the page is showing -- so it is an error, not a default.
+  const empty = [];
+  if (!picked.length) empty.push("series");
+  if (!state.sessions.length) empty.push("session type");
 
   const push = (key, text) => {
     const parsed = offsets(text);
@@ -212,7 +218,9 @@ function buildURL(state) {
     else if (parsed.length) params.push([key, parsed.join(",")]);
   };
 
-  if (!one && picked.length !== all.length) params.push(["series", picked.join(",")]);
+  if (picked.length && !one && picked.length !== all.length) {
+    params.push(["series", picked.join(",")]);
+  }
   if (state.sessions.length && state.sessions.length !== TYPES.length) {
     params.push(["sessions", state.sessions.join(",")]);
   }
@@ -228,6 +236,7 @@ function buildURL(state) {
   for (const key of picked) {
     const own = state.per[key];
     if (!own) continue;
+    if (own.sessions && !own.sessions.length) empty.push(`${NAMES[key]} session type`);
     if (own.sessions && own.sessions.length && own.sessions.length !== TYPES.length) {
       params.push([`${key}.sessions`, own.sessions.join(",")]);
     }
@@ -240,10 +249,13 @@ function buildURL(state) {
   const encode = (s) => encodeURIComponent(s).replace(/%2C/g, ",");
   const query = params.map(([k, v]) => `${encode(k)}=${encode(v)}`).join("&");
   const path = one ? `/${picked[0]}.ics` : "/motorsports.ics";
+  const error = empty.length ? `Pick at least one ${list(empty)}.`
+    : bad.length ? `Not a valid reminder offset in: ${bad.join(", ")}`
+    : null;
   // `params` and `picked` are handed back so the preview can resolve an event
   // exactly the way the server will -- off the parameters actually emitted,
   // not off a second reading of the form.
-  return {url: location.origin + path + (query ? "?" + query : ""), bad, params, picked};
+  return {url: location.origin + path + (query ? "?" + query : ""), bad, error, params, picked};
 }
 
 // --- plain english ---------------------------------------------------------
@@ -267,8 +279,9 @@ function remindText(alarms) {
   if (alarms.includes("0")) parts.push("at the start");
   return list(parts);
 }
-function sentence(state) {
-  const picked = state.series.length ? state.series : SERIES.map(s => s.key);
+// Returns the two halves rather than markup: a series name is config, and
+// pasting it into innerHTML would run whatever HTML someone put in it.
+function sentence(state, picked) {
   const everySeries = picked.length === SERIES.length;
   const who = everySeries ? "Every series" : list(picked.map(k => NAMES[k]));
   const what = state.sessions.length === TYPES.length || !state.sessions.length
@@ -288,7 +301,7 @@ function sentence(state) {
     return own && (own.sessions || own.alarms || Object.values(own.byType).some(Boolean));
   });
   const tail = tweaked.length ? `, with ${list(tweaked.map(k => NAMES[k]))} set up differently` : "";
-  return `<em>${who}</em> — ${what}, ${when}${tail}.`;
+  return [who, ` — ${what}, ${when}${tail}.`];
 }
 
 // --- next event ------------------------------------------------------------
@@ -451,7 +464,7 @@ function readState() {
 function render() {
   readState();
   document.getElementById("alarmFields").hidden = state.alarmMode !== "set";
-  const carried = new Set(state.series.length ? state.series : SERIES.map(s => s.key));
+  const carried = new Set(state.series);
   for (const {key} of SERIES) {
     const own = state.per[key];
     per[key].block.hidden = !carried.has(key);
@@ -460,17 +473,23 @@ function render() {
   }
 
   const built = buildURL(state);
-  const {url, bad} = built;
+  const {url, bad, error} = built;
   const box = document.getElementById("url");
   const copy = document.getElementById("copy");
   const sub = document.getElementById("subscribe");
-  box.classList.toggle("bad", bad.length > 0);
-  box.textContent = bad.length ? `Not a valid reminder offset in: ${bad.join(", ")}` : url;
-  document.getElementById("sentence").innerHTML = sentence(state);
+  box.classList.toggle("bad", error !== null);
+  box.textContent = error ?? url;
+
+  const summary = document.getElementById("sentence");
+  summary.textContent = "";
+  if (!error) {
+    const [who, rest] = sentence(state, built.picked);
+    summary.append(make("em", {textContent: who}), rest);
+  }
   renderNext(built, state.emoji);
-  copy.disabled = bad.length > 0;
-  sub.setAttribute("aria-disabled", String(bad.length > 0));
-  sub.href = bad.length ? "#" : url.replace(/^https?:/, "webcal:");
+  copy.disabled = error !== null;
+  sub.setAttribute("aria-disabled", String(error !== null));
+  sub.href = error ? "#" : url.replace(/^https?:/, "webcal:");
 
   alarmsInput.classList.toggle("bad", bad.includes("alarms"));
   for (const [type, input] of Object.entries(alarmsByType)) {
@@ -497,23 +516,24 @@ render();
 // The URL builder is the only real logic here; this fails loudly in the console
 // if it starts emitting something the server would reject.
 (function selfCheck() {
+  const keys = SERIES.map(s => s.key);
+  const [first, second] = keys;
   const base = {
-    series: [], sessions: TYPES.map(t => t[0]), emoji: false, name: "",
+    series: keys, sessions: TYPES.map(t => t[0]), emoji: false, name: "",
     alarmMode: "default", alarms: "", alarmsByType: {}, per: {},
   };
   const at = (over) => buildURL({...base, ...over}).url.slice(location.origin.length);
   const cases = [
-    [at({}), "/motorsports.ics", "no choices = bare combined feed"],
-    [at({series: ["f1"]}), "/f1.ics", "one series = its own path, never series="],
-    [at({series: ["f1", "wec"]}), "/motorsports.ics?series=f1,wec", "subset = series="],
-    [at({series: SERIES.map(s => s.key)}), "/motorsports.ics", "all series = no series="],
+    [at({}), "/motorsports.ics", "everything ticked = bare combined feed"],
+    [at({series: [first]}), `/${first}.ics`, "one series = its own path, never series="],
+    [at({series: [first, second]}), `/motorsports.ics?series=${first},${second}`, "subset = series="],
     [at({sessions: ["race"]}), "/motorsports.ics?sessions=race", "session subset"],
     [at({alarmMode: "silence"}), "/motorsports.ics?alarms=", "silence is an empty value"],
     [at({alarmMode: "set", alarms: "-1d, -10m"}), "/motorsports.ics?alarms=-1d,-10m", "offsets trimmed"],
-    [at({series: ["f1"], per: {f1: {sessions: null, alarms: "-1h", byType: {}}}}),
-      "/f1.ics?f1.alarms=-1h", "per-series override"],
-    [at({per: {imsa: {sessions: null, alarms: "-1h", byType: {}}}, series: ["f1"]}),
-      "/f1.ics", "override for a series not in the feed is dropped"],
+    [at({series: [first], per: {[first]: {sessions: null, alarms: "-1h", byType: {}}}}),
+      `/${first}.ics?${first}.alarms=-1h`, "per-series override"],
+    [at({per: {[second]: {sessions: null, alarms: "-1h", byType: {}}}, series: [first]}),
+      `/${first}.ics`, "override for a series not in the feed is dropped"],
   ];
   let ok = true;
   for (const [got, want, what] of cases) {
@@ -522,6 +542,16 @@ render();
   if (buildURL({...base, alarmMode: "set", alarms: "1h"}).bad.length !== 1) {
     ok = false; console.error("self-check: '1h' should be rejected (offsets are negative)");
   }
+  // Nothing ticked must be an error: the bare URL would mean the opposite.
+  const empties = [
+    [buildURL({...base, series: []}).error, "no series"],
+    [buildURL({...base, sessions: []}).error, "no session types"],
+    [buildURL({...base, series: [first], per: {[first]: {sessions: [], alarms: "", byType: {}}}}).error,
+      "no session types for one series"],
+  ];
+  for (const [error, what] of empties) {
+    if (!error) { ok = false; console.error(`self-check: ${what} should be rejected`); }
+  }
   if (remindText(["-1d", "-10m"]) !== "1 day and 10 minutes before"
       || remindText(["-1h", "0"]) !== "1 hour before and at the start") {
     ok = false; console.error("self-check: reminder wording is wrong");
@@ -529,7 +559,7 @@ render();
 
   // The preview must resolve an event the same way the server would.
   const sample = {
-    series: "f1", type: "race", title: "F1: Example Grand Prix", location: "Somewhere",
+    series: first, type: "race", title: "Example Grand Prix", location: "Somewhere",
     start: "2999-01-01T12:00:00+00:00", date: null, duration: 5400,
     time_confirmed: true, alarms: ["-15m"],
   };
@@ -546,10 +576,10 @@ render();
     [preview({}).alarms.join(), "-15m", "no alarm params = the series' own alarms"],
     [preview({alarmMode: "silence"}).alarms.join(), "", "alarms= silences the preview too"],
     [preview({alarmMode: "set", alarmsByType: {race: "-1h"}}).alarms.join(), "-1h", "alarms_race wins"],
-    [preview({series: ["f1"], per: {f1: {sessions: null, alarms: "-2h", byType: {}}}}).alarms.join(),
-      "-2h", "f1.alarms beats the series default"],
+    [preview({series: [first], per: {[first]: {sessions: null, alarms: "-2h", byType: {}}}}).alarms.join(),
+      "-2h", "a per-series override beats the series default"],
     [preview({sessions: ["practice"]}).type, "practice", "the preview obeys the session filter"],
-    [String(preview({series: ["wec"]})), "null", "nothing matching = no preview"],
+    [String(preview({series: [second]})), "null", "nothing matching = no preview"],
   ];
   for (const [got, want, what] of previews) {
     if (got !== want) { ok = false; console.error(`self-check: ${what}\n  got  ${got}\n  want ${want}`); }

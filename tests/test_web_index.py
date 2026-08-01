@@ -132,6 +132,19 @@ def test_postponed_event_is_titled_the_way_the_ics_titles_it():
     assert event["title"] == "[Postponed] WEC: Imola"
 
 
+def test_all_day_event_beats_a_timed_one_later_the_same_day():
+    # An all-day session is upcoming until the day is over but *starts* at
+    # midnight, so it is the one the feed shows next -- not the afternoon race.
+    published = {"wec": [
+        _event("all-day", start=None, all_day_date="2026-04-01"),
+        _event("afternoon", start=NOW + timedelta(hours=6)),
+    ]}
+
+    (event,) = _example_events(CONFIG, published, NOW)
+
+    assert event["title"] == "WEC: all-day"
+
+
 def test_all_day_event_stays_upcoming_for_the_whole_of_its_day():
     # An all-day session has no time of its own, so it must not drop off the
     # page at midnight UTC on the morning it happens.

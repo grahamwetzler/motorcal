@@ -196,15 +196,23 @@ def _inline_json(value: object) -> str:
 
 
 def _starts_at(event: PublishedEvent) -> datetime:
-    """When an event stops being upcoming.
-
-    An all-day session has no time, so it counts as upcoming for the whole of
-    its day rather than vanishing from the page at midnight UTC.
-    """
+    """Where the session sits in time. An all-day session sits at midnight UTC."""
     if event.start is not None:
         return event.start
-    day = datetime.fromisoformat(event.all_day_date).replace(tzinfo=timezone.utc)
-    return day + timedelta(days=1)
+    return datetime.fromisoformat(event.all_day_date).replace(tzinfo=timezone.utc)
+
+
+def _is_upcoming(event: PublishedEvent, now: datetime) -> bool:
+    """Whether the session is still ahead of `now`.
+
+    An all-day session has no time, so it counts as upcoming for the whole of
+    its day rather than vanishing from the page at midnight UTC. That is a
+    question about when it *ends*, kept apart from `_starts_at` so ordering two
+    sessions of the same day doesn't rank the all-day one last.
+    """
+    if event.start is not None:
+        return event.start >= now
+    return _starts_at(event) + timedelta(days=1) > now
 
 
 def _example_events(
@@ -220,7 +228,7 @@ def _example_events(
     soonest: dict[tuple[str, SessionType], PublishedEvent] = {}
     for series, events in published.items():
         for event in events:
-            if _starts_at(event) < now:
+            if not _is_upcoming(event, now):
                 continue
             key = (series, event.session_type)
             if key not in soonest or _starts_at(event) < _starts_at(soonest[key]):
