@@ -183,6 +183,15 @@ class SessionConfig(StrictModel):
     alarms: list[str] | None = None  # None = fall back to series/global defaults
     round: int | None = None  # only when it differs from the event's -- see EventConfig
 
+    @field_validator("uid")
+    @classmethod
+    def validate_uid(cls, value: str) -> str:
+        # An empty uid still satisfies `str`, and would publish every session that
+        # has one under the same "local-@<domain>" identity.
+        if not value.strip():
+            raise ValueError("A session's uid must not be empty")
+        return value
+
     @field_validator("duration")
     @classmethod
     def validate_duration_format(cls, value: str | None) -> str | None:

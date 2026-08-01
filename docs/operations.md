@@ -70,22 +70,41 @@ hot-reload poller performs the same validation automatically and keeps the
 previous bundle active on failure (see `check_and_reload_config` in
 `src/motorcal/refresh.py`); running this by hand just catches mistakes earlier.
 
-## Migrating a pre-TheSportsDB state file
+## Cutting over from the TheSportsDB release
 
-A `state.yaml` written before the provider was removed carries a `snapshots:`
-block and `thesportsdb-*` version entries. The schema forbids unknown keys, so
-the app refuses to start against one. Run once, with the container stopped:
+Removing the provider changed all three things a host owns: the series files
+(`source:`, `id_event:` and the old series settings are now rejected), the
+`state.yaml` schema (no `snapshots:`, no `thesportsdb-*` versions), and the
+mounts (`./data` read-only, `./state` writable). **Watchtower will pull the new
+image on its own within 30 minutes of the release**, so pin the image first and
+do the whole cutover in one pass:
 
 ```bash
+# 1. Pin to what is running now, so watchtower can't roll forward mid-migration.
+#    Put image: ghcr.io/grahamwetzler/motorcal:sha-<current-commit> in compose.yaml
+docker compose up -d
+
+# 2. Stop, and take the new compose.yaml, .env and data/ from the repo.
 docker compose down
-uv run python scripts/migrate_state.py data/state.yaml state/state.yaml
+cp -r data data-backup && cp -r <checkout>/data .
+
+# 3. Move the ledger across, dropping what the schema no longer accepts.
+mkdir -p state && chown -R 1000:1000 state
+uv run python scripts/migrate_state.py data-backup/state.yaml state/state.yaml
+
+# 4. Unpin back to :latest and start.
 docker compose up -d
 ```
 
-That keeps `uid_domain` and the `local-*` version entries — the hand-added
+Step 3 keeps `uid_domain` and the `local-*` version entries — the hand-added
 sessions whose UIDs are unchanged — and drops the rest. The original file is left
 alone; keep it until the new feeds look right. Sessions that were provider-backed
 get new UIDs regardless, so subscribers see those republished once.
+
+Skipping step 2 leaves the old series files in place and the app exits on every
+start with a validation error naming the offending file; the fix is still to copy
+`data/` from the repo. Skipping the `./state` mount is caught the same way, by the
+first save failing — the ledger is never silently written somewhere ephemeral.
 
 Delete `scripts/migrate_state.py` afterwards; it exists for this one cutover.
 

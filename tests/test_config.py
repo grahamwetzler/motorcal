@@ -182,6 +182,13 @@ def test_a_session_needs_a_uid_and_a_type():
         SessionConfig(uid="mine", date="2026-01-01")  # no type
 
 
+def test_a_session_uid_cannot_be_blank():
+    """A blank one type-checks, and would publish every such session as one event."""
+    for blank in ("", "   "):
+        with pytest.raises(ValueError, match="uid must not be empty"):
+            SessionConfig(uid=blank, type="race", date="2026-01-01")
+
+
 def test_a_session_rejects_an_unknown_type():
     with pytest.raises(ValueError):
         SessionConfig(uid="mine", type="parade_lap", date="2026-01-01")
