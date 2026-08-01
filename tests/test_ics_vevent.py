@@ -1,11 +1,11 @@
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 
 from motorcal.ics import build_vevent
 
 
 def test_confirmed_timed_event_with_duration_and_alarm():
     event = build_vevent(
-        uid="thesportsdb-2421035@x.example.com",
+        uid="local-wec-2026-imola-race@x.example.com",
         summary="6 Hours of Imola",
         series_name="WEC",
         status="CONFIRMED",
@@ -15,7 +15,7 @@ def test_confirmed_timed_event_with_duration_and_alarm():
         dtstamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
         last_modified=datetime(2026, 1, 1, tzinfo=timezone.utc),
         sequence=1,
-        description="Venue: Imola\nSource: TheSportsDB",
+        description="Round: 1\nNote: from the official timetable",
         location="Imola, Italy",
         alarms=["-1d", "-30m"],
     )
@@ -24,7 +24,7 @@ def test_confirmed_timed_event_with_duration_and_alarm():
     assert b"VTIMEZONE" not in ics_bytes
     assert b"DTSTART:20260419T130000Z" in ics_bytes
     assert b"DTEND:20260419T190000Z" in ics_bytes
-    assert b"UID:thesportsdb-2421035@x.example.com" in ics_bytes
+    assert b"UID:local-wec-2026-imola-race@x.example.com" in ics_bytes
     assert b"STATUS:CONFIRMED" in ics_bytes
     assert b"SUMMARY:WEC: 6 Hours of Imola" in ics_bytes
     assert ics_bytes.count(b"BEGIN:VALARM") == 2
@@ -34,7 +34,7 @@ def test_confirmed_timed_event_with_duration_and_alarm():
 
 def test_all_day_event_has_no_dtend_and_no_alarms():
     event = build_vevent(
-        uid="thesportsdb-9999@x.example.com",
+        uid="local-wec-2026-spa-race@x.example.com",
         summary="Some Race (time TBC)",
         series_name="IMSA",
         status="CONFIRMED",
