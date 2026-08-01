@@ -205,6 +205,12 @@ events:
     date: '2026-09-05'
     tbc: true
     status: CONFIRMED
+  - uid: wec-2026-lone-star-le-mans-qualifying-hypercar
+    label: Qualifying - Hypercar
+    type: qualifying
+    date: '2026-09-05'
+    tbc: true
+    status: CONFIRMED
   - uid: wec-2026-lone-star-le-mans-hyperpole-hypercar
     label: Hyperpole - Hypercar
     type: hyperpole
