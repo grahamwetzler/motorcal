@@ -117,7 +117,7 @@ def test_filtered_request_returns_503_when_series_has_no_feed_at_all():
     assert response.status_code == 503
 
 
-# ------------------------------------------------------------------- /all.ics
+# ---------------------------------------------------------- /motorsports.ics
 
 
 def _combined_client(feeds=None, published=None):
@@ -129,36 +129,36 @@ def _combined_client(feeds=None, published=None):
     return TestClient(app)
 
 
-def test_all_ics_serves_the_precomputed_combined_feed():
-    response = _combined_client({"all": ICS}).get("/all.ics")
+def test_combined_serves_the_precomputed_combined_feed():
+    response = _combined_client({"motorsports": ICS}).get("/motorsports.ics")
 
     assert response.status_code == 200
     assert response.content == ICS
     assert "etag" in response.headers
 
 
-def test_all_ics_is_not_shadowed_by_the_series_route():
-    """The series route would match "all" as a path parameter and 404 on it."""
-    assert _combined_client({}).get("/all.ics").status_code != 404
+def test_combined_is_not_shadowed_by_the_series_route():
+    """The series route would match it as a path parameter and 404 on it."""
+    assert _combined_client({}).get("/motorsports.ics").status_code != 404
 
 
-def test_all_ics_with_no_combined_feed_returns_503():
-    assert _combined_client({}, {}).get("/all.ics").status_code == 503
+def test_combined_with_no_combined_feed_returns_503():
+    assert _combined_client({}, {}).get("/motorsports.ics").status_code == 503
 
 
-def test_all_ics_filtered_request_returns_503_when_there_is_no_combined_feed():
-    response = _combined_client({}, {}).get("/all.ics", params={"practices": "false"})
+def test_combined_filtered_request_returns_503_when_there_is_no_combined_feed():
+    response = _combined_client({}, {}).get("/motorsports.ics", params={"practices": "false"})
 
     assert response.status_code == 503
 
 
-def test_all_ics_filter_applies_across_every_series():
+def test_combined_filter_applies_across_every_series():
     published = {
         "wec": [_event("wec-practice", SessionType.PRACTICE), _event("wec-race", SessionType.RACE)],
         "f1": [_event("f1-practice", SessionType.PRACTICE), _event("f1-race", SessionType.RACE)],
     }
-    response = _combined_client({"all": ICS}, published).get(
-        "/all.ics", params={"practices": "false"}
+    response = _combined_client({"motorsports": ICS}, published).get(
+        "/motorsports.ics", params={"practices": "false"}
     )
 
     assert b"UID:wec-practice" not in response.content
@@ -167,10 +167,10 @@ def test_all_ics_filter_applies_across_every_series():
     assert b"UID:f1-race" in response.content
 
 
-def test_all_ics_conditional_request_with_matching_etag_returns_304():
-    client = _combined_client({"all": ICS})
-    first = client.get("/all.ics")
+def test_combined_conditional_request_with_matching_etag_returns_304():
+    client = _combined_client({"motorsports": ICS})
+    first = client.get("/motorsports.ics")
 
-    second = client.get("/all.ics", headers={"If-None-Match": first.headers["etag"]})
+    second = client.get("/motorsports.ics", headers={"If-None-Match": first.headers["etag"]})
 
     assert second.status_code == 304

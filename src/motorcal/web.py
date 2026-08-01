@@ -5,16 +5,25 @@ The refresh and reload jobs each build a fresh `Publication` and swap it onto
 exactly once at the top of the handler, so it always sees one consistent
 generation of config/feeds/published together -- never config from a rebuild
 paired with feeds from the one before it (or a series that generation removed).
+
+A request with no query parameters is served the prebuilt bytes. Anything else
+is a `Selection`: the subscriber's own cut of the feed, filtered and re-rendered
+per request. That costs a render, but nothing else -- the ETag is a hash of the
+bytes actually served, so every variant revalidates correctly on its own, and
+alarms and the title prefix are applied here at render time, never written back
+to the version ledger. Nobody's calendar re-notifies because someone else asked
+for `?emoji=true`.
 """
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import Response
+from starlette.datastructures import QueryParams
 
-from motorcal.config import COMBINED_SERIES_KEY, Config
+from motorcal.config import COMBINED_SERIES_KEY, Config, ConfigError, parse_alarm_offset
 from motorcal.ics import compute_content_hash, render_calendar_bytes, render_combined_bytes
 from motorcal.models import PublishedEvent, SessionType
 
@@ -25,6 +34,28 @@ _access_logger = logging.getLogger("motorcal.access")
 # but they're all "qualifying" from a subscriber's point of view.
 _QUALIFYING_TYPES = {
     SessionType.QUALIFYING, SessionType.HYPERPOLE, SessionType.SPRINT_QUALIFYING,
+}
+
+# An alarm needs a confirmed start to hang off, and these two have nothing worth
+# alerting about. `resolve_alarms` skips them for configured alarms; a URL
+# override must not be a way around that.
+_NO_ALARM_TYPES = {SessionType.UNKNOWN, SessionType.TESTING}
+
+_EMOJI_PREFIX = "\N{CHEQUERED FLAG} "
+
+# `alarms_race=-1h` and friends: one per session type.
+_ALARM_PARAMS = {f"alarms_{session_type.value}": session_type for session_type in SessionType}
+# Settable for one series as `f1.sessions=race`, or for every series unprefixed.
+_SERIES_PARAMS = {"sessions", "alarms", *_ALARM_PARAMS}
+# `practices`/`qualifying` predate `sessions` and are kept for feeds already
+# subscribed to in people's calendar apps.
+_LEGACY_PARAMS = {"practices", "qualifying"}
+_GLOBAL_ONLY_PARAMS = {"series", "emoji", "name", *_LEGACY_PARAMS}
+_GLOBAL_PARAMS = _SERIES_PARAMS | _GLOBAL_ONLY_PARAMS
+
+_BOOLEANS = {
+    "true": True, "1": True, "on": True, "yes": True,
+    "false": False, "0": False, "off": False, "no": False,
 }
 
 
@@ -42,6 +73,27 @@ class Publication:
     published: dict[str, list[PublishedEvent]]
 
 
+@dataclass(frozen=True)
+class _Filters:
+    """What one series' events are cut down to, for one request."""
+
+    sessions: frozenset[SessionType] | None  # None = every session type
+    # Per session type, already resolved through the whole precedence chain.
+    # None for a type = leave that event's configured alarms alone.
+    alarms: dict[SessionType, list[str] | None]
+
+
+@dataclass(frozen=True)
+class Selection:
+    """One request's cut of the feed. Private to this module -- see `ics.render_bytes`."""
+
+    series: tuple[str, ...]
+    filters: dict[str, _Filters]
+    prefix: str
+    calname: str | None
+    is_default: bool
+
+
 def create_app(config: Config) -> FastAPI:
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     app.state.publication = Publication(config=config, feeds={}, published={})
@@ -51,27 +103,32 @@ def create_app(config: Config) -> FastAPI:
         return {"ok": True}
 
     # Declared before /{series}.ics: FastAPI matches in declaration order, and the
-    # series route's path parameter would otherwise swallow "all". `load_config`
-    # rejects a series named "all", so nothing legitimate is shadowed here.
-    @app.get("/all.ics")
-    def get_combined_calendar(request: Request, practices: bool = True, qualifying: bool = True):
+    # series route's path parameter would otherwise swallow the combined feed's
+    # name. `load_config` rejects a series file claiming it, so nothing legitimate
+    # is shadowed here.
+    @app.get(f"/{COMBINED_SERIES_KEY}.ics")
+    def get_combined_calendar(request: Request):
         publication = app.state.publication
 
         ics_bytes = publication.feeds.get(COMBINED_SERIES_KEY)
         if not ics_bytes:
             raise HTTPException(status_code=503, detail="no usable events")
 
-        if not practices or not qualifying:
+        selection = _parse_selection(request.query_params, publication.config)
+        if not selection.is_default:
             published = {
-                series: _filtered(events, practices, qualifying)
-                for series, events in publication.published.items()
+                series: _select(publication.published.get(series, []), selection.filters[series])
+                for series in selection.series
             }
-            ics_bytes = render_combined_bytes(publication.config, published)
+            ics_bytes = render_combined_bytes(
+                publication.config, published,
+                prefix=selection.prefix, calname=selection.calname,
+            )
 
         return _conditional_response(ics_bytes, request, COMBINED_SERIES_KEY)
 
     @app.get("/{series}.ics")
-    def get_calendar(series: str, request: Request, practices: bool = True, qualifying: bool = True):
+    def get_calendar(series: str, request: Request):
         publication = app.state.publication
 
         if series not in publication.config.series:
@@ -81,24 +138,223 @@ def create_app(config: Config) -> FastAPI:
         if not ics_bytes:
             raise HTTPException(status_code=503, detail="no usable events for this series")
 
-        if not practices or not qualifying:
-            events = _filtered(publication.published.get(series, []), practices, qualifying)
-            ics_bytes = render_calendar_bytes(publication.config.series[series], events)
+        selection = _parse_selection(request.query_params, publication.config, series=series)
+        if not selection.is_default:
+            events = _select(publication.published.get(series, []), selection.filters[series])
+            ics_bytes = render_calendar_bytes(
+                publication.config.series[series], events,
+                prefix=selection.prefix, calname=selection.calname,
+            )
 
         return _conditional_response(ics_bytes, request, series)
 
     return app
 
 
-def _filtered(
-    events: list[PublishedEvent], practices: bool, qualifying: bool
-) -> list[PublishedEvent]:
-    excluded = set()
-    if not practices:
-        excluded.add(SessionType.PRACTICE)
-    if not qualifying:
-        excluded |= _QUALIFYING_TYPES
-    return [e for e in events if e.session_type not in excluded]
+# ------------------------------------------------------------------ query parsing
+
+
+def _bad_request(message: str) -> HTTPException:
+    return HTTPException(status_code=400, detail=message)
+
+
+def _split(value: str, key: str) -> list[str]:
+    """Split a comma-separated parameter, rejecting empty members."""
+    parts = [part.strip() for part in value.split(",")]
+    if not all(parts):
+        raise _bad_request(f"empty value in {key!r}")
+    return parts
+
+
+def _parse_bool(value: str, key: str) -> bool:
+    try:
+        return _BOOLEANS[value.strip().lower()]
+    except KeyError:
+        raise _bad_request(f"{key!r} must be true or false (got {value!r})") from None
+
+
+def _parse_sessions(value: str, key: str) -> frozenset[SessionType]:
+    session_types = set()
+    for name in _split(value, key):
+        try:
+            session_types.add(SessionType(name))
+        except ValueError:
+            valid = ", ".join(sorted(member.value for member in SessionType))
+            raise _bad_request(
+                f"unknown session type {name!r} in {key!r} (expected one of: {valid})"
+            ) from None
+    return frozenset(session_types)
+
+
+def _parse_alarms(value: str, key: str) -> list[str]:
+    """Parse an alarm override. An empty value is meaningful: silence this feed."""
+    if not value.strip():
+        return []
+    offsets = _split(value, key)
+    for offset in offsets:
+        try:
+            parse_alarm_offset(offset)
+        except ConfigError as exc:
+            raise _bad_request(f"{exc} in {key!r}") from None
+    return offsets
+
+
+def _first_set(*candidates: list[str] | None) -> list[str] | None:
+    """First candidate that was actually given. An empty list is 'given' -- it silences."""
+    for candidate in candidates:
+        if candidate is not None:
+            return candidate
+    return None
+
+
+def _parse_selection(
+    query: QueryParams, config: Config, *, series: str | None = None
+) -> Selection:
+    """Turn one request's query string into the cut of the feed it asks for.
+
+    Strict on the way in: an unknown or misplaced parameter is a 400, never
+    something quietly ignored. Ignoring a typo would hand a subscriber a feed
+    that silently isn't the one they asked for, and they would have no way to
+    tell -- an ICS feed reports nothing back.
+    """
+    items = query.multi_items()
+    keys = [key for key, _ in items]
+    repeated = sorted({key for key in keys if keys.count(key) > 1})
+    if repeated:
+        raise _bad_request(
+            f"repeated query parameter(s): {', '.join(repeated)}. Give one comma-separated "
+            "value instead (e.g. sessions=race,qualifying)"
+        )
+
+    # Split each key on its first '.': a known series key on the left makes it a
+    # per-series override, otherwise the whole key is a global parameter name. So
+    # `alarms_race` can never be read as a prefix.
+    global_raw: dict[str, str] = {}
+    per_series_raw: dict[str, dict[str, str]] = {}
+    for key, value in items:
+        prefix, _, param = key.partition(".")
+        if not param:
+            global_raw[key] = value
+            continue
+        if prefix not in config.series:
+            raise _bad_request(f"unknown series {prefix!r} in query parameter {key!r}")
+        if series is not None and prefix != series:
+            raise _bad_request(f"{key!r} names a series this feed does not carry")
+        per_series_raw.setdefault(prefix, {})[param] = value
+
+    for key in global_raw:
+        if key not in _GLOBAL_PARAMS:
+            raise _bad_request(f"unknown query parameter {key!r}")
+    for owner, params in per_series_raw.items():
+        for key in params:
+            if key in _SERIES_PARAMS:
+                continue
+            if key in _GLOBAL_PARAMS:
+                raise _bad_request(
+                    f"{key!r} applies to the whole feed and cannot be set for one "
+                    f"series (got {owner}.{key})"
+                )
+            raise _bad_request(f"unknown query parameter '{owner}.{key}'")
+
+    if series is not None and "series" in global_raw:
+        raise _bad_request(f"'series' only applies to /{COMBINED_SERIES_KEY}.ics")
+
+    # Rather than define how a legacy exclusion interacts with the allow-list,
+    # refuse the combination. Each alias on its own keeps behaving exactly as it
+    # always has, and nothing already subscribed sends both.
+    legacy = sorted(_LEGACY_PARAMS & set(global_raw))
+    any_sessions = "sessions" in global_raw or any(
+        "sessions" in params for params in per_series_raw.values()
+    )
+    if legacy and any_sessions:
+        raise _bad_request(
+            f"{', '.join(legacy)} cannot be combined with 'sessions' -- use 'sessions' alone"
+        )
+
+    if series is not None:
+        selected = (series,)
+    elif "series" in global_raw:
+        selected = tuple(dict.fromkeys(_split(global_raw["series"], "series")))
+        for key in selected:
+            if key not in config.series:
+                raise _bad_request(f"unknown series {key!r}")
+    else:
+        selected = tuple(config.series)
+
+    orphaned = sorted(set(per_series_raw) - set(selected))
+    if orphaned:
+        raise _bad_request(
+            f"{', '.join(orphaned)} has settings but is not in this feed -- add it to 'series'"
+        )
+
+    global_sessions = (
+        _parse_sessions(global_raw["sessions"], "sessions") if "sessions" in global_raw else None
+    )
+    if legacy:
+        excluded: set[SessionType] = set()
+        if not _parse_bool(global_raw.get("practices", "true"), "practices"):
+            excluded.add(SessionType.PRACTICE)
+        if not _parse_bool(global_raw.get("qualifying", "true"), "qualifying"):
+            excluded |= _QUALIFYING_TYPES
+        if excluded:
+            global_sessions = frozenset(set(SessionType) - excluded)
+
+    global_alarms = _parse_alarms(global_raw["alarms"], "alarms") if "alarms" in global_raw else None
+    global_by_type = {
+        session_type: _parse_alarms(global_raw[param], param)
+        for param, session_type in _ALARM_PARAMS.items()
+        if param in global_raw
+    }
+
+    filters: dict[str, _Filters] = {}
+    for key in selected:
+        raw = per_series_raw.get(key, {})
+        own_sessions = (
+            _parse_sessions(raw["sessions"], f"{key}.sessions") if "sessions" in raw else None
+        )
+        own_alarms = _parse_alarms(raw["alarms"], f"{key}.alarms") if "alarms" in raw else None
+        own_by_type = {
+            session_type: _parse_alarms(raw[param], f"{key}.{param}")
+            for param, session_type in _ALARM_PARAMS.items()
+            if param in raw
+        }
+        filters[key] = _Filters(
+            sessions=own_sessions if own_sessions is not None else global_sessions,
+            alarms={
+                session_type: _first_set(
+                    own_by_type.get(session_type),
+                    own_alarms,
+                    global_by_type.get(session_type),
+                    global_alarms,
+                )
+                for session_type in SessionType
+            },
+        )
+
+    return Selection(
+        series=selected,
+        filters=filters,
+        prefix=_EMOJI_PREFIX if _parse_bool(global_raw.get("emoji", "false"), "emoji") else "",
+        calname=global_raw.get("name") or None,
+        is_default=not items,
+    )
+
+
+def _select(events: list[PublishedEvent], filters: _Filters) -> list[PublishedEvent]:
+    """Apply one series' filters: drop the session types not asked for, override alarms.
+
+    Returns copies where alarms changed, so the events held by the live
+    `Publication` -- shared by every other request -- are never touched.
+    """
+    selected = []
+    for event in events:
+        if filters.sessions is not None and event.session_type not in filters.sessions:
+            continue
+        alarms = filters.alarms.get(event.session_type)
+        if alarms is not None and event.time_confirmed and event.session_type not in _NO_ALARM_TYPES:
+            event = replace(event, alarms=list(alarms))
+        selected.append(event)
+    return selected
 
 
 def _conditional_response(ics_bytes: bytes, request: Request, label: str) -> Response:
