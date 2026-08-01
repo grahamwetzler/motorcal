@@ -126,6 +126,9 @@ events:
     duration: 360m
     status: CONFIRMED
     note: Green flag confirmed 11:40am ET per IMSA's official race-week schedule
+    alarms:
+    - '0'
+    - '-10m'
 - name: Michelin GT Challenge at VIR
   location: Virginia International Raceway, United States
   round: 9
