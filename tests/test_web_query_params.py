@@ -156,6 +156,15 @@ def test_an_empty_alarms_value_silences_the_feed():
     assert b"BEGIN:VALARM" not in body
 
 
+def test_an_oversized_offset_is_a_400_not_an_overflow():
+    assert _get(query="alarms=-1000000000d").status_code == 400
+
+
+def test_too_many_alarms_in_one_list_is_rejected():
+    offsets = ",".join(f"-{n}d" for n in range(1, 12))
+    assert _get(query=f"alarms={offsets}").status_code == 400
+
+
 def test_per_type_alarms_apply_only_to_that_session_type():
     published = {
         "wec": [_event("wec-race"), _event("wec-practice", SessionType.PRACTICE)], "f1": [],

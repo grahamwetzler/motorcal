@@ -25,7 +25,10 @@ GLOBAL_FILENAME = "defaults.yaml"
 COMBINED_SERIES_KEY = "events"
 
 _DURATION_RE = re.compile(r"^([1-9]\d*)(h|m)$")
-_ALARM_OFFSET_RE = re.compile(r"^0$|^-[1-9]\d*[dhm]$")
+# Digits capped at 5 (max 99999): plenty for any real alert lead time, and low
+# enough that the worst case (99999d -> ~273 years in seconds) stays far under
+# timedelta's ~2.7e11-day range, so a crafted offset can't overflow it in ics.py.
+_ALARM_OFFSET_RE = re.compile(r"^0$|^-[1-9]\d{0,4}[dhm]$")
 _VALID_SESSION_NAMES = {member.value for member in SessionType}
 _VALID_STATUS_NAMES = {member.value for member in EventStatus}
 
