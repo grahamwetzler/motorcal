@@ -259,11 +259,16 @@ def _parse_sessions(value: str, key: str) -> frozenset[SessionType]:
     return frozenset(session_types)
 
 
+_MAX_ALARMS = 10  # one VALARM per offset per event -- caps anonymous list-based amplification
+
+
 def _parse_alarms(value: str, key: str) -> list[str]:
     """Parse an alarm override. An empty value is meaningful: silence this feed."""
     if not value.strip():
         return []
     offsets = _split(value, key)
+    if len(offsets) > _MAX_ALARMS:
+        raise _bad_request(f"{key!r} accepts at most {_MAX_ALARMS} alarms (got {len(offsets)})")
     for offset in offsets:
         try:
             parse_alarm_offset(offset)
