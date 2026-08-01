@@ -1,7 +1,5 @@
-league_id: 4488
 name: IMSA
-max_round: 30
-race_only: true
+schedule_url: https://www.imsa.com/weathertech/weathertech-2026-schedule/
 durations:
   race: 160m
 alerts:
@@ -18,22 +16,13 @@ events:
     start: '2026-03-20T15:25:00+00:00'
     duration: 75m
     status: CONFIRMED
-    note: Added manually from imsa.com; not yet in TheSportsDB
     alarms:
     - '0'
-  - id_event: '2415565'
+  - uid: imsa-2026-mobil-1-twelve-hours-of-sebring-race
     type: race
     start: '2026-03-21T14:00:00+00:00'
     duration: 720m
     status: CONFIRMED
-    source:
-      name: Mobil 1 Twelve Hours of Sebring
-      date: '2026-03-21'
-      time: '14:00:00'
-      venue: Sebring International Raceway
-      country: United States
-      round: 2
-      season: '2026'
 - name: Acura Grand Prix of Long Beach
   location: Long Beach Street Circuit, United States
   round: 3
@@ -44,22 +33,13 @@ events:
     start: '2026-04-18T00:25:00+00:00'
     duration: 35m
     status: CONFIRMED
-    note: Added manually from imsa.com; not yet in TheSportsDB
     alarms:
     - '0'
-  - id_event: '2415566'
+  - uid: imsa-2026-acura-grand-prix-of-long-beach-race
     type: race
     start: '2026-04-18T20:05:00+00:00'
     duration: 100m
     status: CONFIRMED
-    source:
-      name: Acura Grand Prix of Long Beach
-      date: '2026-04-18'
-      time: '20:05:00'
-      venue: Long Beach Street Circuit
-      country: United States
-      round: 3
-      season: '2026'
 - name: Motul Course de Monterey
   location: Laguna Seca, United States
   round: 4
@@ -70,21 +50,13 @@ events:
     start: '2026-05-02T22:10:00+00:00'
     duration: 60m
     status: CONFIRMED
-    note: Added manually from imsa.com; not yet in TheSportsDB
     alarms:
     - '0'
-  - id_event: '2415567'
+  - uid: imsa-2026-motul-course-de-monterey-race
     type: race
     date: '2026-05-03'
+    tbc: true
     status: CONFIRMED
-    source:
-      name: Motul Course de Monterey
-      date: '2026-05-03'
-      time: 00:00:00
-      venue: Laguna Seca
-      country: United States
-      round: 4
-      season: '2026'
 - name: Chevrolet Detroit Grand Prix Presented By Lear
   location: Detroit Street Circuit, United States
   round: 5
@@ -95,22 +67,14 @@ events:
     start: '2026-05-29T20:50:00+00:00'
     duration: 35m
     status: CONFIRMED
-    note: Added manually from imsa.com; not yet in TheSportsDB
     alarms:
     - '0'
-  - id_event: '2415568'
+  - uid: imsa-2026-chevrolet-detroit-grand-prix-presented-by-lear-race
     type: race
     date: '2026-05-30'
+    tbc: true
     duration: 100m
     status: CONFIRMED
-    source:
-      name: Chevrolet Detroit Grand Prix Presented By Lear
-      date: '2026-05-30'
-      time: 00:00:00
-      venue: Detroit Street Circuit
-      country: United States
-      round: 5
-      season: '2026'
 - name: Sahlen's Six Hours of The Glen
   location: Watkins Glen International, United States
   round: 6
@@ -121,22 +85,13 @@ events:
     start: '2026-06-27T19:40:00+00:00'
     duration: 75m
     status: CONFIRMED
-    note: Added manually from imsa.com; not yet in TheSportsDB
     alarms:
     - '0'
-  - id_event: '2415569'
+  - uid: imsa-2026-sahlen-s-six-hours-of-the-glen-race
     type: race
     start: '2026-06-28T16:00:00+00:00'
     duration: 360m
     status: CONFIRMED
-    source:
-      name: Sahlen's Six Hours of The Glen
-      date: '2026-06-28'
-      time: '16:00:00'
-      venue: Watkins Glen International
-      country: United States
-      round: 6
-      season: '2026'
 - name: Chevrolet Grand Prix
   location: Canadian Tire Motorsport Park, Canada
   round: 7
@@ -147,21 +102,12 @@ events:
     start: '2026-07-11T20:00:00+00:00'
     duration: 65m
     status: CONFIRMED
-    note: Added manually from imsa.com; not yet in TheSportsDB
     alarms:
     - '0'
-  - id_event: '2415570'
+  - uid: imsa-2026-chevrolet-grand-prix-race
     type: race
     start: '2026-07-12T18:00:00+00:00'
     status: CONFIRMED
-    source:
-      name: Chevrolet Grand Prix
-      date: '2026-07-12'
-      time: '18:00:00'
-      venue: Canadian Tire Motorsport Park
-      country: Canada
-      round: 7
-      season: '2026'
 - name: Motul SportsCar Endurance Grand Prix
   location: Road America, United States
   round: 8
@@ -172,22 +118,13 @@ events:
     start: '2026-08-01T20:25:00+00:00'
     duration: 75m
     status: CONFIRMED
-    note: Added manually from imsa.com; not yet in TheSportsDB
     alarms:
     - '0'
-  - id_event: '2415571'
+  - uid: imsa-2026-motul-sportscar-endurance-grand-prix-race
     type: race
     start: '2026-08-02T15:30:00+00:00'
     duration: 360m
     status: CONFIRMED
-    source:
-      name: Motul SportsCar Endurance Grand Prix
-      date: '2026-08-02'
-      time: '15:30:00'
-      venue: Road America
-      country: United States
-      round: 8
-      season: '2026'
 - name: Michelin GT Challenge at VIR
   location: Virginia International Raceway, United States
   round: 9
@@ -198,21 +135,12 @@ events:
     start: '2026-08-22T20:45:00+00:00'
     duration: 40m
     status: CONFIRMED
-    note: Added manually from imsa.com; not yet in TheSportsDB
     alarms:
     - '0'
-  - id_event: '2415572'
+  - uid: imsa-2026-michelin-gt-challenge-at-vir-race
     type: race
     start: '2026-08-23T16:00:00+00:00'
     status: CONFIRMED
-    source:
-      name: Michelin GT Challenge at VIR
-      date: '2026-08-23'
-      time: '16:00:00'
-      venue: Virginia International Raceway
-      country: United States
-      round: 9
-      season: '2026'
 - name: TireRack.com Battle On The Bricks
   location: Indianapolis Motor Speedway, United States
   round: 10
@@ -223,21 +151,12 @@ events:
     start: '2026-09-19T21:00:00+00:00'
     duration: 80m
     status: CONFIRMED
-    note: Added manually from imsa.com; not yet in TheSportsDB
     alarms:
     - '0'
-  - id_event: '2415573'
+  - uid: imsa-2026-tirerack-com-battle-on-the-bricks-race
     type: race
     start: '2026-09-20T19:00:00+00:00'
     status: CONFIRMED
-    source:
-      name: TireRack.com Battle On The Bricks
-      date: '2026-09-20'
-      time: '19:00:00'
-      venue: Indianapolis Motor Speedway
-      country: United States
-      round: 10
-      season: '2026'
 - name: Motul Petit Le Mans
   location: Michelin Raceway Road Atlanta, United States
   round: 11
@@ -248,19 +167,10 @@ events:
     start: '2026-10-02T18:15:00+00:00'
     duration: 80m
     status: CONFIRMED
-    note: Added manually from imsa.com; not yet in TheSportsDB
     alarms:
     - '0'
-  - id_event: '2415574'
+  - uid: imsa-2026-motul-petit-le-mans-race
     type: race
     start: '2026-10-03T16:00:00+00:00'
     duration: 600m
     status: CONFIRMED
-    source:
-      name: Motul Petit Le Mans
-      date: '2026-10-03'
-      time: '16:00:00'
-      venue: Michelin Raceway Road Atlanta
-      country: United States
-      round: 11
-      season: '2026'
