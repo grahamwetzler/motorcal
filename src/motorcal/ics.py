@@ -12,6 +12,16 @@ from motorcal.models import PublishedEvent
 PRODID = "-//motorcal//motorsports-calendar//EN"
 
 
+def build_title(series_name: str, summary: str, status: str) -> str:
+    """The event title a calendar app shows, before any `prefix` is put in front.
+
+    Split out so the landing page can preview the exact title a subscriber will
+    end up with rather than approximating it.
+    """
+    title = f"{series_name}: {summary}"
+    return f"[Postponed] {title}" if status == "TENTATIVE" else title
+
+
 def build_vevent(
     *,
     uid: str,
@@ -37,9 +47,7 @@ def build_vevent(
     event = Event()
     event.add("uid", uid)
 
-    summary = f"{series_name}: {summary}"
-    rendered_summary = f"[Postponed] {summary}" if status == "TENTATIVE" else summary
-    rendered_summary = f"{prefix}{rendered_summary}"
+    rendered_summary = f"{prefix}{build_title(series_name, summary, status)}"
     event.add("summary", rendered_summary)
 
     if start is not None:

@@ -16,15 +16,23 @@ for `?emoji=true`.
 """
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass, replace
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import Response
+from fastapi.responses import HTMLResponse, Response
 from starlette.datastructures import QueryParams
 
 from motorcal.config import COMBINED_SERIES_KEY, Config, ConfigError, parse_alarm_offset
-from motorcal.ics import compute_content_hash, render_calendar_bytes, render_combined_bytes
+from motorcal.ics import (
+    build_title,
+    compute_content_hash,
+    render_calendar_bytes,
+    render_combined_bytes,
+)
 from motorcal.models import PublishedEvent, SessionType
 
 _access_logger = logging.getLogger("motorcal.access")
@@ -42,6 +50,10 @@ _QUALIFYING_TYPES = {
 _NO_ALARM_TYPES = {SessionType.UNKNOWN, SessionType.TESTING}
 
 _EMOJI_PREFIX = "\N{CHEQUERED FLAG} "
+
+# The feed-builder page served at `/`. Read once at import: it ships inside the
+# package, so it can only change with a new image.
+_INDEX_HTML = (Path(__file__).parent / "index.html").read_text()
 
 # `alarms_race=-1h` and friends: one per session type.
 _ALARM_PARAMS = {f"alarms_{session_type.value}": session_type for session_type in SessionType}
@@ -102,6 +114,26 @@ def create_app(config: Config) -> FastAPI:
     def healthz():
         return {"ok": True}
 
+    # The builder page. `/{series}.ics` only matches paths ending in `.ics`, so
+    # this shadows nothing.
+    @app.get("/", response_class=HTMLResponse)
+    def get_index():
+        publication = app.state.publication
+
+        series = [
+            {"key": key, "name": series_config.name}
+            for key, series_config in publication.config.series.items()
+        ]
+        upcoming = _example_events(
+            publication.config, publication.published, datetime.now(timezone.utc)
+        )
+        page = _INDEX_HTML.replace("__SERIES_JSON__", _inline_json(series)).replace(
+            "__UPCOMING_JSON__", _inline_json(upcoming)
+        )
+        # The page carries real event times, so it must revalidate like the feeds
+        # do rather than sit in a browser cache until the next race has been run.
+        return HTMLResponse(page, headers={"Cache-Control": "public, no-cache"})
+
     # Declared before /{series}.ics: FastAPI matches in declaration order, and the
     # series route's path parameter would otherwise swallow the combined feed's
     # name. `load_config` rejects a series file claiming it, so nothing legitimate
@@ -149,6 +181,70 @@ def create_app(config: Config) -> FastAPI:
         return _conditional_response(ics_bytes, request, series)
 
     return app
+
+
+# ------------------------------------------------------------------- index page
+
+
+def _inline_json(value: object) -> str:
+    """Serialise for embedding in a <script> block.
+
+    Escaping `<` is the whole point: a series named with a stray `</script>`
+    would otherwise end the block and turn the rest of the page into markup.
+    """
+    return json.dumps(value).replace("<", "\\u003c")
+
+
+def _starts_at(event: PublishedEvent) -> datetime:
+    """When an event stops being upcoming.
+
+    An all-day session has no time, so it counts as upcoming for the whole of
+    its day rather than vanishing from the page at midnight UTC.
+    """
+    if event.start is not None:
+        return event.start
+    day = datetime.fromisoformat(event.all_day_date).replace(tzinfo=timezone.utc)
+    return day + timedelta(days=1)
+
+
+def _example_events(
+    config: Config, published: dict[str, list[PublishedEvent]], now: datetime
+) -> list[dict[str, object]]:
+    """The next upcoming session of every (series, session type), for `/`.
+
+    One per pair rather than one overall: the page filters this list by whatever
+    the visitor ticked, and the earliest survivor of that filter is the real next
+    event of the feed they just built. Bounded by construction -- at most one
+    entry per series per session type.
+    """
+    soonest: dict[tuple[str, SessionType], PublishedEvent] = {}
+    for series, events in published.items():
+        for event in events:
+            if _starts_at(event) < now:
+                continue
+            key = (series, event.session_type)
+            if key not in soonest or _starts_at(event) < _starts_at(soonest[key]):
+                soonest[key] = event
+
+    return [
+        {
+            "series": event.series,
+            "type": event.session_type.value,
+            # The title the calendar app will show, built by the one rule that
+            # builds it for real (`build_vevent`), minus the emoji prefix the
+            # page applies itself when that box is ticked.
+            "title": build_title(
+                config.series[event.series].name, event.summary, event.status.value
+            ),
+            "start": event.start.isoformat() if event.start is not None else None,
+            "date": event.all_day_date,
+            "duration": event.duration_seconds,
+            "location": event.location,
+            "time_confirmed": event.time_confirmed,
+            "alarms": list(event.alarms),
+        }
+        for event in sorted(soonest.values(), key=_starts_at)
+    ]
 
 
 # ------------------------------------------------------------------ query parsing
