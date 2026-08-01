@@ -1,8 +1,9 @@
 # motorcal
 
-Self-hosted per-series motorsports ICS calendar publisher. It publishes one ICS
-feed per series — every session of every race weekend, practice through race —
-that you can subscribe to from any calendar app.
+Self-hosted motorsports ICS calendar publisher. It publishes one combined ICS
+feed — every session of every race weekend, practice through race, across
+every series — that you can subscribe to from any calendar app, filtered down
+to just the series and sessions you want via the URL.
 
 **The data directory is the source of truth, and the only one.** One YAML file
 per series holds that series' settings *and* its full event list — one entry per
@@ -12,10 +13,10 @@ these files. Nothing in the app fetches anything or writes to `data/`, so there
 is no database, no patch layer, no override file, and no merge to lose an edit
 to — you edit the event.
 
-Feeds are exposed to the internet via a Cloudflare Tunnel, so nothing needs to
-be port-forwarded. They are **not** access-controlled — anyone who knows your
-hostname can fetch `/f1.ics`. That's fine for public race schedules; don't put
-anything else in there.
+The feed is exposed to the internet via a Cloudflare Tunnel, so nothing needs
+to be port-forwarded. It is **not** access-controlled — anyone who knows your
+hostname can fetch `/events.ics`. That's fine for public race schedules; don't
+put anything else in there.
 
 ## Quick start
 
@@ -31,9 +32,9 @@ anything else in there.
    cp -r data.example data
    ```
 
-   Add one file per series you want. The filename is the series key and the feed
-   path: `f1.yaml` is served at `/f1.ics`. `motorsports` is reserved for the
-   combined feed, so there can be no `motorsports.yaml`.
+   Add one file per series you want. The filename is the series key, used to
+   select or configure it in the feed URL: `f1.yaml` is series key `f1`.
+   `events` is reserved for the combined feed, so there can be no `events.yaml`.
 
 3. Make the state directory writable by the container's user:
 
@@ -47,9 +48,9 @@ anything else in there.
    docker compose up -d
    ```
 
-5. Subscribe at `https://<your-domain>/<series>.ics`, or at
-   `https://<your-domain>/motorsports.ics` for every series in one calendar.
-   Shape the feed from the URL — see "Feed parameters" below.
+5. Subscribe at `https://<your-domain>/events.ics` — every series in one
+   calendar by default. Shape the feed from the URL — see "Feed parameters"
+   below — to cut it down to just the series and sessions you want.
 
    Or open `https://<your-domain>/` and tick what you want: the page builds the
    URL for you and previews the next event the feed would carry.
@@ -59,7 +60,7 @@ anything else in there.
 
 ## Feed parameters
 
-Both feeds take query parameters, so one deployment can serve as many different
+The feed takes query parameters, so one deployment can serve as many different
 calendars as you have subscriptions. Nothing is stored — the URL *is* the
 setting, and two people can subscribe to the same server and get different
 feeds. The builder page at `/` writes these for you; the table below is what it
@@ -67,7 +68,7 @@ is writing.
 
 | Parameter | Example | Applies to |
 | --- | --- | --- |
-| `series` | `series=f1,wec` | whole feed; `/motorsports.ics` only |
+| `series` | `series=f1,wec` | which series to include; leave off for all of them |
 | `emoji` | `emoji=true` | whole feed — puts 🏁 in front of every title |
 | `name` | `name=Racing` | whole feed — the calendar's display name |
 | `sessions` | `sessions=race,qualifying` | whole feed, or one series: `f1.sessions=race` |
@@ -93,7 +94,7 @@ So a feed of nothing but F1 and WEC races, flagged, reminding you a day and ten
 minutes ahead, with F1 races an hour ahead instead:
 
 ```
-/motorsports.ics?series=f1,wec&sessions=race&emoji=true&alarms=-1d,-10m&f1.alarms=-1h
+/events.ics?series=f1,wec&sessions=race&emoji=true&alarms=-1d,-10m&f1.alarms=-1h
 ```
 
 A malformed parameter — an unknown name, an unknown series, a repeated key, a

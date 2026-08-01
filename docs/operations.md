@@ -51,12 +51,13 @@ so subscribers see the whole calendar as modified once.
 ## Adding a series
 
 Drop a new `data/<key>.yaml` in place with a `name:` and, so the agent knows
-where to look, a `schedule_url:`. The filename stem is the series key and the
-feed path, so `indycar.yaml` is served at `/indycar.ics`. The hot-reload picks it
-up without a restart.
+where to look, a `schedule_url:`. The filename stem is the series key, selectable
+in the combined feed's URL as `?series=indycar`. The hot-reload picks it up
+without a restart.
 
-Removing a series file stops publishing that feed. Events for a series that is
-no longer configured are simply not published — nothing is deleted.
+Removing a series file stops publishing that series' events. Events for a
+series that is no longer configured are simply not published — nothing is
+deleted.
 
 ## Validating configuration without activating it
 

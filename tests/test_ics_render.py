@@ -1,11 +1,10 @@
 from datetime import datetime, timezone
 
 from tests.conftest import make_config, make_series
-from motorcal.ics import compute_content_hash, render_calendar_bytes, render_combined_bytes
+from motorcal.ics import compute_content_hash, render_combined_bytes
 from motorcal.models import EventStatus, PublishedEvent, SessionType
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
-SERIES_CFG = make_series()
 
 
 def _published(uid, series="wec", summary="S"):
@@ -16,39 +15,6 @@ def _published(uid, series="wec", summary="S"):
         status=EventStatus.CONFIRMED, sequence=1, dtstamp=NOW, last_modified=NOW,
         fingerprint="fp", alarms=["-1d"], session_key="1",
     )
-
-
-def test_render_calendar_bytes_produces_valid_ics():
-    ics_bytes = render_calendar_bytes(SERIES_CFG, [_published("u1")])
-
-    assert b"BEGIN:VCALENDAR" in ics_bytes
-    assert b"UID:u1" in ics_bytes
-    assert b"X-WR-CALNAME:WEC" in ics_bytes
-
-
-def test_render_calendar_bytes_renders_only_what_it_is_given():
-    ics_bytes = render_calendar_bytes(SERIES_CFG, [_published("u1")])
-
-    assert b"UID:u2" not in ics_bytes
-
-
-def test_render_calendar_bytes_is_deterministic_across_calls():
-    events = [_published("u1")]
-
-    assert render_calendar_bytes(SERIES_CFG, events) == render_calendar_bytes(SERIES_CFG, events)
-
-
-def test_render_calendar_bytes_is_independent_of_event_order():
-    a, b = _published("u1"), _published("u2")
-
-    assert render_calendar_bytes(SERIES_CFG, [a, b]) == render_calendar_bytes(SERIES_CFG, [b, a])
-
-
-def test_render_calendar_bytes_handles_an_empty_series():
-    ics_bytes = render_calendar_bytes(SERIES_CFG, [])
-
-    assert b"BEGIN:VCALENDAR" in ics_bytes
-    assert b"BEGIN:VEVENT" not in ics_bytes
 
 
 def test_render_combined_bytes_carries_every_series_under_its_own_name():

@@ -136,9 +136,9 @@ def test_a_series_filename_that_is_not_a_valid_key_is_rejected(tmp_path):
 
 
 def test_a_series_named_after_the_combined_feed_is_rejected(tmp_path):
-    """/motorsports.ics is the combined feed, so that series could never be served."""
+    """/events.ics is the combined feed, so that series could never be served."""
     config_dir = _dir(tmp_path)
-    (config_dir / "wec.yaml").rename(config_dir / "motorsports.yaml")
+    (config_dir / "wec.yaml").rename(config_dir / "events.yaml")
 
     with pytest.raises(ConfigError, match="reserved"):
         load_config(config_dir, uid_domain=UID_DOMAIN)
@@ -234,7 +234,7 @@ def test_duplicate_session_keys_within_a_series_are_rejected(tmp_path):
 
 
 def test_duplicate_session_uids_across_two_series_are_rejected(tmp_path):
-    """A UID keys the version ledger and identifies the event in /motorsports.ics, so it has
+    """A UID keys the version ledger and identifies the event in /events.ics, so it has
     to be unique across the whole directory, not just within one series file."""
     config_dir = _dir(tmp_path)
     series_path(config_dir, "f1").write_text(

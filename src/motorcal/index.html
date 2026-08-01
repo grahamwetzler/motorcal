@@ -193,9 +193,8 @@ const OFFSET = /^0$|^-[1-9]\d*[dhm]$/;
 
 // --- url building ----------------------------------------------------------
 // Mirrors _parse_selection in src/motorcal/web.py: only ever emit a URL the
-// server accepts. No repeated keys, no `series=` on a per-series feed, no
-// per-series override for a series the feed does not carry, nothing that just
-// restates a default.
+// server accepts. No repeated keys, no per-series override for a series the
+// feed does not carry, nothing that just restates a default.
 function offsets(text) {
   const parts = text.split(",").map(s => s.trim()).filter(Boolean);
   return parts.every(p => OFFSET.test(p)) ? parts : null;  // null = invalid
@@ -204,7 +203,6 @@ function offsets(text) {
 function buildURL(state) {
   const all = SERIES.map(s => s.key);
   const picked = state.series;
-  const one = picked.length === 1;
   const params = [];
   const bad = [];
   // An unticked group is not a shortcut for "everything". Omitting the parameter
@@ -220,7 +218,7 @@ function buildURL(state) {
     else if (parsed.length) params.push([key, parsed.join(",")]);
   };
 
-  if (picked.length && !one && picked.length !== all.length) {
+  if (picked.length && picked.length !== all.length) {
     params.push(["series", picked.join(",")]);
   }
   if (state.sessions.length && state.sessions.length !== TYPES.length) {
@@ -250,7 +248,7 @@ function buildURL(state) {
   // is what a subscriber has to be able to read back.
   const encode = (s) => encodeURIComponent(s).replace(/%2C/g, ",");
   const query = params.map(([k, v]) => `${encode(k)}=${encode(v)}`).join("&");
-  const path = one ? `/${picked[0]}.ics` : "/motorsports.ics";
+  const path = "/events.ics";
   const error = empty.length ? `Pick at least one ${list(empty)}.`
     : bad.length ? `Not a valid reminder offset in: ${bad.join(", ")}`
     : null;
@@ -526,16 +524,16 @@ render();
   };
   const at = (over) => buildURL({...base, ...over}).url.slice(location.origin.length);
   const cases = [
-    [at({}), "/motorsports.ics", "everything ticked = bare combined feed"],
-    [at({series: [first]}), `/${first}.ics`, "one series = its own path, never series="],
-    [at({series: [first, second]}), `/motorsports.ics?series=${first},${second}`, "subset = series="],
-    [at({sessions: ["race"]}), "/motorsports.ics?sessions=race", "session subset"],
-    [at({alarmMode: "silence"}), "/motorsports.ics?alarms=", "silence is an empty value"],
-    [at({alarmMode: "set", alarms: "-1d, -10m"}), "/motorsports.ics?alarms=-1d,-10m", "offsets trimmed"],
+    [at({}), "/events.ics", "everything ticked = bare combined feed"],
+    [at({series: [first]}), `/events.ics?series=${first}`, "one series = series="],
+    [at({series: [first, second]}), `/events.ics?series=${first},${second}`, "subset = series="],
+    [at({sessions: ["race"]}), "/events.ics?sessions=race", "session subset"],
+    [at({alarmMode: "silence"}), "/events.ics?alarms=", "silence is an empty value"],
+    [at({alarmMode: "set", alarms: "-1d, -10m"}), "/events.ics?alarms=-1d,-10m", "offsets trimmed"],
     [at({series: [first], per: {[first]: {sessions: null, alarms: "-1h", byType: {}}}}),
-      `/${first}.ics?${first}.alarms=-1h`, "per-series override"],
+      `/events.ics?series=${first}&${first}.alarms=-1h`, "per-series override"],
     [at({per: {[second]: {sessions: null, alarms: "-1h", byType: {}}}, series: [first]}),
-      `/${first}.ics`, "override for a series not in the feed is dropped"],
+      `/events.ics?series=${first}`, "override for a series not in the feed is dropped"],
   ];
   let ok = true;
   for (const [got, want, what] of cases) {
