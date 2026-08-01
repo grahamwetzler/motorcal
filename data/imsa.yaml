@@ -122,9 +122,10 @@ events:
     - '0'
   - uid: imsa-2026-motul-sportscar-endurance-grand-prix-race
     type: race
-    start: '2026-08-02T15:30:00+00:00'
+    start: '2026-08-02T15:40:00+00:00'
     duration: 360m
     status: CONFIRMED
+    note: Green flag confirmed 11:40am ET per IMSA's official race-week schedule
 - name: Michelin GT Challenge at VIR
   location: Virginia International Raceway, United States
   round: 9
