@@ -25,10 +25,13 @@ GLOBAL_FILENAME = "defaults.yaml"
 COMBINED_SERIES_KEY = "events"
 
 _DURATION_RE = re.compile(r"^([1-9]\d*)(h|m)$")
-# Digits capped at 5 (max 99999): plenty for any real alert lead time, and low
-# enough that the worst case (99999d -> ~273 years in seconds) stays far under
-# timedelta's ~2.7e11-day range, so a crafted offset can't overflow it in ics.py.
+# Digits capped at 5 so a pathological offset never reaches int() as a long
+# digit string; the real bound is MAX_ALARM_OFFSET_SECONDS below.
 _ALARM_OFFSET_RE = re.compile(r"^0$|^-[1-9]\d{0,4}[dhm]$")
+# No alert needs more than a week's notice. Also keeps parse_alarm_offset's
+# result far under timedelta's range, so a crafted offset can't overflow it
+# building the VALARM in ics.py.
+MAX_ALARM_OFFSET_SECONDS = 7 * 86400
 _VALID_SESSION_NAMES = {member.value for member in SessionType}
 _VALID_STATUS_NAMES = {member.value for member in EventStatus}
 
@@ -51,8 +54,10 @@ def _validate_duration_string(value: str | None) -> str | None:
 
 def _validate_alarm_list(value: list[str] | None) -> list[str] | None:
     for offset in value or []:
-        if not _ALARM_OFFSET_RE.match(offset):
-            raise ValueError(f"Invalid alarm offset {offset!r} (expected e.g. '-1d', '-30m', '0')")
+        try:
+            parse_alarm_offset(offset)
+        except ConfigError as exc:
+            raise ValueError(str(exc)) from exc
     return value
 
 
@@ -87,7 +92,12 @@ def parse_alarm_offset(value: str) -> int:
     if value == "0":
         return 0
     amount, unit = int(value[1:-1]), value[-1]
-    return -(amount * {"d": 86400, "h": 3600, "m": 60}[unit])
+    seconds = amount * {"d": 86400, "h": 3600, "m": 60}[unit]
+    if seconds > MAX_ALARM_OFFSET_SECONDS:
+        raise ConfigError(
+            f"Alarm offset {value!r} exceeds the {MAX_ALARM_OFFSET_SECONDS // 86400}-day maximum"
+        )
+    return -seconds
 
 
 def _load_yaml_mapping(path: Path, kind: str) -> Any:

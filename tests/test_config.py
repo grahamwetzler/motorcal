@@ -45,6 +45,15 @@ def test_parse_alarm_offset_rejects_a_positive_offset():
         parse_alarm_offset("30m")
 
 
+def test_parse_alarm_offset_allows_up_to_a_week():
+    assert parse_alarm_offset("-7d") == -7 * 86400
+
+
+def test_parse_alarm_offset_rejects_more_than_a_week():
+    with pytest.raises(ConfigError):
+        parse_alarm_offset("-8d")
+
+
 # --------------------------------------------------------------- directory loading
 
 

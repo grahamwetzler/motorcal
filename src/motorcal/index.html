@@ -189,15 +189,26 @@ const TYPES = [
   ["race", "Race"],
   ["testing", "Testing"],
 ];
-const OFFSET = /^0$|^-[1-9]\d*[dhm]$/;
+const OFFSET = /^0$|^-[1-9]\d{0,4}[dhm]$/;
+const OFFSET_UNIT_SECONDS = {d: 86400, h: 3600, m: 60};
+// Mirrors MAX_ALARM_OFFSET_SECONDS in src/motorcal/config.py.
+const MAX_ALARM_OFFSET_SECONDS = 7 * 86400;
+// Mirrors _MAX_ALARMS in src/motorcal/web.py.
+const MAX_ALARMS = 10;
 
 // --- url building ----------------------------------------------------------
 // Mirrors _parse_selection in src/motorcal/web.py: only ever emit a URL the
 // server accepts. No repeated keys, no per-series override for a series the
 // feed does not carry, nothing that just restates a default.
+function offsetSeconds(offset) {
+  return offset === "0" ? 0 : Number(offset.slice(1, -1)) * OFFSET_UNIT_SECONDS[offset.slice(-1)];
+}
+
 function offsets(text) {
   const parts = text.split(",").map(s => s.trim()).filter(Boolean);
-  return parts.every(p => OFFSET.test(p)) ? parts : null;  // null = invalid
+  if (parts.length > MAX_ALARMS) return null;
+  return parts.every(p => OFFSET.test(p) && offsetSeconds(p) <= MAX_ALARM_OFFSET_SECONDS)
+    ? parts : null;  // null = invalid
 }
 
 function buildURL(state) {
@@ -541,6 +552,12 @@ render();
   }
   if (buildURL({...base, alarmMode: "set", alarms: "1h"}).bad.length !== 1) {
     ok = false; console.error("self-check: '1h' should be rejected (offsets are negative)");
+  }
+  if (buildURL({...base, alarmMode: "set", alarms: "-8d"}).bad.length !== 1) {
+    ok = false; console.error("self-check: '-8d' should be rejected (over the 7-day cap)");
+  }
+  if (buildURL({...base, alarmMode: "set", alarms: Array.from({length: 11}, (_, i) => `-${i + 1}d`).join(",")}).bad.length !== 1) {
+    ok = false; console.error("self-check: 11 offsets should be rejected (over the 10-alarm cap)");
   }
   // Nothing ticked must be an error: the bare URL would mean the opposite.
   const empties = [
