@@ -8,11 +8,16 @@
   :root {
     --bg: #f4f5f7; --panel: #ffffff; --fg: #16191d; --muted: #626d79; --line: #e2e6eb;
     --accent: #0b5fff; --field: #ffffff; --soft: #f0f3f7; --mono-bg: #0e1116; --mono-fg: #d8e0ea;
+    /* One color per series, fixed order -- see the dataviz skill's reference palette. */
+    --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+    --series-5: #e87ba4; --series-6: #008300; --series-7: #4a3aa7; --series-8: #e34948;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #0e1013; --panel: #16191d; --fg: #e9edf1; --muted: #8e9aa6; --line: #262b31;
       --accent: #5b8cff; --field: #1c2026; --soft: #1c2026; --mono-bg: #05070a; --mono-fg: #cfd9e4;
+      --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+      --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
     }
   }
   * { box-sizing: border-box; }
@@ -51,15 +56,21 @@
 
   .chips { display: flex; flex-wrap: wrap; gap: .5rem; }
   .chip {
+    --c: var(--accent);
     display: inline-flex; align-items: center; gap: .45rem; cursor: pointer; user-select: none;
     border: 1px solid var(--line); background: var(--soft); border-radius: 999px;
     padding: .45rem .95rem; font-size: .95rem; font-weight: 600; transition: .12s;
   }
   .chip input { position: absolute; opacity: 0; width: 0; height: 0; }
   .chip::before { content: "＋"; font-size: .85em; opacity: .55; }
-  .chip:has(input:checked) { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .chip:has(input:checked)::before { content: "✓"; opacity: 1; }
-  .chip:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* A tint, not a solid fill: the label stays in --fg at every hue rather than
+     needing its own white-on-color contrast check per series. */
+  .chip:has(input:checked) {
+    background: color-mix(in srgb, var(--c) 20%, var(--panel));
+    border-color: var(--c); color: var(--fg);
+  }
+  .chip:has(input:checked)::before { content: "✓"; opacity: 1; color: var(--c); }
+  .chip:has(input:focus-visible) { outline: 2px solid var(--c); outline-offset: 2px; }
 
   details { border-top: 1px solid var(--line); }
   details > summary {
@@ -96,16 +107,18 @@
   .preview h2 { margin-bottom: .5rem; }
   #next { display: flex; flex-direction: column; gap: .6rem; }
   .event {
-    border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: .5rem;
+    --c: var(--accent);
+    border: 1px solid var(--line); border-left: 4px solid var(--c); border-radius: .5rem;
     background: var(--panel); padding: .75rem .9rem;
   }
+  /* The left border already carries the series color; the label itself stays
+     in --muted like any other text so it doesn't need its own per-hue contrast check. */
   .event .series { font-size: .74rem; font-weight: 700; letter-spacing: .04em;
-    text-transform: uppercase; color: var(--accent); margin-bottom: .2rem; }
+    text-transform: uppercase; color: var(--muted); margin-bottom: .2rem; }
   .event .title { font-weight: 650; line-height: 1.35; }
   .event .when { font-size: .87rem; margin-top: .2rem; }
   .event .where, .event .alarm { color: var(--muted); font-size: .84rem; margin-top: .15rem; }
   .event.none { border-left-color: var(--line); color: var(--muted); font-size: .88rem; }
-  .event.none .series { color: var(--muted); }
 </style>
 </head>
 <body>
@@ -287,6 +300,9 @@ const LABELS = Object.fromEntries(TYPES.map(([t, l]) => [t, l.toLowerCase()]));
 // A series never runs every session type (WEC has hyperpole, IndyCar doesn't),
 // so its per-series overrides only offer the types it actually has.
 const TYPES_FOR = Object.fromEntries(SERIES.map(s => [s.key, TYPES.filter(([t]) => s.sessions.includes(t))]));
+// One color per series, fixed order -- see --series-1.. in <style>. Wraps past
+// 8 series rather than growing the palette; nothing here has that many.
+const SERIES_COLOR = Object.fromEntries(SERIES.map((s, i) => [s.key, `var(--series-${i % 8 + 1})`]));
 const UNITS = {d: ["day", "days"], h: ["hour", "hours"], m: ["minute", "minutes"]};
 
 function list(items) {
@@ -383,6 +399,7 @@ function whenText(event) {
 
 function eventCard(series, event, prefix) {
   const card = make("div", {className: event ? "event" : "event none"});
+  card.style.setProperty("--c", SERIES_COLOR[series]);
   card.append(make("div", {className: "series", textContent: NAMES[series]}));
   if (!event) {
     card.append(make("div", {textContent: "Nothing upcoming matches these settings."}));
@@ -437,6 +454,7 @@ for (const {key, name} of SERIES) {
   const box = make("input", {type: "checkbox", checked: true});
   box.addEventListener("change", render);
   seriesBoxes[key] = make("label", {className: "chip"}, box, name);
+  seriesBoxes[key].style.setProperty("--c", SERIES_COLOR[key]);
   document.getElementById("series").append(seriesBoxes[key]);
 }
 const sessionBoxes = {};
