@@ -1,4 +1,4 @@
-from tests.conftest import UID_DOMAIN, make_config, make_series, source_event, write_config_dir
+from tests.conftest import UID_DOMAIN, make_config, make_event, make_series, write_config_dir
 
 from motorcal import state as state_module
 from motorcal.cli import main
@@ -7,7 +7,8 @@ from motorcal.state import State
 
 def _config_dir(tmp_path):
     return write_config_dir(
-        tmp_path, make_config(series={"wec": make_series(events=[source_event("1", time="13:00:00")])})
+        tmp_path,
+        make_config(series={"wec": make_series(events=[make_event("wec-2026-imola-race")])}),
     )
 
 
@@ -29,7 +30,7 @@ def test_validate_config_accepts_a_valid_directory(tmp_path, capsys, monkeypatch
 def test_validate_config_rejects_an_invalid_directory(tmp_path, capsys, monkeypatch):
     monkeypatch.setenv("UID_DOMAIN", UID_DOMAIN)
     config_dir = _config_dir(tmp_path)
-    (config_dir / "wec.yaml").write_text("league_id: not_a_number\nname: X\nmax_round: 1\n")
+    (config_dir / "wec.yaml").write_text("name: X\nevents: not_a_list\n")
 
     assert main(["validate-config", "--config", str(config_dir)]) == 1
     assert capsys.readouterr().err != ""
@@ -61,7 +62,6 @@ def test_serve_refuses_to_start_when_uid_domain_has_changed(tmp_path, capsys, mo
     config_dir = _config_dir(tmp_path)
     state_path = tmp_path / "state.yaml"
     state_module.save(state_path, State(uid_domain="old.example.com"))
-    monkeypatch.setenv("THESPORTSDB_API_KEY", "key")
     monkeypatch.setenv("UID_DOMAIN", UID_DOMAIN)
 
     # UID_DOMAIN (racing.example.com) differs from the domain already bound
@@ -82,15 +82,3 @@ def test_serve_requires_uid_domain(tmp_path, capsys, monkeypatch):
 
     assert exit_code == 1
     assert "UID_DOMAIN" in capsys.readouterr().err
-
-
-def test_serve_requires_the_api_key(tmp_path, capsys, monkeypatch):
-    monkeypatch.setenv("UID_DOMAIN", UID_DOMAIN)
-    monkeypatch.delenv("THESPORTSDB_API_KEY", raising=False)
-
-    exit_code = main([
-        "serve", "--config", str(_config_dir(tmp_path)), "--state", str(tmp_path / "state.yaml"),
-    ])
-
-    assert exit_code == 1
-    assert "THESPORTSDB_API_KEY" in capsys.readouterr().err

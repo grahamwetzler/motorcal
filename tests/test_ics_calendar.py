@@ -15,7 +15,7 @@ def _event(uid, start_hour=13):
 
 
 def test_calendar_has_required_calendar_level_properties():
-    series_cfg = SeriesConfig(league_id=4413, name="WEC", max_round=20)
+    series_cfg = SeriesConfig(name="WEC")
     cal = build_calendar(series_cfg, [_event("u1")])
     ics_bytes = cal.to_ical()
 
@@ -27,25 +27,15 @@ def test_calendar_has_required_calendar_level_properties():
     assert b"PRODID" in ics_bytes
 
 
-def test_race_only_series_mentions_it_in_caldesc():
-    series_cfg = SeriesConfig(league_id=4373, name="IndyCar", max_round=30, race_only=True)
-    cal = build_calendar(series_cfg, [_event("u1")])
-    ics_bytes = cal.to_ical()
+def test_caldesc_names_the_series_and_claims_nothing_else():
+    """No feed advertises a subset of sessions -- every series carries all of its own."""
+    cal = build_calendar(SeriesConfig(name="IndyCar"), [_event("u1")])
 
-    assert b"CALDESC" in ics_bytes
-    assert b"race" in ics_bytes.lower()
-
-
-def test_non_race_only_series_caldesc_has_no_race_only_note():
-    series_cfg = SeriesConfig(league_id=4413, name="WEC", max_round=20, race_only=False)
-    cal = build_calendar(series_cfg, [_event("u1")])
-    ics_bytes = cal.to_ical()
-
-    assert b"race sessions only" not in ics_bytes.lower()
+    assert b"X-WR-CALDESC:IndyCar calendar" in cal.to_ical()
 
 
 def test_events_are_rendered_in_uid_sorted_order_regardless_of_input_order():
-    series_cfg = SeriesConfig(league_id=4413, name="WEC", max_round=20)
+    series_cfg = SeriesConfig(name="WEC")
     events_in_reverse = [_event("z-event"), _event("a-event"), _event("m-event")]
     cal = build_calendar(series_cfg, events_in_reverse)
     ics_bytes = cal.to_ical()
@@ -57,7 +47,7 @@ def test_events_are_rendered_in_uid_sorted_order_regardless_of_input_order():
 
 
 def test_rendering_the_same_calendar_twice_is_byte_identical():
-    series_cfg = SeriesConfig(league_id=4413, name="WEC", max_round=20)
+    series_cfg = SeriesConfig(name="WEC")
     events = [_event("u1"), _event("u2")]
     b1 = build_calendar(series_cfg, events).to_ical()
     b2 = build_calendar(series_cfg, [_event("u1"), _event("u2")]).to_ical()
@@ -65,14 +55,14 @@ def test_rendering_the_same_calendar_twice_is_byte_identical():
 
 
 def test_rendering_is_stable_regardless_of_input_list_order():
-    series_cfg = SeriesConfig(league_id=4413, name="WEC", max_round=20)
+    series_cfg = SeriesConfig(name="WEC")
     forward = [_event("u1"), _event("u2")]
     backward = [_event("u2"), _event("u1")]
     assert build_calendar(series_cfg, forward).to_ical() == build_calendar(series_cfg, backward).to_ical()
 
 
 def test_empty_calendar_still_has_valid_header():
-    series_cfg = SeriesConfig(league_id=4413, name="WEC", max_round=20)
+    series_cfg = SeriesConfig(name="WEC")
     cal = build_calendar(series_cfg, [])
     ics_bytes = cal.to_ical()
     assert b"BEGIN:VCALENDAR" in ics_bytes

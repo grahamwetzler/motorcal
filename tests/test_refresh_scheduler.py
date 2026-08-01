@@ -1,35 +1,14 @@
-from motorcal.refresh import REFRESH_JOB_ID, build_scheduler, reschedule_refresh_job
+from motorcal.refresh import build_scheduler
 
 
-def test_build_scheduler_registers_the_refresh_cron_job():
-    calls = {"refresh": 0, "reload": 0}
-
-    def refresh_job():
-        calls["refresh"] += 1
-
+def test_build_scheduler_registers_the_reload_job():
     def reload_job():
-        calls["reload"] += 1
+        pass
 
-    scheduler = build_scheduler(refresh_job, "17 */6 * * *", reload_job, reload_interval_seconds=30)
+    jobs = build_scheduler(reload_job, reload_interval_seconds=30).get_jobs()
 
-    jobs = scheduler.get_jobs()
-    assert len(jobs) == 2
-    job_funcs = {job.func for job in jobs}
-    assert refresh_job in job_funcs
-    assert reload_job in job_funcs
+    assert [job.func for job in jobs] == [reload_job]
 
 
 def test_build_scheduler_does_not_start_automatically():
-    scheduler = build_scheduler(lambda: None, "0 * * * *", lambda: None)
-    assert scheduler.running is False
-
-
-def test_reschedule_refresh_job_changes_the_cron_trigger():
-    scheduler = build_scheduler(lambda: None, "0 * * * *", lambda: None)
-    original_trigger = str(scheduler.get_job(REFRESH_JOB_ID).trigger)
-
-    reschedule_refresh_job(scheduler, "17 */6 * * *")
-
-    new_trigger = str(scheduler.get_job(REFRESH_JOB_ID).trigger)
-    assert new_trigger != original_trigger
-    assert "17" in new_trigger
+    assert build_scheduler(lambda: None).running is False

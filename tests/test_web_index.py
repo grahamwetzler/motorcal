@@ -9,10 +9,12 @@ the data to break out of the <script> block it is embedded in.
 import json
 import re
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 from tests.conftest import make_config, make_series
 
+import motorcal.web
 from motorcal.models import EventStatus, PublishedEvent, SessionType
 from motorcal.web import Publication, _example_events, create_app
 
@@ -153,3 +155,14 @@ def test_all_day_event_stays_upcoming_for_the_whole_of_its_day():
 
     assert len(_example_events(CONFIG, today, NOW)) == 1
     assert _example_events(CONFIG, yesterday, NOW) == []
+
+
+def test_the_pages_session_checkboxes_cover_every_session_type():
+    """TYPES in index.html is a hand-maintained copy of SessionType. If a type is
+    added to the enum and not to the page, that type is silently unfilterable and
+    ticking "all" would emit a `sessions=` list the server rejects."""
+    html = (Path(motorcal.web.__file__).parent / "index.html").read_text()
+    block = re.search(r"const TYPES = \[(.*?)\];", html, re.DOTALL).group(1)
+    listed = set(re.findall(r'\["([a-z_]+)",', block))
+
+    assert listed == {member.value for member in SessionType}

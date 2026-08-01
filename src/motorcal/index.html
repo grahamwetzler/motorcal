@@ -178,8 +178,10 @@
 // don't actually have.
 const SERIES = __SERIES_JSON__;
 const UPCOMING = __UPCOMING_JSON__;
+// Must list every SessionType -- tests/test_web_index.py asserts it.
 const TYPES = [
   ["practice", "Practice"],
+  ["warmup", "Warm-up"],
   ["qualifying", "Qualifying"],
   ["hyperpole", "Hyperpole"],
   ["sprint_qualifying", "Sprint qualifying"],

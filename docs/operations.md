@@ -3,47 +3,39 @@
 ## Where things live
 
 - `data/` is the source of truth: `defaults.yaml` plus one file per series,
-  each holding that series' settings and its full event list. Both you and the
-  refresh cycle write here.
-- `data/state.yaml` is the machine-only sidecar: the uid_domain
-  binding, per-scope fetch times, and the per-UID version ledger
-  (`fingerprint`/`sequence`/`dtstamp`) that stops calendar clients re-notifying
-  subscribers on every refresh.
-
-Both are written atomically (full write + fsync, then a single rename), so
-copying either from a running system is safe.
+  each holding that series' settings and its full event list. It is mounted
+  **read-only** into the container — nothing in the app writes it. You and the
+  scheduled agent that reads the official timetables are the only writers.
+- `state/state.yaml` is the machine-only sidecar: the uid_domain binding and the
+  per-UID version ledger (`fingerprint`/`sequence`/`dtstamp`) that stops calendar
+  clients re-notifying subscribers on every rebuild. It gets its own writable
+  directory because it is replaced atomically (write a sibling tempfile, fsync,
+  rename), which a single-file bind mount does not survive.
 
 ## Editing events by hand
 
 Edit the series file directly. The next hot-reload (~30s) picks it up; a bad edit
 is rejected and logged, and the previous configuration stays active.
 
-A field you change is yours. The refresh compares each incoming provider value
-against the `source:` block — its record of what the provider said last time —
-and only overwrites a field when the provider actually changed it *and* your
-value still matches the old provider value. To hand a field back to upstream
-tracking, delete your value and let the next refresh repopulate it.
+Every field is yours — there is no provider to merge against and nothing
+overwrites what you wrote. **Comments survive**, so annotate the file freely; a
+session's `note:` is still the right place for anything a subscriber should see,
+since it is published in the calendar description.
 
-`duration`, `status`, `note`, and `alarms` are never provider-owned.
+A session needs a `uid:` (its identity, and what the ICS UID is built from), a
+`type:`, and exactly one of `start:` (a confirmed time) or `date:` (all-day). Set
+`tbc: true` alongside `date:` when the timetable has the day but not the time —
+that is what puts "(time TBC)" in the title. An all-day session without `tbc:` is
+treated as deliberately all-day, which is how a test day should read.
 
-An event's `name:`, `location:` and `round:` are merged the same way, against
-what the provider called that weekend as a whole.
-
-The provider reports one round at a time; the refresh groups rounds run at the
-same place within a day of each other into one event, so a double-header weekend
-keeps its two races and its shared qualifying together. If it ever gets that
-wrong, move the sessions by hand — a refresh only adds a new session to the event
-that already holds its weekend, and never moves one you placed.
-
-**Comments do not survive a refresh** — the file is rewritten from parsed data.
-Put anything you want to keep in a session's `note:`, which also shows up in the
-calendar description.
+**Renaming a `uid:` republishes that session as a new event.** Subscribers keep
+the old copy until it expires. Rename only when you mean to.
 
 ## Backups
 
 ```bash
 cp -r data data-$(date +%F)
-cp data/state.yaml data/state-$(date +%F).yaml
+cp state/state.yaml state/state-$(date +%F).yaml
 ```
 
 Restoring `data/` restores your events. Restoring an older `state.yaml` rolls
@@ -52,26 +44,19 @@ Restoring `data/` restores your events. Restoring an older `state.yaml` rolls
 the `versions:` block and raise every `sequence` above the highest value clients
 could have seen (they're UTC Unix minutes).
 
-Losing `state.yaml` entirely is recoverable: the next refresh rebuilds it from
+Losing `state.yaml` entirely is recoverable: the next rebuild recreates it from
 `data/`, and every UID stays the same, but every event gets a fresh `dtstamp`
 so subscribers see the whole calendar as modified once.
 
 ## Adding a series
 
-Drop a new `data/<key>.yaml` in place with `league_id`, `name`, and
-`max_round`. The filename stem is the series key and the feed path, so
-`indycar.yaml` is served at `/indycar.ics`. The hot-reload picks it up without a
-restart; the first scheduled refresh fills in its events.
+Drop a new `data/<key>.yaml` in place with a `name:` and, so the agent knows
+where to look, a `schedule_url:`. The filename stem is the series key and the
+feed path, so `indycar.yaml` is served at `/indycar.ics`. The hot-reload picks it
+up without a restart.
 
 Removing a series file stops publishing that feed. Events for a series that is
 no longer configured are simply not published — nothing is deleted.
-
-## Forcing an immediate refresh
-
-There is no "refresh now" command, and restarting doesn't force one. Temporarily
-set `source.refresh_cron` in `data/defaults.yaml` to `"* * * * *"`, wait for
-the reload (~30s) and the cycle to run, then restore the original expression. No
-restart needed for either edit.
 
 ## Validating configuration without activating it
 
@@ -84,6 +69,44 @@ touching the running service. A nonzero exit means the files are invalid. The
 hot-reload poller performs the same validation automatically and keeps the
 previous bundle active on failure (see `check_and_reload_config` in
 `src/motorcal/refresh.py`); running this by hand just catches mistakes earlier.
+
+## Cutting over from the TheSportsDB release
+
+Removing the provider changed all three things a host owns: the series files
+(`source:`, `id_event:` and the old series settings are now rejected), the
+`state.yaml` schema (no `snapshots:`, no `thesportsdb-*` versions), and the
+mounts (`./data` read-only, `./state` writable). **Watchtower will pull the new
+image on its own within 30 minutes of the release**, so pin the image first and
+do the whole cutover in one pass:
+
+```bash
+# 1. Pin to what is running now, so watchtower can't roll forward mid-migration.
+#    Put image: ghcr.io/grahamwetzler/motorcal:sha-<current-commit> in compose.yaml
+docker compose up -d
+
+# 2. Stop, and take the new compose.yaml, .env and data/ from the repo.
+docker compose down
+cp -r data data-backup && cp -r <checkout>/data .
+
+# 3. Move the ledger across, dropping what the schema no longer accepts.
+mkdir -p state && chown -R 1000:1000 state
+uv run python scripts/migrate_state.py data-backup/state.yaml state/state.yaml
+
+# 4. Unpin back to :latest and start.
+docker compose up -d
+```
+
+Step 3 keeps `uid_domain` and the `local-*` version entries — the hand-added
+sessions whose UIDs are unchanged — and drops the rest. The original file is left
+alone; keep it until the new feeds look right. Sessions that were provider-backed
+get new UIDs regardless, so subscribers see those republished once.
+
+Skipping step 2 leaves the old series files in place and the app exits on every
+start with a validation error naming the offending file; the fix is still to copy
+`data/` from the repo. Skipping the `./state` mount is caught the same way, by the
+first save failing — the ledger is never silently written somewhere ephemeral.
+
+Delete `scripts/migrate_state.py` afterwards; it exists for this one cutover.
 
 ## Changing `UID_DOMAIN`
 
@@ -111,9 +134,9 @@ private by default even though the repo is public. Open the package's
 GitHub settings and set visibility to Public, or `docker compose pull` will
 fail with 403s.
 
-To move this to a new machine: copy `compose.yaml`, `.env`, and `data/`
-over and run `docker compose up -d`. No git checkout or build step required
-— everything pulls from GHCR.
+To move this to a new machine: copy `compose.yaml`, `.env`, `data/` and
+`state/` over and run `docker compose up -d`. No git checkout or build step
+required — everything pulls from GHCR.
 
 To roll back a bad release, pin the image to a known-good commit instead of
 `latest`:
@@ -125,39 +148,18 @@ image: ghcr.io/grahamwetzler/motorcal:sha-<previous-good-commit>
 then `docker compose up -d`. Watchtower never touches a `sha-*` tag, so it
 stays pinned until you switch back to `:latest`.
 
-## Unclassified events
+## Diagnosing a feed that looks wrong
 
-Container logs carry an `Unclassified events:` warning listing UIDs of sessions
-stored as `type: unknown` — their label matched none of the classification rules
-(`src/motorcal/classify.py`) when they first appeared. They are still published,
-just without an inferred alarm or duration. An entry here usually means
-TheSportsDB introduced a new session-name format.
+There's no status endpoint; diagnose from container logs.
 
-The fix is usually the session file: set that session's `type:` to what it
-actually is, and your value stands from then on. For a naming pattern that will
-recur, extend the rule list in `classify.py` too, so the next session named that
-way classifies itself.
-
-## Interpreting stale, incomplete, and suspicious-empty refreshes
-
-There's no status endpoint; diagnose freshness from container logs.
-
-- **Stale**: repeated refresh failures — network issues, TheSportsDB
-  rate-limiting or outage — show up as `Provider scan:` and
-  `Config reload rejected:` warnings. The previously published calendar keeps
-  serving; nothing is silently emptied.
-- **Never refreshed / incomplete / suspicious-empty**: every attempt for that
-  series has been *incomplete* (a round request failed) or *suspicious-empty*
-  (a complete scan returned zero events for a scope that previously had data,
-  or for the current season at all), logged as `Refresh published nothing:`
-  or `Refresh skipped:`. Both are discarded in full by design — see
-  `sync_snapshot` in `src/motorcal/sync.py` — rather than overwriting good
-  data with a partial or suspicious result. The next tick tries again.
-- **Incomplete snapshot**: not its own status field, but it looks like "never
-  refreshed" persisting longer than expected. Across many consecutive ticks,
-  suspect something systemic: the round-scan `deadline_seconds`, the token-bucket
-  rate limit, or an API key nearing its quota.
-- **Suspicious-empty for a *future* season** (the season fetched from
-  `next_season_from` onward) is expected and harmless if that calendar hasn't
-  been announced yet. It's only rejected once that scope previously had data and
-  then reported zero.
+- **A stale feed** means the last reload was rejected. `Config reload rejected:`
+  names the file and the validation error. The previously published calendar
+  keeps serving; nothing is silently emptied. Fix the file and the next poll
+  (~30s) picks it up.
+- **A missing session** is a data problem, not a runtime one: the app publishes
+  exactly what `data/` holds. Check the series file, then
+  `motorcal validate-config`.
+- **An event that disappeared on its own** hit the retention window in
+  `defaults.yaml` — `historical_days` (180) after it happened, or
+  `cancelled_after_event_days` (90) for a `status: CANCELLED` one. It is still in
+  the series file; only the feed drops it.

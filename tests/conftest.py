@@ -3,18 +3,14 @@ import yaml
 from motorcal.config import (
     Config,
     DefaultsConfig,
-    DurationDefaults,
     EventConfig,
     GlobalConfig,
     RetentionConfig,
     SeriesConfig,
     SessionConfig,
-    SourceSettings,
-    SourceSnapshot,
     UnknownTimeConfig,
-    save_series,
+    series_path,
 )
-from motorcal.providers.thesportsdb import ProviderEvent, SnapshotResult
 from motorcal.state import State
 
 UID_DOMAIN = "racing.example.com"
@@ -23,24 +19,16 @@ UID_DOMAIN = "racing.example.com"
 def make_globals(
     *,
     uid_domain: str = UID_DOMAIN,
-    durations: DurationDefaults | None = None,
+    durations: dict[str, str] | None = None,
     alerts: dict[str, list[str]] | None = None,
     retention: RetentionConfig | None = None,
-    refresh_cron: str = "0 */6 * * *",
-    next_season_from: str = "10-01",
-    rate_limit_per_min: int = 6000,
     **kwargs,
 ) -> GlobalConfig:
     return GlobalConfig(
         uid_domain=uid_domain,
-        source=SourceSettings(
-            refresh_cron=refresh_cron,
-            next_season_from=next_season_from,
-            rate_limit_per_min=rate_limit_per_min,
-        ),
         retention=retention or RetentionConfig(),
         defaults=DefaultsConfig(
-            durations=durations or DurationDefaults(), alerts=alerts if alerts is not None else {}
+            durations=durations or {}, alerts=alerts if alerts is not None else {}
         ),
         unknown_time=UnknownTimeConfig(),
         **kwargs,
@@ -48,11 +36,11 @@ def make_globals(
 
 
 def make_series(
-    *, league_id: int = 4413, name: str = "WEC", max_round: int = 20,
-    race_only: bool = False, durations=None, alerts=None, events=None,
+    *, name: str = "WEC", schedule_url: str | None = None,
+    durations=None, alerts=None, events=None,
 ) -> SeriesConfig:
     return SeriesConfig(
-        league_id=league_id, name=name, max_round=max_round, race_only=race_only,
+        name=name, schedule_url=schedule_url,
         durations=durations, alerts=alerts, events=list(events or []),
     )
 
@@ -64,76 +52,20 @@ def make_config(*, series=None, **global_kwargs) -> Config:
     )
 
 
-def source_snapshot(
-    *, name: str = "6 Hours of Imola", date: str = "2026-04-19", time: str | None = "13:00:00",
-    venue: str | None = "Imola", country: str | None = "Italy", round: int = 1,
-    season: str = "2026",
-) -> SourceSnapshot:
-    return SourceSnapshot(
-        name=name, date=date, time=time, venue=venue, country=country,
-        round=round, season=season,
-    )
-
-
-def source_session(
-    id_event: str = "1", *, event_name: str = "6 Hours of Imola",
-    disappeared_at: str | None = None, **snapshot_kwargs
-) -> SessionConfig:
-    """A provider-backed session whose fields still match its source snapshot."""
-    from motorcal.sync import session_from_source
-
-    session = session_from_source(source_snapshot(**snapshot_kwargs), id_event, event_name)
-    session.disappeared_at = disappeared_at
-    return session
-
-
-def manual_session(uid: str = "my-session", **kwargs) -> SessionConfig:
+def make_session(uid: str = "my-session", *, type: str = "race", **kwargs) -> SessionConfig:
+    """One session. Defaults to an all-day race, so only what a test cares about is passed."""
     if not kwargs.get("start"):
         kwargs.setdefault("date", "2026-05-01")
-    return SessionConfig(uid=uid, **kwargs)
+    return SessionConfig(uid=uid, type=type, **kwargs)
 
 
-def source_event(
-    id_event: str = "1", *, event_name: str | None = None,
-    disappeared_at: str | None = None, **snapshot_kwargs
+def make_event(
+    uid: str = "my-event", *, name: str = "6 Hours of Imola",
+    location: str | None = None, round: int | None = None, **kwargs
 ) -> EventConfig:
-    """A race event of one provider-backed session, all still matching its source.
-
-    `event_name` names the weekend when it differs from the session's own name --
-    which is how a non-race session ends up with a label at all.
-    """
-    from motorcal.sync import derive_event, session_from_source
-
-    source = source_snapshot(**snapshot_kwargs)
-    values = derive_event([source])
-    name = event_name or values["name"]
-    session = session_from_source(source, id_event, name)
-    session.disappeared_at = disappeared_at
+    """A race event of one session."""
     return EventConfig(
-        name=name, location=values["location"], round=values["round"], sessions=[session],
-    )
-
-
-def manual_event(uid: str = "my-event", *, name: str = "Test Day", **kwargs) -> EventConfig:
-    """A race event of one manual session."""
-    return EventConfig(name=name, sessions=[manual_session(uid, **kwargs)])
-
-
-def provider_event(
-    id_event: str = "1", *, name: str = "6 Hours of Imola", round: int = 1,
-    season: str = "2026", series: str = "wec", date: str = "2026-04-19",
-    time: str | None = "13:00:00", venue: str | None = "Imola", country: str | None = "Italy",
-) -> ProviderEvent:
-    return ProviderEvent(
-        id_event=id_event, name=name, date=date, time=time, round=round, season=season,
-        series=series, venue=venue, country=country, raw={"idEvent": id_event},
-    )
-
-
-def snapshot(events, *, complete: bool = True, diagnostics=None) -> SnapshotResult:
-    return SnapshotResult(
-        complete=complete, events=list(events), diagnostics=diagnostics or [],
-        rounds_attempted=max(len(events), 1), rounds_failed=len(diagnostics or []),
+        name=name, location=location, round=round, sessions=[make_session(uid, **kwargs)]
     )
 
 
@@ -151,5 +83,9 @@ def write_config_dir(tmp_path, config: Config):
         )
     )
     for series, series_config in config.series.items():
-        save_series(config_dir, series, series_config)
+        series_path(config_dir, series).write_text(
+            yaml.safe_dump(
+                series_config.model_dump(mode="json", exclude_none=True), sort_keys=False
+            )
+        )
     return config_dir

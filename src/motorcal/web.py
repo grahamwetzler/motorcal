@@ -44,10 +44,10 @@ _QUALIFYING_TYPES = {
     SessionType.QUALIFYING, SessionType.HYPERPOLE, SessionType.SPRINT_QUALIFYING,
 }
 
-# An alarm needs a confirmed start to hang off, and these two have nothing worth
-# alerting about. `resolve_alarms` skips them for configured alarms; a URL
-# override must not be a way around that.
-_NO_ALARM_TYPES = {SessionType.UNKNOWN, SessionType.TESTING}
+# An alarm needs a confirmed start to hang off, and a test day has nothing worth
+# alerting about. `resolve_alarms` skips it for configured alarms; a URL override
+# must not be a way around that.
+_NO_ALARM_TYPES = {SessionType.TESTING}
 
 _EMOJI_PREFIX = "\N{CHEQUERED FLAG} "
 
