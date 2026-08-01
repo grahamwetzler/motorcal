@@ -144,22 +144,6 @@ def render_bytes(
     return _calendar(calname, caldesc, vevents).to_ical()
 
 
-def render_calendar_bytes(
-    series_config: SeriesConfig,
-    events: list[PublishedEvent],
-    *,
-    prefix: str = "",
-    calname: str | None = None,
-) -> bytes:
-    """Render the deterministic ICS bytes for one series' published events."""
-    return render_bytes(
-        calname or series_config.name,
-        series_caldesc(series_config),
-        [(series_config.name, events)],
-        prefix=prefix,
-    )
-
-
 def render_combined_bytes(
     config: Config,
     published: dict[str, list[PublishedEvent]],

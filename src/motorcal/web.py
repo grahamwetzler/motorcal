@@ -1,4 +1,4 @@
-"""Public feed app (port 8000): one ICS file per series, plus all of them combined.
+"""Public feed app (port 8000): one combined ICS feed, filterable by series.
 
 The refresh and reload jobs each build a fresh `Publication` and swap it onto
 `app.state.publication` in one assignment. A request reads that attribute
@@ -27,12 +27,7 @@ from fastapi.responses import HTMLResponse, Response
 from starlette.datastructures import QueryParams
 
 from motorcal.config import COMBINED_SERIES_KEY, Config, ConfigError, parse_alarm_offset
-from motorcal.ics import (
-    build_title,
-    compute_content_hash,
-    render_calendar_bytes,
-    render_combined_bytes,
-)
+from motorcal.ics import build_title, compute_content_hash, render_combined_bytes
 from motorcal.models import PublishedEvent, SessionType
 
 _access_logger = logging.getLogger("motorcal.access")
@@ -114,8 +109,7 @@ def create_app(config: Config) -> FastAPI:
     def healthz():
         return {"ok": True}
 
-    # The builder page. `/{series}.ics` only matches paths ending in `.ics`, so
-    # this shadows nothing.
+    # The builder page.
     @app.get("/", response_class=HTMLResponse)
     def get_index():
         publication = app.state.publication
@@ -134,10 +128,6 @@ def create_app(config: Config) -> FastAPI:
         # do rather than sit in a browser cache until the next race has been run.
         return HTMLResponse(page, headers={"Cache-Control": "public, no-cache"})
 
-    # Declared before /{series}.ics: FastAPI matches in declaration order, and the
-    # series route's path parameter would otherwise swallow the combined feed's
-    # name. `load_config` rejects a series file claiming it, so nothing legitimate
-    # is shadowed here.
     @app.get(f"/{COMBINED_SERIES_KEY}.ics")
     def get_combined_calendar(request: Request):
         publication = app.state.publication
@@ -158,27 +148,6 @@ def create_app(config: Config) -> FastAPI:
             )
 
         return _conditional_response(ics_bytes, request, COMBINED_SERIES_KEY)
-
-    @app.get("/{series}.ics")
-    def get_calendar(series: str, request: Request):
-        publication = app.state.publication
-
-        if series not in publication.config.series:
-            raise HTTPException(status_code=404)
-
-        ics_bytes = publication.feeds.get(series)
-        if not ics_bytes:
-            raise HTTPException(status_code=503, detail="no usable events for this series")
-
-        selection = _parse_selection(request.query_params, publication.config, series=series)
-        if not selection.is_default:
-            events = _select(publication.published.get(series, []), selection.filters[series])
-            ics_bytes = render_calendar_bytes(
-                publication.config.series[series], events,
-                prefix=selection.prefix, calname=selection.calname,
-            )
-
-        return _conditional_response(ics_bytes, request, series)
 
     return app
 
@@ -311,9 +280,7 @@ def _first_set(*candidates: list[str] | None) -> list[str] | None:
     return None
 
 
-def _parse_selection(
-    query: QueryParams, config: Config, *, series: str | None = None
-) -> Selection:
+def _parse_selection(query: QueryParams, config: Config) -> Selection:
     """Turn one request's query string into the cut of the feed it asks for.
 
     Strict on the way in: an unknown or misplaced parameter is a 400, never
@@ -342,8 +309,6 @@ def _parse_selection(
             continue
         if prefix not in config.series:
             raise _bad_request(f"unknown series {prefix!r} in query parameter {key!r}")
-        if series is not None and prefix != series:
-            raise _bad_request(f"{key!r} names a series this feed does not carry")
         per_series_raw.setdefault(prefix, {})[param] = value
 
     for key in global_raw:
@@ -360,9 +325,6 @@ def _parse_selection(
                 )
             raise _bad_request(f"unknown query parameter '{owner}.{key}'")
 
-    if series is not None and "series" in global_raw:
-        raise _bad_request(f"'series' only applies to /{COMBINED_SERIES_KEY}.ics")
-
     # Rather than define how a legacy exclusion interacts with the allow-list,
     # refuse the combination. Each alias on its own keeps behaving exactly as it
     # always has, and nothing already subscribed sends both.
@@ -375,9 +337,7 @@ def _parse_selection(
             f"{', '.join(legacy)} cannot be combined with 'sessions' -- use 'sessions' alone"
         )
 
-    if series is not None:
-        selected = (series,)
-    elif "series" in global_raw:
+    if "series" in global_raw:
         selected = tuple(dict.fromkeys(_split(global_raw["series"], "series")))
         for key in selected:
             if key not in config.series:

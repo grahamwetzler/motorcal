@@ -21,8 +21,8 @@ from pydantic import BaseModel, ConfigDict, ValidationError, field_validator, mo
 from motorcal.models import EventStatus, SessionType, session_uid
 
 GLOBAL_FILENAME = "defaults.yaml"
-# Served at /motorsports.ics as every series combined, so no series file may claim it.
-COMBINED_SERIES_KEY = "motorsports"
+# Served at /events.ics as every series combined, so no series file may claim it.
+COMBINED_SERIES_KEY = "events"
 
 _DURATION_RE = re.compile(r"^([1-9]\d*)(h|m)$")
 _ALARM_OFFSET_RE = re.compile(r"^0$|^-[1-9]\d*[dhm]$")

@@ -41,13 +41,14 @@ def _client(published=None):
     app = create_app(CONFIG)
     app.state.publication = Publication(
         config=CONFIG,
-        feeds={"motorsports": PREBUILT, "wec": PREBUILT, "f1": PREBUILT},
+        feeds={"events": PREBUILT},
         published=published if published is not None else PUBLISHED,
     )
     return TestClient(app)
 
 
-def _get(path="/motorsports.ics", query=""):
+def _get(query=""):
+    path = "/events.ics"
     return _client().get(f"{path}?{query}" if query else path)
 
 
@@ -56,7 +57,6 @@ def _get(path="/motorsports.ics", query=""):
 
 def test_a_request_with_no_params_serves_the_prebuilt_bytes_untouched():
     assert _get().content == PREBUILT
-    assert _get("/wec.ics").content == PREBUILT
 
 
 def test_a_no_op_param_re_renders_the_exact_bytes_the_fast_path_would_serve():
@@ -64,16 +64,16 @@ def test_a_no_op_param_re_renders_the_exact_bytes_the_fast_path_would_serve():
     app = create_app(CONFIG)
     real_feed = render_combined_bytes(CONFIG, PUBLISHED)
     app.state.publication = Publication(
-        config=CONFIG, feeds={"motorsports": real_feed}, published=PUBLISHED
+        config=CONFIG, feeds={"events": real_feed}, published=PUBLISHED
     )
     client = TestClient(app)
 
-    assert client.get("/motorsports.ics?emoji=false").content == real_feed
+    assert client.get("/events.ics?emoji=false").content == real_feed
 
 
 def test_a_global_and_a_per_series_setting_render_identically():
-    plain = _client().get("/wec.ics?sessions=race,practice")
-    prefixed = _client().get("/wec.ics?wec.sessions=race,practice")
+    plain = _client().get("/events.ics?series=wec&sessions=race,practice")
+    prefixed = _client().get("/events.ics?series=wec&wec.sessions=race,practice")
 
     assert plain.content == prefixed.content
 
@@ -90,10 +90,6 @@ def test_series_selects_only_the_named_series():
 
 def test_unknown_series_is_rejected():
     assert _get(query="series=motogp").status_code == 400
-
-
-def test_series_is_rejected_on_a_single_series_feed():
-    assert _get("/wec.ics", "series=f1").status_code == 400
 
 
 # --------------------------------------------------------------------- sessions
@@ -119,7 +115,7 @@ def test_a_per_series_sessions_override_beats_the_global_one():
 def test_warmup_is_a_selectable_session_type():
     """The type IMSA and IndyCar actually run, added when TheSportsDB was dropped."""
     published = {"wec": [_event("wec-warmup", SessionType.WARMUP), _event("wec-race")], "f1": []}
-    body = _client(published).get("/wec.ics?sessions=warmup").content
+    body = _client(published).get("/events.ics?series=wec&sessions=warmup").content
 
     assert b"UID:wec-warmup" in body
     assert b"UID:wec-race" not in body
@@ -140,7 +136,7 @@ def test_empty_member_in_a_list_is_rejected():
 
 def test_alarms_override_the_configured_ones():
     published = {"wec": [_event("wec-race", alarms=["-1d"])], "f1": []}
-    body = _client(published).get("/motorsports.ics?alarms=-2h").content
+    body = _client(published).get("/events.ics?alarms=-2h").content
 
     assert b"TRIGGER:-PT2H" in body
     assert b"TRIGGER:-P1D" not in body
@@ -148,14 +144,14 @@ def test_alarms_override_the_configured_ones():
 
 def test_omitting_alarms_keeps_the_configured_ones():
     published = {"wec": [_event("wec-race", alarms=["-1d"])], "f1": []}
-    body = _client(published).get("/motorsports.ics?sessions=race").content
+    body = _client(published).get("/events.ics?sessions=race").content
 
     assert b"TRIGGER:-P1D" in body
 
 
 def test_an_empty_alarms_value_silences_the_feed():
     published = {"wec": [_event("wec-race", alarms=["-1d"])], "f1": []}
-    body = _client(published).get("/motorsports.ics?alarms=").content
+    body = _client(published).get("/events.ics?alarms=").content
 
     assert b"BEGIN:VALARM" not in body
 
@@ -164,7 +160,7 @@ def test_per_type_alarms_apply_only_to_that_session_type():
     published = {
         "wec": [_event("wec-race"), _event("wec-practice", SessionType.PRACTICE)], "f1": [],
     }
-    body = _client(published).get("/motorsports.ics?alarms_race=-1h").content
+    body = _client(published).get("/events.ics?alarms_race=-1h").content
 
     assert body.count(b"BEGIN:VALARM") == 1
     assert b"TRIGGER:-PT1H" in body
@@ -174,7 +170,7 @@ def test_alarm_precedence_runs_most_specific_first():
     """series+type > series > global type > global."""
     published = {"wec": [_event("wec-race")], "f1": [_event("f1-race", series="f1")]}
     body = _client(published).get(
-        "/motorsports.ics?alarms=-1d&alarms_race=-2d&wec.alarms=-3d&wec.alarms_race=-4d"
+        "/events.ics?alarms=-1d&alarms_race=-2d&wec.alarms=-3d&wec.alarms_race=-4d"
     ).content
 
     assert b"TRIGGER:-P4D" in body  # wec: the series+type override wins
@@ -186,14 +182,14 @@ def test_alarm_precedence_runs_most_specific_first():
 def test_an_unconfirmed_time_gets_no_alarms_even_when_the_url_asks():
     """Same guard `resolve_alarms` applies: there is no real start to hang it off."""
     published = {"wec": [_event("tbc", confirmed=False)], "f1": []}
-    body = _client(published).get("/motorsports.ics?alarms=-1h").content
+    body = _client(published).get("/events.ics?alarms=-1h").content
 
     assert b"BEGIN:VALARM" not in body
 
 
 def test_testing_sessions_get_no_alarms_even_when_the_url_asks():
     published = {"wec": [_event("test", SessionType.TESTING)], "f1": []}
-    body = _client(published).get("/motorsports.ics?alarms=-1h").content
+    body = _client(published).get("/events.ics?alarms=-1h").content
 
     assert b"BEGIN:VALARM" not in body
 
@@ -232,7 +228,7 @@ def test_name_sets_the_calendar_name():
 
 
 def test_a_repeated_key_is_rejected_rather_than_merged():
-    response = _client().get("/motorsports.ics?sessions=race&sessions=practice")
+    response = _client().get("/events.ics?sessions=race&sessions=practice")
 
     assert response.status_code == 400
     assert "repeated" in response.json()["detail"]
@@ -251,14 +247,6 @@ def test_an_unknown_prefix_is_reported_as_an_unknown_series():
 
 def test_settings_for_a_series_outside_the_selection_are_rejected():
     assert _get(query="series=f1&wec.sessions=race").status_code == 400
-
-
-def test_another_series_cannot_be_configured_on_a_single_series_feed():
-    assert _get("/wec.ics", "f1.sessions=race").status_code == 400
-
-
-def test_a_series_can_configure_itself_on_its_own_feed():
-    assert _get("/wec.ics", "wec.sessions=race").status_code == 200
 
 
 # ------------------------------------------------------- legacy alias handling
