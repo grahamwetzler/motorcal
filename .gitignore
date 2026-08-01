@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 .venv/
 data/state*.yaml
+state/
 data/pre-series-migration/
 .env
 .worktrees/

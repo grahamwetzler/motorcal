@@ -16,8 +16,8 @@ COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/src /app/src
 COPY pyproject.toml ./
 ENV PATH="/app/.venv/bin:$PATH"
-RUN mkdir -p /data && chown motorcal:motorcal /data
+RUN mkdir -p /data /state && chown motorcal:motorcal /data /state
 USER motorcal
 EXPOSE 8000
 ENTRYPOINT ["motorcal"]
-CMD ["serve", "--config", "/data", "--state", "/data/state.yaml"]
+CMD ["serve", "--config", "/data", "--state", "/state/state.yaml"]
