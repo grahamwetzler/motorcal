@@ -2,23 +2,19 @@
 # Every other *.yaml in this directory is one series, keyed by its filename.
 # uid_domain is NOT set here -- it's the required UID_DOMAIN environment variable.
 
-source:
-  rate_limit_per_min: 28
-  refresh_cron: "17 */6 * * *"
-  next_season_from: "10-01"   # start fetching next season from this date
-
 retention:
   historical_days: 180
   cancelled_after_event_days: 90
 
 defaults:
-  # Fallback session lengths, used when an event has no `duration:` of its own
-  # and its series has no override.
+  # Fallback session lengths, used when a session has no `duration:` of its own
+  # and its series has no override. Keys are session types.
   durations:
     practice: "1h"
+    warmup: "20m"
     qualifying: "1h"
     sprint: "45m"
-  # Fallback alarms per session type. An event's own `alarms:` always wins,
+  # Fallback alarms per session type. A session's own `alarms:` always wins,
   # including an explicit empty list.
   alerts:
     race: ["-1d", "-30m"]
@@ -26,9 +22,10 @@ defaults:
     hyperpole: ["-15m"]
     sprint: ["-15m"]
     sprint_qualifying: ["-15m"]
+    warmup: []
     practice: []
 
 unknown_time:
+  # Appended to the title of a session marked `tbc: true` -- the official
+  # timetable has the date but hasn't announced a time yet.
   summary_suffix: " (time TBC)"
-
-include_non_championship: false

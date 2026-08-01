@@ -2,18 +2,11 @@ from datetime import datetime, timezone
 
 import pytest
 import yaml
-from tests.conftest import (
-    UID_DOMAIN,
-    make_config,
-    make_series,
-    make_state,
-    manual_event,
-    source_event,
-)
+from tests.conftest import UID_DOMAIN, make_config, make_event, make_series, make_state
 
 from motorcal import state as state_module
 from motorcal.merge import rebuild_publication
-from motorcal.state import SnapshotState, State, VersionState, scope_key
+from motorcal.state import State, VersionState
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
@@ -33,7 +26,6 @@ def test_save_then_load_round_trips_every_field(tmp_path):
     path = tmp_path / "state.yaml"
     original = State(
         uid_domain=UID_DOMAIN,
-        snapshots={scope_key("wec", "2026"): SnapshotState(last_complete_at="t1", count=3)},
         versions={
             "u1": VersionState(
                 fingerprint="fp", sequence=42, dtstamp="t3", last_modified="t4", status="CONFIRMED"
@@ -78,7 +70,7 @@ def test_load_rejects_a_structurally_invalid_state_file(tmp_path):
 def test_sequence_and_dtstamp_survive_a_save_load_cycle(tmp_path):
     """The whole reason the ledger is persisted: a restart must not re-notify clients."""
     path = tmp_path / "state.yaml"
-    config = make_config(series={"wec": make_series(events=[source_event("1", time="13:00:00")])})
+    config = make_config(series={"wec": make_series(events=[make_event("wec-2026-imola-race", start="2026-04-19T13:00:00+00:00")])})
     state = make_state()
     first, _ = rebuild_publication(config, state, now=NOW)
     state_module.save(path, state)
@@ -94,7 +86,7 @@ def test_sequence_and_dtstamp_survive_a_save_load_cycle(tmp_path):
 def test_a_failed_rebuild_never_reaches_disk(tmp_path):
     """Copy-on-write: the caller discards the working copy, so the file is untouched."""
     path = tmp_path / "state.yaml"
-    config = make_config(series={"wec": make_series(events=[source_event("1", time="13:00:00")])})
+    config = make_config(series={"wec": make_series(events=[make_event("wec-2026-imola-race", start="2026-04-19T13:00:00+00:00")])})
     live = make_state()
     rebuild_publication(config, live, now=NOW)
     state_module.save(path, live)
@@ -111,9 +103,9 @@ def test_a_failed_rebuild_never_reaches_disk(tmp_path):
     assert state_module.load(path) == live
 
 
-def test_a_manual_event_keeps_its_version_across_a_reload(tmp_path):
+def test_an_all_day_event_keeps_its_version_across_a_reload(tmp_path):
     path = tmp_path / "state.yaml"
-    config = make_config(series={"wec": make_series(events=[manual_event("mine")])})
+    config = make_config(series={"wec": make_series(events=[make_event("mine")])})
     state = make_state()
     first, _ = rebuild_publication(config, state, now=NOW)
     state_module.save(path, state)

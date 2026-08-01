@@ -12,7 +12,7 @@ from tests.conftest import make_config, make_series
 from motorcal.web import Publication, create_app
 
 WEC = make_series()
-IMSA = make_series(league_id=4488, name="IMSA")
+IMSA = make_series(name="IMSA")
 ICS = b"BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n"
 
 

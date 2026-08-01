@@ -93,16 +93,14 @@ def _calendar(calname: str, caldesc: str, vevents: list[Event]) -> Calendar:
     return calendar
 
 
-def _series_caldesc(series_config: SeriesConfig) -> str:
-    caldesc = f"{series_config.name} calendar"
-    if series_config.race_only:
-        caldesc += " (race sessions only)"
-    return caldesc
+def series_caldesc(series_config: SeriesConfig) -> str:
+    """X-WR-CALDESC for one series' own feed."""
+    return f"{series_config.name} calendar"
 
 
 def build_calendar(series_config: SeriesConfig, vevents: list[Event]) -> Calendar:
     """Assemble one deterministic VCALENDAR for a series from its rendered VEVENTs."""
-    return _calendar(series_config.name, _series_caldesc(series_config), vevents)
+    return _calendar(series_config.name, series_caldesc(series_config), vevents)
 
 
 def _to_vevent(event: PublishedEvent, series_name: str, prefix: str) -> Event:
@@ -156,7 +154,7 @@ def render_calendar_bytes(
     """Render the deterministic ICS bytes for one series' published events."""
     return render_bytes(
         calname or series_config.name,
-        _series_caldesc(series_config),
+        series_caldesc(series_config),
         [(series_config.name, events)],
         prefix=prefix,
     )

@@ -1,6 +1,5 @@
 from tests.conftest import make_globals, make_series
 
-from motorcal.config import DurationDefaults
 from motorcal.merge import compute_fingerprint, next_sequence, resolve_alarms, resolve_duration
 from motorcal.models import SessionType
 
@@ -77,14 +76,14 @@ def test_next_sequence_restored_backup_never_goes_backwards():
 
 def _globals(global_race_duration="1h", alerts=None):
     return make_globals(
-        durations=DurationDefaults(race=global_race_duration),
+        durations={"race": global_race_duration} if global_race_duration else {},
         alerts=alerts if alerts is not None else {"race": ["-1d"]},
     )
 
 
 def test_resolve_duration_prefers_own_duration_over_everything():
     globals_ = _globals()
-    series = make_series(durations=DurationDefaults(race="3h"))
+    series = make_series(durations={"race": "3h"})
     result = resolve_duration(
         SessionType.RACE, own_duration="6h", series_config=series, globals_=globals_
     )
@@ -93,7 +92,7 @@ def test_resolve_duration_prefers_own_duration_over_everything():
 
 def test_resolve_duration_falls_back_to_series_override():
     globals_ = _globals(global_race_duration="1h")
-    series = make_series(durations=DurationDefaults(race="3h"))
+    series = make_series(durations={"race": "3h"})
     result = resolve_duration(
         SessionType.RACE, own_duration=None, series_config=series, globals_=globals_
     )
@@ -127,15 +126,6 @@ def test_resolve_alarms_returns_empty_for_unconfirmed_time():
     assert result == []
 
 
-def test_resolve_alarms_returns_empty_for_unknown_session_type():
-    globals_ = _globals(alerts={"race": ["-1d"]})
-    result = resolve_alarms(
-        SessionType.UNKNOWN, own_alarms=None, time_confirmed=True,
-        series_config=make_series(), globals_=globals_,
-    )
-    assert result == []
-
-
 def test_resolve_alarms_returns_empty_for_testing_session_type():
     globals_ = _globals(alerts={"race": ["-1d"]})
     result = resolve_alarms(
@@ -145,7 +135,7 @@ def test_resolve_alarms_returns_empty_for_testing_session_type():
     assert result == []
 
 
-def test_resolve_alarms_uses_synthetic_own_alarms_when_synthetic():
+def test_resolve_alarms_prefers_the_sessions_own_alarms():
     globals_ = _globals(alerts={"race": ["-1d"]})
     result = resolve_alarms(
         SessionType.RACE, own_alarms=["-2d", "-1h"], time_confirmed=True,
@@ -164,7 +154,7 @@ def test_resolve_alarms_falls_back_to_series_override():
     assert result == ["-15m"]
 
 
-def test_resolve_alarms_uses_global_defaults_for_source_backed_event():
+def test_resolve_alarms_falls_back_to_the_global_defaults():
     globals_ = _globals(alerts={"race": ["-1d", "-30m"]})
     result = resolve_alarms(
         SessionType.RACE, own_alarms=None, time_confirmed=True,

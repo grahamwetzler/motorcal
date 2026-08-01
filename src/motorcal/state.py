@@ -2,11 +2,10 @@
 
 Everything a human writes lives in the data directory. This file holds only what
 the app must remember and nobody should have to read: which uid_domain the feed is
-keyed under, when each scope was last fetched completely, and the per-UID version
-ledger that keeps ICS SEQUENCE/DTSTAMP stable so calendar clients don't re-notify
-subscribers on every refresh.
+keyed under, and the per-UID version ledger that keeps ICS SEQUENCE/DTSTAMP stable
+so calendar clients don't re-notify subscribers on every rebuild.
 
-Deleting it is recoverable -- the next refresh rebuilds it -- but every subscriber
+Deleting it is recoverable -- the next rebuild recreates it -- but every subscriber
 sees the whole calendar as modified once.
 """
 from __future__ import annotations
@@ -18,18 +17,6 @@ from pathlib import Path
 import yaml
 
 from motorcal.config import StrictModel
-
-
-def scope_key(series: str, season: str) -> str:
-    """The `snapshots` key for one {series, season} scope."""
-    return f"{series}|{season}"
-
-
-class SnapshotState(StrictModel):
-    """When one {series, season} scope was last fetched completely, and how much of it."""
-
-    last_complete_at: str
-    count: int
 
 
 class VersionState(StrictModel):
@@ -44,7 +31,6 @@ class VersionState(StrictModel):
 
 class State(StrictModel):
     uid_domain: str | None = None
-    snapshots: dict[str, SnapshotState] = {}
     versions: dict[str, VersionState] = {}
 
 

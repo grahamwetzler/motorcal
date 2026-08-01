@@ -69,11 +69,11 @@ def resolve_duration(
         return parse_duration(own_duration)
 
     if series_config.durations is not None:
-        series_value = getattr(series_config.durations, session_type.value, None)
+        series_value = series_config.durations.get(session_type.value)
         if series_value is not None:
             return parse_duration(series_value)
 
-    global_value = getattr(globals_.defaults.durations, session_type.value, None)
+    global_value = globals_.defaults.durations.get(session_type.value)
     return parse_duration(global_value) if global_value is not None else None
 
 
@@ -85,13 +85,13 @@ def resolve_alarms(
     series_config: SeriesConfig,
     globals_: GlobalConfig,
 ) -> list[str]:
-    """Alarms only apply to confirmed, non-testing, non-unknown sessions.
+    """Alarms only apply to confirmed, non-testing sessions.
 
     3-tier priority: the event's own > per-series > global. An explicit list on
     the event always wins, including an explicit empty one -- that is how you
     silence a single race without touching the series or global defaults.
     """
-    if not time_confirmed or session_type in (SessionType.UNKNOWN, SessionType.TESTING):
+    if not time_confirmed or session_type is SessionType.TESTING:
         return []
     if own_alarms is not None:
         return list(own_alarms)
@@ -100,35 +100,19 @@ def resolve_alarms(
     return list(globals_.defaults.alerts.get(session_type.value, []))
 
 
-def build_description(
-    *,
-    event: EventConfig,
-    session: SessionConfig,
-    race_only: bool,
-    time_confirmed: bool,
-) -> str:
+def build_description(*, event: EventConfig, session: SessionConfig) -> str:
     """Build the human-readable DESCRIPTION text for one published session.
 
-    The venue and country the provider reports are not repeated here: they are the
-    event's `location`, which the VEVENT already carries in its own LOCATION field.
+    The event's `location` is not repeated here -- the VEVENT already carries it in
+    its own LOCATION field.
     """
-    source = session.source
     lines: list[str] = []
     round_number = event.round_of(session)
     if round_number is not None:
         lines.append(f"Round: {round_number}")
 
-    lines.append("Source: TheSportsDB" if source else "Source: local event")
-    if race_only and session.type == SessionType.RACE:
-        lines.append("This series' feed includes race sessions only.")
-
-    if source is None:
-        lines.append("Time supplied by local event definition.")
-    elif not time_confirmed:
-        lines.append("Time not yet confirmed by the source (TBC).")
-    else:
-        lines.append("Time confirmed by source.")
-
+    if session.tbc:
+        lines.append("Start time not yet announced (TBC).")
     if session.note:
         lines.append(f"Note: {session.note}")
     return "\n".join(lines)
@@ -142,24 +126,6 @@ def _event_effective_end(
         return start + timedelta(seconds=duration_seconds) if duration_seconds else start
     day = datetime.fromisoformat(all_day_date).replace(tzinfo=timezone.utc)
     return day + timedelta(days=1)
-
-
-def _resolve_status(
-    *,
-    is_disappeared: bool,
-    is_future_or_active: bool,
-    configured_status: EventStatus,
-    previous_status: EventStatus | None,
-) -> EventStatus:
-    """Cancellation is sticky: once CANCELLED, stay CANCELLED regardless of later rebuilds."""
-    if is_disappeared:
-        if previous_status == EventStatus.CANCELLED:
-            return EventStatus.CANCELLED
-        if is_future_or_active:
-            return EventStatus.CANCELLED
-        # A past event disappearing for the first time stays last-known-good.
-        return previous_status if previous_status is not None else configured_status
-    return configured_status
 
 
 def build_published_event(
@@ -180,9 +146,9 @@ def build_published_event(
     # The published title: "{event} {session}", which the ICS layer prefixes with
     # the series name. A session with no label of its own is just the event.
     summary = " ".join(part for part in (event.name, session.label) if part)
-    if not time_confirmed and session.source is not None:
-        # The provider hasn't announced a time. A manual all-day session is
-        # deliberate, so it never gets the suffix.
+    if session.tbc:
+        # An all-day session whose time simply hasn't been announced yet, as opposed
+        # to one that is deliberately all-day (a test day).
         summary += globals_.unknown_time.summary_suffix
 
     if time_confirmed:
@@ -200,18 +166,8 @@ def build_published_event(
         start, all_day_date = None, session.date
         duration_seconds, alarms = None, []
 
-    is_future_or_active = _event_effective_end(start, all_day_date, duration_seconds) >= now
-    status = _resolve_status(
-        is_disappeared=session.disappeared_at is not None,
-        is_future_or_active=is_future_or_active,
-        configured_status=EventStatus(session.status),
-        previous_status=EventStatus(previous.status) if previous else None,
-    )
-
-    description = build_description(
-        event=event, session=session, race_only=series_config.race_only,
-        time_confirmed=time_confirmed,
-    )
+    status = EventStatus(session.status)
+    description = build_description(event=event, session=session)
     fingerprint = compute_fingerprint(
         summary=summary, description=description, location=event.location, status=status.value,
         start=start.isoformat() if start else None, all_day_date=all_day_date,
@@ -241,7 +197,6 @@ class RebuildReport:
     events_published: int
     events_cancelled: int
     events_pruned: int
-    unknown_events: list[str]
 
 
 def rebuild_publication(
@@ -249,11 +204,10 @@ def rebuild_publication(
 ) -> tuple[dict[str, list[PublishedEvent]], RebuildReport]:
     """Rebuild every published event from the data directory and the version ledger.
 
-    Mutates `state.versions` (and prunes expired entries from both the config and
-    the ledger) but writes nothing to disk.
+    Mutates `state.versions` but writes nothing to disk, and never touches `config`:
+    the data directory is read-only to this process.
     """
     published: dict[str, list[PublishedEvent]] = {}
-    unknown_events: list[str] = []
 
     for series, series_config in config.series.items():
         published[series] = []
@@ -265,8 +219,8 @@ def rebuild_publication(
                 now=now,
             )
             published[series].append(built)
-            if built.session_type == SessionType.UNKNOWN:
-                unknown_events.append(built.uid)
+
+    events_pruned = _prune_expired(config, published, now=now)
 
     for events in published.values():
         for built in events:
@@ -276,63 +230,45 @@ def rebuild_publication(
                 last_modified=built.last_modified.isoformat(), status=built.status.value,
             )
 
-    events_pruned = _prune_expired(config, state, published, now=now)
+    # The ledger exists to keep SEQUENCE stable for events a subscriber can still
+    # see, so it is exactly the set of published UIDs. Anything else -- an expired
+    # session, or one deleted from the data directory -- is dead weight that no
+    # later rebuild would ever revisit to clean up.
+    live_uids = {built.uid for events in published.values() for built in events}
+    state.versions = {uid: v for uid, v in state.versions.items() if uid in live_uids}
 
     all_events = [e for events in published.values() for e in events]
     report = RebuildReport(
         events_published=len(all_events),
         events_cancelled=sum(1 for e in all_events if e.status == EventStatus.CANCELLED),
         events_pruned=events_pruned,
-        unknown_events=unknown_events,
     )
     return published, report
 
 
 def _prune_expired(
-    config: Config,
-    state: State,
-    published: dict[str, list[PublishedEvent]],
-    *,
-    now: datetime,
+    config: Config, published: dict[str, list[PublishedEvent]], *, now: datetime
 ) -> int:
-    """Drop sessions past their retention window from the config, the ledger, and the feed.
-
-    A race event that loses its last session goes with them -- an empty weekend
-    would publish nothing and only clutter the series file.
-    """
+    """Drop sessions past their retention window from the feed. Returns how many."""
     retention: RetentionConfig = config.globals.retention
     pruned = 0
 
     for series, events in published.items():
-        expired_uids: set[str] = set()
-        expired_keys: set[str] = set()
+        kept = []
         for built in events:
             effective_end = _event_effective_end(
                 built.start, built.all_day_date, built.duration_seconds
             )
-            if effective_end >= now:
-                continue  # still current/future -- never prune
-
             days = (
                 retention.cancelled_after_event_days
                 if built.status == EventStatus.CANCELLED
                 else retention.historical_days
             )
-            if now > effective_end + timedelta(days=days):
-                expired_uids.add(built.uid)
-                expired_keys.add(built.session_key)
-
-        if not expired_uids:
-            continue
-
-        published[series] = [e for e in events if e.uid not in expired_uids]
-        for event in config.series[series].events:
-            event.sessions = [s for s in event.sessions if s.key not in expired_keys]
-        config.series[series].events = [
-            event for event in config.series[series].events if event.sessions
-        ]
-        for uid in expired_uids:
-            state.versions.pop(uid, None)
-        pruned += len(expired_uids)
+            # Still current/future, or inside the retention window: keep it.
+            if effective_end >= now or now <= effective_end + timedelta(days=days):
+                kept.append(built)
+            else:
+                pruned += 1
+        published[series] = kept
 
     return pruned

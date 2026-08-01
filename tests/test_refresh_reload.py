@@ -4,8 +4,8 @@ from tests.conftest import (
     UID_DOMAIN,
     make_config,
     make_series,
+    make_event,
     make_state,
-    source_event,
     write_config_dir,
 )
 
@@ -16,7 +16,7 @@ NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 def _dir(tmp_path, **kwargs):
     config = make_config(
-        series={"wec": make_series(events=[source_event("1", time="13:00:00")])}, **kwargs
+        series={"wec": make_series(events=[make_event("wec-2026-imola-race", start="2026-04-19T13:00:00+00:00")])}, **kwargs
     )
     return write_config_dir(tmp_path, config), config
 
@@ -40,8 +40,7 @@ def test_bundle_hash_notices_a_new_series_file(tmp_path):
     config_dir, config = _dir(tmp_path)
     before = config_bundle_hash(config_dir)
 
-    from motorcal.config import save_series
-    save_series(config_dir, "imsa", make_series(league_id=4488, name="IMSA"))
+    (config_dir / "imsa.yaml").write_text("name: IMSA\n")
 
     assert config_bundle_hash(config_dir) != before
 
@@ -83,8 +82,7 @@ def test_reload_picks_up_a_hand_edited_event(tmp_path):
 
 def test_reload_picks_up_a_new_series_file(tmp_path):
     config_dir, config = _dir(tmp_path)
-    from motorcal.config import save_series
-    save_series(config_dir, "imsa", make_series(league_id=4488, name="IMSA"))
+    (config_dir / "imsa.yaml").write_text("name: IMSA\n")
 
     result = check_and_reload_config(config_dir, make_state(), None, config, UID_DOMAIN, NOW)
 

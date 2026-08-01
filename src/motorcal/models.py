@@ -12,13 +12,13 @@ if TYPE_CHECKING:
 
 class SessionType(str, Enum):
     PRACTICE = "practice"
+    WARMUP = "warmup"
     QUALIFYING = "qualifying"
     HYPERPOLE = "hyperpole"
     SPRINT_QUALIFYING = "sprint_qualifying"
     SPRINT = "sprint"
     RACE = "race"
     TESTING = "testing"
-    UNKNOWN = "unknown"
 
 
 class EventStatus(str, Enum):
@@ -47,16 +47,13 @@ class PublishedEvent:
     last_modified: datetime
     fingerprint: str
     alarms: list[str] = field(default_factory=list)
-    session_key: str = ""  # the id_event/uid this was built from, for config lookups
+    session_key: str = ""  # the session's `uid:`, for config lookups
 
 
 def session_uid(session: "SessionConfig", uid_domain: str) -> str:
     """The stable ICS UID for a configured session.
 
-    Provider-backed and manual sessions keep distinct prefixes so a manual session
-    can never collide with a provider id, and so the UID a subscriber already has
-    does not change if a session later gains or loses provider backing.
+    The `local-` prefix predates the data directory becoming the only source, and
+    is kept because changing it would republish every event under a new UID.
     """
-    if session.id_event is not None:
-        return f"thesportsdb-{session.id_event}@{uid_domain}"
     return f"local-{session.uid}@{uid_domain}"

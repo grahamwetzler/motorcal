@@ -15,7 +15,7 @@ from motorcal.web import Publication, create_app
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 CONFIG = make_config(
-    series={"wec": make_series(), "f1": make_series(league_id=4370, name="F1")}
+    series={"wec": make_series(), "f1": make_series(name="F1")}
 )
 PREBUILT = b"BEGIN:VCALENDAR\r\nSUMMARY:prebuilt\r\nEND:VCALENDAR\r\n"
 
@@ -116,8 +116,19 @@ def test_a_per_series_sessions_override_beats_the_global_one():
     assert b"UID:f1-practice" not in body
 
 
+def test_warmup_is_a_selectable_session_type():
+    """The type IMSA and IndyCar actually run, added when TheSportsDB was dropped."""
+    published = {"wec": [_event("wec-warmup", SessionType.WARMUP), _event("wec-race")], "f1": []}
+    body = _client(published).get("/wec.ics?sessions=warmup").content
+
+    assert b"UID:wec-warmup" in body
+    assert b"UID:wec-race" not in body
+
+
 def test_unknown_session_type_is_rejected():
     assert _get(query="sessions=lunch").status_code == 400
+    # `unknown` was a real type until the provider went; it must not linger as one.
+    assert _get(query="sessions=unknown").status_code == 400
 
 
 def test_empty_member_in_a_list_is_rejected():

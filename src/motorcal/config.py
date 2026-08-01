@@ -1,23 +1,21 @@
 """Configuration schema and loader.
 
-The data directory is the source of truth. `defaults.yaml` holds the settings
-that can't belong to any one series; every other `*.yaml` file is one series,
-keyed by its filename stem, holding that series' settings and its full event list.
+The data directory is the source of truth -- the only one. `defaults.yaml` holds
+the settings that can't belong to any one series; every other `*.yaml` file is
+one series, keyed by its filename stem, holding that series' settings and its
+full event list.
 
-The refresh cycle writes series files back (see `sync.py`), so loading and saving
-are both here. Comments inside a series file do not survive a rewrite -- the
-per-event `note:` field is the durable place for annotations.
+Nothing in the app writes these files: they are maintained by hand and by the
+scheduled agent that reads the official timetables. So this module only loads
+them, and comments in them survive.
 """
 from __future__ import annotations
 
-import os
 import re
-import tempfile
 from pathlib import Path
 from typing import Any
 
 import yaml
-from apscheduler.triggers.cron import CronTrigger
 from pydantic import BaseModel, ConfigDict, ValidationError, field_validator, model_validator
 
 from motorcal.models import EventStatus, SessionType, session_uid
@@ -110,41 +108,21 @@ def _load_yaml_mapping(path: Path, kind: str) -> Any:
 # --------------------------------------------------------------------------- globals
 
 
-class SourceSettings(StrictModel):
-    rate_limit_per_min: int = 28
-    refresh_cron: str
-    next_season_from: str = "10-01"
-
-    @field_validator("refresh_cron")
-    @classmethod
-    def validate_refresh_cron(cls, value: str) -> str:
-        """Reject a malformed cron expression at config-validation time -- catching it
-        later, when APScheduler builds a CronTrigger during a hot reload, would mean
-        the new bundle was already partially activated."""
-        try:
-            CronTrigger.from_crontab(value)
-        except ValueError as exc:
-            raise ValueError(f"Invalid refresh_cron: {value!r} ({exc})") from exc
-        return value
-
-
 class RetentionConfig(StrictModel):
     historical_days: int = 180
     cancelled_after_event_days: int = 90
 
 
-class DurationDefaults(StrictModel):
-    practice: str | None = None
-    qualifying: str | None = None
-    hyperpole: str | None = None
-    sprint_qualifying: str | None = None
-    sprint: str | None = None
-    race: str | None = None
-
-    @field_validator("*")
-    @classmethod
-    def validate_duration_format(cls, value: str | None) -> str | None:
-        return _validate_duration_string(value)
+def _validate_durations_dict(value: dict[str, str]) -> dict[str, str]:
+    unknown = set(value) - _VALID_SESSION_NAMES
+    if unknown:
+        raise ValueError(f"Unknown session type(s) in durations: {sorted(unknown)}")
+    for session, duration in value.items():
+        try:
+            _validate_duration_string(duration)
+        except ValueError as exc:
+            raise ValueError(f"{exc} for session {session!r}") from exc
+    return value
 
 
 class UnknownTimeConfig(StrictModel):
@@ -152,8 +130,13 @@ class UnknownTimeConfig(StrictModel):
 
 
 class DefaultsConfig(StrictModel):
-    durations: DurationDefaults = DurationDefaults()
+    durations: dict[str, str] = {}
     alerts: dict[str, list[str]] = {}
+
+    @field_validator("durations")
+    @classmethod
+    def validate_durations(cls, value: dict[str, str]) -> dict[str, str]:
+        return _validate_durations_dict(value)
 
     @field_validator("alerts")
     @classmethod
@@ -170,31 +153,12 @@ class GlobalConfig(StrictModel):
     """
 
     uid_domain: str
-    source: SourceSettings
     retention: RetentionConfig = RetentionConfig()
     defaults: DefaultsConfig = DefaultsConfig()
     unknown_time: UnknownTimeConfig = UnknownTimeConfig()
-    include_non_championship: bool = False
 
 
 # --------------------------------------------------------------------------- events
-
-
-class SourceSnapshot(StrictModel):
-    """What the provider last reported for one event.
-
-    Machine-written and the baseline for the 3-way merge in `sync.py`: a field is
-    only overwritten from a new fetch if the provider actually changed it AND the
-    stored value still matches what the provider said before. Absent on manual events.
-    """
-
-    name: str
-    date: str
-    time: str | None = None
-    venue: str | None = None
-    country: str | None = None
-    round: int
-    season: str
 
 
 class SessionConfig(StrictModel):
@@ -203,23 +167,21 @@ class SessionConfig(StrictModel):
     Everything here is specific to this session; whatever the whole weekend shares
     (name, location, round) lives once on the `EventConfig` holding it.
 
-    Provider-backed sessions carry `id_event` and `source`; manual sessions carry a
-    `uid` you choose and are never touched by a refresh.
+    `uid` is this session's identity: it is what the published ICS UID is built
+    from, so renaming one republishes the session as a new event for subscribers.
     """
 
-    id_event: str | None = None
-    uid: str | None = None
+    uid: str
     label: str = ""  # appended to the event name: "Practice 1", "Qualifying", "Race"
-    type: SessionType = SessionType.UNKNOWN
+    type: SessionType
     start: str | None = None  # confirmed time, ISO 8601
-    date: str | None = None  # all-day, "YYYY-MM-DD" -- the time is not yet known
+    date: str | None = None  # all-day, "YYYY-MM-DD"
+    tbc: bool = False  # the official timetable hasn't announced this session's time
     duration: str | None = None
     status: str = EventStatus.CONFIRMED.value
     note: str | None = None
     alarms: list[str] | None = None  # None = fall back to series/global defaults
     round: int | None = None  # only when it differs from the event's -- see EventConfig
-    disappeared_at: str | None = None
-    source: SourceSnapshot | None = None
 
     @field_validator("duration")
     @classmethod
@@ -241,17 +203,17 @@ class SessionConfig(StrictModel):
         return value
 
     @model_validator(mode="after")
-    def validate_identity_and_timing(self) -> "SessionConfig":
-        if bool(self.id_event) == bool(self.uid):
-            raise ValueError("A session must set exactly one of id_event or uid")
+    def validate_timing(self) -> "SessionConfig":
         if bool(self.start) == bool(self.date):
             raise ValueError("A session must set exactly one of start or date")
+        if self.tbc and self.start:
+            raise ValueError("A session with a confirmed start cannot also be tbc")
         return self
 
     @property
     def key(self) -> str:
         """The identity this session is matched on within its series file."""
-        return self.id_event or self.uid  # type: ignore[return-value]
+        return self.uid
 
     @property
     def when(self) -> str:
@@ -291,13 +253,16 @@ class EventConfig(StrictModel):
 class SeriesConfig(StrictModel):
     """One data/<series>.yaml. The series key is the filename stem."""
 
-    league_id: int
     name: str
-    max_round: int
-    race_only: bool = False
-    durations: DurationDefaults | None = None
+    schedule_url: str | None = None  # the official timetable this series is kept in step with
+    durations: dict[str, str] | None = None
     alerts: dict[str, list[str]] | None = None
     events: list[EventConfig] = []
+
+    @field_validator("durations")
+    @classmethod
+    def validate_durations(cls, value: dict[str, str] | None) -> dict[str, str] | None:
+        return _validate_durations_dict(value) if value is not None else None
 
     @field_validator("alerts")
     @classmethod
@@ -309,7 +274,7 @@ class SeriesConfig(StrictModel):
         seen: set[str] = set()
         for _, session in self.iter_sessions():
             if session.key in seen:
-                raise ValueError(f"Duplicate session id_event/uid in this series: {session.key!r}")
+                raise ValueError(f"Duplicate session uid in this series: {session.key!r}")
             seen.add(session.key)
         return self
 
@@ -404,26 +369,3 @@ def load_config(config_dir: Path, *, uid_domain: str) -> Config:
 
 def series_path(config_dir: Path, series: str) -> Path:
     return Path(config_dir) / f"{series}.yaml"
-
-
-def save_series(config_dir: Path, series: str, config: SeriesConfig) -> None:
-    """Rewrite one series file atomically, preserving field order and dropping nothing.
-
-    Events are written in the order they appear in `config.events`; `sync.py` keeps
-    that list sorted by date so the file stays readable and diffs stay small.
-    """
-    path = series_path(config_dir, series)
-    payload = config.model_dump(mode="json", exclude_none=True, exclude_defaults=False)
-    # Sessions carry a lot of optional fields; drop the empty ones per-session so a
-    # hand-written file doesn't grow a wall of `null`s the first time it's rewritten.
-    payload["events"] = [event.model_dump(mode="json", exclude_none=True) for event in config.events]
-
-    fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{series}-", suffix=".tmp")
-    try:
-        with os.fdopen(fd, "w") as f:
-            yaml.safe_dump(payload, f, sort_keys=False, default_flow_style=False, width=100)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp_name, path)
-    finally:
-        Path(tmp_name).unlink(missing_ok=True)

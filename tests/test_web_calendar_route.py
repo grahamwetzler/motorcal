@@ -121,7 +121,7 @@ def test_filtered_request_returns_503_when_series_has_no_feed_at_all():
 
 
 def _combined_client(feeds=None, published=None):
-    config = make_config(series={"wec": make_series(), "f1": make_series(league_id=4370, name="F1")})
+    config = make_config(series={"wec": make_series(), "f1": make_series(name="F1")})
     app = create_app(config)
     app.state.publication = Publication(
         config=config, feeds=feeds or {}, published=published or {}

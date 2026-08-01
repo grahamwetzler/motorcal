@@ -53,7 +53,7 @@ def test_render_calendar_bytes_handles_an_empty_series():
 
 def test_render_combined_bytes_carries_every_series_under_its_own_name():
     config = make_config(
-        series={"wec": make_series(), "f1": make_series(league_id=4370, name="F1")}
+        series={"wec": make_series(), "f1": make_series(name="F1")}
     )
     published = {"wec": [_published("u1", summary="Imola")], "f1": [_published("u2", summary="Bahrain")]}
 
@@ -77,7 +77,7 @@ def test_render_combined_bytes_skips_series_the_config_no_longer_has():
 
 def test_render_combined_bytes_is_deterministic_regardless_of_series_order():
     config = make_config(
-        series={"wec": make_series(), "f1": make_series(league_id=4370, name="F1")}
+        series={"wec": make_series(), "f1": make_series(name="F1")}
     )
     wec, f1 = {"wec": [_published("u1")]}, {"f1": [_published("u2", series="f1")]}
 
