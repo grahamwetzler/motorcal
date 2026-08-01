@@ -27,13 +27,19 @@ def build_vevent(
     description: str,
     location: str | None,
     alarms: list[str],
+    prefix: str = "",
 ) -> Event:
-    """Render one published event into an icalendar VEVENT component."""
+    """Render one published event into an icalendar VEVENT component.
+
+    `prefix` goes outermost, in front of everything else the title carries:
+    "🏁 [Postponed] WEC: 6 Hours of Imola".
+    """
     event = Event()
     event.add("uid", uid)
 
     summary = f"{series_name}: {summary}"
     rendered_summary = f"[Postponed] {summary}" if status == "TENTATIVE" else summary
+    rendered_summary = f"{prefix}{rendered_summary}"
     event.add("summary", rendered_summary)
 
     if start is not None:
@@ -79,15 +85,19 @@ def _calendar(calname: str, caldesc: str, vevents: list[Event]) -> Calendar:
     return calendar
 
 
-def build_calendar(series_config: SeriesConfig, vevents: list[Event]) -> Calendar:
-    """Assemble one deterministic VCALENDAR for a series from its rendered VEVENTs."""
+def _series_caldesc(series_config: SeriesConfig) -> str:
     caldesc = f"{series_config.name} calendar"
     if series_config.race_only:
         caldesc += " (race sessions only)"
-    return _calendar(series_config.name, caldesc, vevents)
+    return caldesc
 
 
-def _to_vevent(event: PublishedEvent, series_name: str) -> Event:
+def build_calendar(series_config: SeriesConfig, vevents: list[Event]) -> Calendar:
+    """Assemble one deterministic VCALENDAR for a series from its rendered VEVENTs."""
+    return _calendar(series_config.name, _series_caldesc(series_config), vevents)
+
+
+def _to_vevent(event: PublishedEvent, series_name: str, prefix: str) -> Event:
     return build_vevent(
         uid=event.uid,
         summary=event.summary,
@@ -102,33 +112,70 @@ def _to_vevent(event: PublishedEvent, series_name: str) -> Event:
         description=event.description,
         location=event.location,
         alarms=event.alarms,
+        prefix=prefix,
     )
 
 
+def render_bytes(
+    calname: str,
+    caldesc: str,
+    entries: list[tuple[str, list[PublishedEvent]]],
+    *,
+    prefix: str = "",
+) -> bytes:
+    """Render one VCALENDAR from (series display name, that series' events) pairs.
+
+    The one place published events become ICS bytes. It takes display names and a
+    plain prefix string rather than any richer object: `web.py` imports this
+    module to render its per-request feeds, so accepting a type owned by `web.py`
+    would put the two modules in an import cycle.
+    """
+    vevents = [
+        _to_vevent(event, series_name, prefix)
+        for series_name, events in entries
+        for event in events
+    ]
+    return _calendar(calname, caldesc, vevents).to_ical()
+
+
 def render_calendar_bytes(
-    series_config: SeriesConfig, events: list[PublishedEvent]
+    series_config: SeriesConfig,
+    events: list[PublishedEvent],
+    *,
+    prefix: str = "",
+    calname: str | None = None,
 ) -> bytes:
     """Render the deterministic ICS bytes for one series' published events."""
-    return build_calendar(
-        series_config, [_to_vevent(e, series_config.name) for e in events]
-    ).to_ical()
+    return render_bytes(
+        calname or series_config.name,
+        _series_caldesc(series_config),
+        [(series_config.name, events)],
+        prefix=prefix,
+    )
 
 
 def render_combined_bytes(
-    config: Config, published: dict[str, list[PublishedEvent]]
+    config: Config,
+    published: dict[str, list[PublishedEvent]],
+    *,
+    prefix: str = "",
+    calname: str | None = None,
 ) -> bytes:
     """Render every series' events into the one combined feed.
 
     Each event keeps its own series' display name, which `build_vevent` already
     puts in front of every summary, so the series stay legible once mixed.
     """
-    vevents = [
-        _to_vevent(event, config.series[series].name)
-        for series, events in published.items()
-        if series in config.series
-        for event in events
-    ]
-    return _calendar("Motorsports", "All series", vevents).to_ical()
+    return render_bytes(
+        calname or "Motorsports",
+        "All series",
+        [
+            (config.series[series].name, events)
+            for series, events in published.items()
+            if series in config.series
+        ],
+        prefix=prefix,
+    )
 
 
 def compute_content_hash(ics_bytes: bytes) -> str:

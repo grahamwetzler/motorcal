@@ -31,8 +31,8 @@ anything else in there.
    ```
 
    Add one file per series you want. The filename is the series key and the feed
-   path: `f1.yaml` is served at `/f1.ics`. `all` is reserved for the combined
-   feed, so there can be no `all.yaml`.
+   path: `f1.yaml` is served at `/f1.ics`. `motorsports` is reserved for the
+   combined feed, so there can be no `motorsports.yaml`.
 
 3. Start everything:
 
@@ -41,12 +41,57 @@ anything else in there.
    ```
 
 4. Subscribe at `https://<your-domain>/<series>.ics`, or at
-   `https://<your-domain>/all.ics` for every series in one calendar. Races are
-   always included; add `?practices=false` and/or `?qualifying=false` to drop
-   those session types from the feed.
+   `https://<your-domain>/motorsports.ics` for every series in one calendar.
+   Shape the feed from the URL — see "Feed parameters" below.
 
 5. Edit events by hand in the series YAML files under `data/`. Changes are
    picked up within ~30 seconds.
+
+## Feed parameters
+
+Both feeds take query parameters, so one deployment can serve as many different
+calendars as you have subscriptions. Nothing is stored — the URL *is* the
+setting, and two people can subscribe to the same server and get different
+feeds.
+
+| Parameter | Example | Applies to |
+| --- | --- | --- |
+| `series` | `series=f1,wec` | whole feed; `/motorsports.ics` only |
+| `emoji` | `emoji=true` | whole feed — puts 🏁 in front of every title |
+| `name` | `name=Racing` | whole feed — the calendar's display name |
+| `sessions` | `sessions=race,qualifying` | whole feed, or one series: `f1.sessions=race` |
+| `alarms` | `alarms=-1d,-30m` | whole feed, or one series: `f1.alarms=-1h` |
+| `alarms_<type>` | `alarms_race=-1h` | whole feed, or one series: `f1.alarms_race=-1h` |
+
+`sessions` is the list of session types to keep — one or more of `practice`,
+`qualifying`, `hyperpole`, `sprint_qualifying`, `sprint`, `race`, `testing`.
+Leave it off and you get all of them.
+
+Alarms default to whatever the YAML says; set them here only to override that.
+The most specific setting wins:
+
+```
+f1.alarms_race  →  f1.alarms  →  alarms_race  →  alarms  →  the YAML default
+```
+
+`alarms=` with an empty value silences the feed. As in the YAML, alarms are
+never attached to a session whose time isn't confirmed yet, or to `testing` and
+`unknown` sessions.
+
+So a feed of nothing but F1 and WEC races, flagged, reminding you a day and ten
+minutes ahead, with F1 races an hour ahead instead:
+
+```
+/motorsports.ics?series=f1,wec&sessions=race&emoji=true&alarms=-1d,-10m&f1.alarms=-1h
+```
+
+A malformed parameter — an unknown name, an unknown series, a repeated key, a
+bad alarm offset — is rejected with a 400 rather than ignored, so a typo can't
+quietly hand you the wrong calendar.
+
+`?practices=false` and `?qualifying=false` still work for feeds subscribed to
+before `sessions` existed. They can't be combined with `sessions`; use one or
+the other.
 
 ## The data directory
 
