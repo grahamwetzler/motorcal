@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>motorcal — feed builder</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --panel: #ffffff; --fg: #16191d; --muted: #626d79; --line: #e2e6eb;
+    --accent: #0b5fff; --field: #ffffff; --soft: #f0f3f7; --mono-bg: #0e1116; --mono-fg: #d8e0ea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1013; --panel: #16191d; --fg: #e9edf1; --muted: #8e9aa6; --line: #262b31;
+      --accent: #5b8cff; --field: #1c2026; --soft: #1c2026; --mono-bg: #05070a; --mono-fg: #cfd9e4;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }  /* display:grid would otherwise win */
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 68rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+  header { margin-bottom: 2rem; }
+  h1 { font-size: 1.6rem; margin: 0 0 .3rem; letter-spacing: -.02em; }
+  h1 b { color: var(--accent); font-weight: 800; }
+  header p { margin: 0; color: var(--muted); }
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.5rem; align-items: start; }
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+
+  section {
+    background: var(--panel); border: 1px solid var(--line); border-radius: .75rem;
+    padding: 1.1rem 1.25rem 1.25rem; margin-bottom: 1rem;
+  }
+  h2 { font-size: .78rem; text-transform: uppercase; letter-spacing: .09em; color: var(--muted);
+       margin: 0 0 .15rem; font-weight: 700; }
+  .hint { color: var(--muted); font-size: .86rem; margin: 0 0 .9rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: .15rem .8rem; }
+  label.check { display: flex; align-items: center; gap: .55rem; padding: .32rem 0; cursor: pointer; font-size: .95rem; }
+  input[type=checkbox], input[type=radio] { accent-color: var(--accent); width: 1rem; height: 1rem; margin: 0; }
+  input[type=text] {
+    background: var(--field); color: var(--fg); border: 1px solid var(--line); border-radius: .45rem;
+    padding: .42rem .6rem; font: inherit; font-size: .88rem; width: 100%;
+  }
+  input[type=text]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  input.bad { border-color: #e5484d; background: color-mix(in srgb, #e5484d 8%, var(--field)); }
+  .row { display: grid; grid-template-columns: 9.5rem 1fr; gap: .6rem; align-items: center; margin-bottom: .45rem; }
+  .row > span { color: var(--muted); font-size: .87rem; }
+  .radios { display: flex; flex-wrap: wrap; gap: 1rem; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .chip {
+    display: inline-flex; align-items: center; gap: .45rem; cursor: pointer; user-select: none;
+    border: 1px solid var(--line); background: var(--soft); border-radius: 999px;
+    padding: .45rem .95rem; font-size: .95rem; font-weight: 600; transition: .12s;
+  }
+  .chip input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .chip::before { content: "＋"; font-size: .85em; opacity: .55; }
+  .chip:has(input:checked) { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip:has(input:checked)::before { content: "✓"; opacity: 1; }
+  .chip:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  details { border-top: 1px solid var(--line); }
+  details > summary {
+    cursor: pointer; padding: .6rem 0; font-size: .9rem; font-weight: 600; list-style: none;
+    display: flex; align-items: center; gap: .5rem;
+  }
+  details > summary::before { content: "▸"; color: var(--muted); font-size: .8rem; transition: transform .12s; }
+  details[open] > summary::before { transform: rotate(90deg); }
+  details > summary::-webkit-details-marker { display: none; }
+  .details-body { padding: 0 0 .9rem .95rem; border-left: 2px solid var(--line); margin: 0 0 .3rem .25rem; }
+  .tag { font-size: .72rem; color: var(--accent); font-weight: 700; }
+
+  aside { position: sticky; top: 1.5rem; }
+  .result { background: var(--panel); border: 1px solid var(--line); border-radius: .75rem; padding: 1.25rem; }
+  .sentence { font-size: 1.02rem; line-height: 1.5; margin: 0 0 1rem; }
+  .sentence em { font-style: normal; font-weight: 650; color: var(--accent); }
+  code#url {
+    display: block; background: var(--mono-bg); color: var(--mono-fg); border-radius: .5rem;
+    padding: .7rem .8rem; font: .78rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+    word-break: break-all; max-height: 11rem; overflow: auto; margin-bottom: .85rem;
+  }
+  code#url.bad { color: #ff8b8f; }
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+  button, a.btn {
+    font: inherit; font-size: .9rem; font-weight: 650; padding: .55rem .8rem; border-radius: .5rem;
+    border: 1px solid var(--line); background: var(--soft); color: var(--fg);
+    cursor: pointer; text-decoration: none; text-align: center;
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button:disabled, a.btn[aria-disabled=true] { opacity: .4; pointer-events: none; }
+  .foot { color: var(--muted); font-size: .8rem; margin: .9rem 0 0; }
+
+  .preview { margin-top: 1rem; }
+  .preview h2 { margin-bottom: .5rem; }
+  .event {
+    border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: .5rem;
+    background: var(--panel); padding: .75rem .9rem;
+  }
+  .event .title { font-weight: 650; line-height: 1.35; }
+  .event .when { font-size: .87rem; margin-top: .2rem; }
+  .event .where, .event .alarm { color: var(--muted); font-size: .84rem; margin-top: .15rem; }
+  .event.none { border-left-color: var(--line); color: var(--muted); font-size: .88rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>motor<b>cal</b></h1>
+    <p>Build a calendar feed. Copy the URL into any calendar app.</p>
+  </header>
+
+  <div class="cols">
+    <div>
+      <section>
+        <h2>Series</h2>
+        <p class="hint">All of them selected gives you one combined calendar.</p>
+        <div class="chips" id="series"></div>
+      </section>
+
+      <section>
+        <h2>Sessions</h2>
+        <p class="hint">Which parts of a race weekend to keep.</p>
+        <div class="grid" id="sessions"></div>
+      </section>
+
+      <section>
+        <h2>Reminders</h2>
+        <p class="hint">Offsets before the start: <code>-1d</code>, <code>-1h</code>, <code>-30m</code>, or <code>0</code> for on time.</p>
+        <div class="radios">
+          <label class="check"><input type="radio" name="alarmMode" value="default" checked> Series defaults</label>
+          <label class="check"><input type="radio" name="alarmMode" value="set"> Set my own</label>
+          <label class="check"><input type="radio" name="alarmMode" value="silence"> None</label>
+        </div>
+        <div id="alarmFields" hidden style="margin-top:.9rem">
+          <div class="row"><span>Every session</span><input type="text" id="alarms" placeholder="-1d,-10m"></div>
+          <details><summary>Different per session type</summary><div class="details-body" id="alarmsByType"></div></details>
+        </div>
+      </section>
+
+      <section>
+        <h2>Per-series overrides</h2>
+        <p class="hint">Only when one series needs something different from the rest.</p>
+        <div id="perSeries"></div>
+      </section>
+
+      <section>
+        <h2>Appearance</h2>
+        <label class="check"><input type="checkbox" id="emoji"> Put 🏁 in front of every event</label>
+        <div class="row" style="margin-top:.7rem"><span>Calendar name</span><input type="text" id="name" placeholder="Motorsports"></div>
+      </section>
+    </div>
+
+    <aside>
+      <div class="result">
+        <p class="sentence" id="sentence"></p>
+        <code id="url"></code>
+        <div class="actions">
+          <button type="button" class="primary" id="copy">Copy URL</button>
+          <a class="btn" id="subscribe" href="#">Subscribe</a>
+        </div>
+        <p class="foot">Nothing is stored — the URL <em>is</em> the setting.</p>
+      </div>
+
+      <div class="result preview">
+        <h2>Next in this feed</h2>
+        <div id="next"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+// --- data ------------------------------------------------------------------
+// Injected by the `/` handler from the publication this server is currently
+// serving, so the page can never offer a series or preview an event the feeds
+// don't actually have.
+const SERIES = __SERIES_JSON__;
+const UPCOMING = __UPCOMING_JSON__;
+const TYPES = [
+  ["practice", "Practice"],
+  ["qualifying", "Qualifying"],
+  ["hyperpole", "Hyperpole"],
+  ["sprint_qualifying", "Sprint qualifying"],
+  ["sprint", "Sprint"],
+  ["race", "Race"],
+  ["testing", "Testing"],
+];
+const OFFSET = /^0$|^-[1-9]\d*[dhm]$/;
+
+// --- url building ----------------------------------------------------------
+// Mirrors _parse_selection in src/motorcal/web.py: only ever emit a URL the
+// server accepts. No repeated keys, no `series=` on a per-series feed, no
+// per-series override for a series the feed does not carry, nothing that just
+// restates a default.
+function offsets(text) {
+  const parts = text.split(",").map(s => s.trim()).filter(Boolean);
+  return parts.every(p => OFFSET.test(p)) ? parts : null;  // null = invalid
+}
+
+function buildURL(state) {
+  const all = SERIES.map(s => s.key);
+  const picked = state.series;
+  const one = picked.length === 1;
+  const params = [];
+  const bad = [];
+  // An unticked group is not a shortcut for "everything". Omitting the parameter
+  // would hand back a feed carrying every series or every session -- the exact
+  // opposite of what the page is showing -- so it is an error, not a default.
+  const empty = [];
+  if (!picked.length) empty.push("series");
+  if (!state.sessions.length) empty.push("session type");
+
+  const push = (key, text) => {
+    const parsed = offsets(text);
+    if (parsed === null) bad.push(key);
+    else if (parsed.length) params.push([key, parsed.join(",")]);
+  };
+
+  if (picked.length && !one && picked.length !== all.length) {
+    params.push(["series", picked.join(",")]);
+  }
+  if (state.sessions.length && state.sessions.length !== TYPES.length) {
+    params.push(["sessions", state.sessions.join(",")]);
+  }
+  if (state.emoji) params.push(["emoji", "true"]);
+  if (state.name.trim()) params.push(["name", state.name.trim()]);
+
+  if (state.alarmMode === "silence") params.push(["alarms", ""]);
+  if (state.alarmMode === "set") {
+    push("alarms", state.alarms);
+    for (const [type] of TYPES) push(`alarms_${type}`, state.alarmsByType[type] || "");
+  }
+
+  for (const key of picked) {
+    const own = state.per[key];
+    if (!own) continue;
+    if (own.sessions && !own.sessions.length) empty.push(`${NAMES[key]} session type`);
+    if (own.sessions && own.sessions.length && own.sessions.length !== TYPES.length) {
+      params.push([`${key}.sessions`, own.sessions.join(",")]);
+    }
+    push(`${key}.alarms`, own.alarms || "");
+    for (const [type] of TYPES) push(`${key}.alarms_${type}`, own.byType[type] || "");
+  }
+
+  // Commas stay literal: they are legal in a query value and `sessions=race,qualifying`
+  // is what a subscriber has to be able to read back.
+  const encode = (s) => encodeURIComponent(s).replace(/%2C/g, ",");
+  const query = params.map(([k, v]) => `${encode(k)}=${encode(v)}`).join("&");
+  const path = one ? `/${picked[0]}.ics` : "/motorsports.ics";
+  const error = empty.length ? `Pick at least one ${list(empty)}.`
+    : bad.length ? `Not a valid reminder offset in: ${bad.join(", ")}`
+    : null;
+  // `params` and `picked` are handed back so the preview can resolve an event
+  // exactly the way the server will -- off the parameters actually emitted,
+  // not off a second reading of the form.
+  return {url: location.origin + path + (query ? "?" + query : ""), bad, error, params, picked};
+}
+
+// --- plain english ---------------------------------------------------------
+const NAMES = Object.fromEntries(SERIES.map(s => [s.key, s.name]));
+const LABELS = Object.fromEntries(TYPES.map(([t, l]) => [t, l.toLowerCase()]));
+const UNITS = {d: ["day", "days"], h: ["hour", "hours"], m: ["minute", "minutes"]};
+
+function list(items) {
+  if (items.length <= 1) return items[0] || "";
+  return items.slice(0, -1).join(", ") + " and " + items[items.length - 1];
+}
+function spell(offset) {
+  const amount = Number(offset.slice(1, -1));
+  const [one, many] = UNITS[offset.slice(-1)];
+  return `${amount} ${amount === 1 ? one : many}`;
+}
+// "0" is an alert at the start, so it can't take the "before" the others share.
+function remindText(alarms) {
+  const ahead = alarms.filter(a => a !== "0");
+  const parts = ahead.length ? [list(ahead.map(spell)) + " before"] : [];
+  if (alarms.includes("0")) parts.push("at the start");
+  return list(parts);
+}
+// Returns the two halves rather than markup: a series name is config, and
+// pasting it into innerHTML would run whatever HTML someone put in it.
+function sentence(state, picked) {
+  const everySeries = picked.length === SERIES.length;
+  const who = everySeries ? "Every series" : list(picked.map(k => NAMES[k]));
+  const what = state.sessions.length === TYPES.length || !state.sessions.length
+    ? "every session"
+    : list(state.sessions.map(t => LABELS[t]));
+
+  let when = "keeping each series' own reminders";
+  if (state.alarmMode === "silence") when = "with no reminders at all";
+  if (state.alarmMode === "set") {
+    const parsed = offsets(state.alarms);
+    when = parsed === null ? "with reminders"
+      : parsed.length ? `reminding you ${remindText(parsed)}`
+      : "keeping each series' own reminders";
+  }
+  const tweaked = picked.filter(k => {
+    const own = state.per[k];
+    return own && (own.sessions || own.alarms || Object.values(own.byType).some(Boolean));
+  });
+  const tail = tweaked.length ? `, with ${list(tweaked.map(k => NAMES[k]))} set up differently` : "";
+  return [who, ` — ${what}, ${when}${tail}.`];
+}
+
+// --- next event ------------------------------------------------------------
+// UPCOMING holds the next real session of each series/type pair, so the
+// earliest survivor of the feed's own filters is the feed's actual next event.
+function starts(event) { return new Date(event.start || event.date + "T00:00:00"); }
+
+function nextEvent(built) {
+  const params = new Map(built.params);
+  const kept = UPCOMING.filter((event) => {
+    if (!built.picked.includes(event.series)) return false;
+    const sessions = params.get(`${event.series}.sessions`) ?? params.get("sessions");
+    return sessions === undefined || sessions.split(",").includes(event.type);
+  });
+  if (!kept.length) return null;
+
+  const event = kept.reduce((a, b) => (starts(a) <= starts(b) ? a : b));
+  // Same precedence chain as _first_set in web.py, read off the emitted params.
+  // An unconfirmed time and the two alertless types keep their own alarms, which
+  // is what `_select` does server-side -- a URL override is not a way around it.
+  let alarms = event.alarms;
+  if (event.time_confirmed && event.type !== "testing" && event.type !== "unknown") {
+    for (const key of [`${event.series}.alarms_${event.type}`, `${event.series}.alarms`,
+                       `alarms_${event.type}`, "alarms"]) {
+      if (params.has(key)) { alarms = params.get(key).split(",").filter(Boolean); break; }
+    }
+  }
+  return {...event, alarms};
+}
+
+function whenText(event) {
+  const start = starts(event);
+  if (!event.start) {
+    return start.toLocaleDateString([], {weekday: "long", day: "numeric", month: "long"}) + ", all day";
+  }
+  const time = (date) => date.toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
+  const day = start.toLocaleDateString([], {weekday: "long", day: "numeric", month: "long"});
+  if (!event.duration) return `${day}, ${time(start)}`;
+  return `${day}, ${time(start)} – ${time(new Date(start.getTime() + event.duration * 1000))}`;
+}
+
+function renderNext(built, emoji) {
+  const event = nextEvent(built);
+  const box = document.getElementById("next");
+  box.textContent = "";
+  if (!event) {
+    box.className = "event none";
+    box.textContent = "Nothing upcoming matches these settings.";
+    return;
+  }
+  box.className = "event";
+  box.append(
+    make("div", {className: "title", textContent: (emoji ? "🏁 " : "") + event.title}),
+    make("div", {className: "when", textContent: whenText(event)}),
+  );
+  if (event.location) box.append(make("div", {className: "where", textContent: event.location}));
+  box.append(make("div", {className: "alarm", textContent: event.alarms.length
+    ? "Alert " + remindText(event.alarms) : "No alert"}));
+}
+
+// --- state -----------------------------------------------------------------
+const state = {
+  series: [], sessions: TYPES.map(t => t[0]), emoji: false, name: "",
+  alarmMode: "default", alarms: "", alarmsByType: {}, per: {},
+};
+
+function make(tag, props = {}, ...kids) {
+  const node = Object.assign(document.createElement(tag), props);
+  node.append(...kids);
+  return node;
+}
+function checkbox(label, checked, onchange) {
+  const box = make("input", {type: "checkbox", checked});
+  box.addEventListener("change", onchange);
+  return make("label", {className: "check"}, box, label);
+}
+function textField(label, placeholder, onchange) {
+  const input = make("input", {type: "text", placeholder});
+  input.addEventListener("input", onchange);
+  return {input, row: make("div", {className: "row"}, make("span", {}, label), input)};
+}
+
+const seriesBoxes = {};
+for (const {key, name} of SERIES) {
+  const box = make("input", {type: "checkbox", checked: true});
+  box.addEventListener("change", render);
+  seriesBoxes[key] = make("label", {className: "chip"}, box, name);
+  document.getElementById("series").append(seriesBoxes[key]);
+}
+const sessionBoxes = {};
+for (const [type, label] of TYPES) {
+  sessionBoxes[type] = checkbox(label, true, render);
+  document.getElementById("sessions").append(sessionBoxes[type]);
+}
+const alarmsInput = document.getElementById("alarms");
+const alarmsByType = {};
+for (const [type, label] of TYPES) {
+  const {input, row} = textField(label, "inherit", render);
+  alarmsByType[type] = input;
+  document.getElementById("alarmsByType").append(row);
+}
+const per = {};
+for (const {key, name} of SERIES) {
+  const body = make("div", {className: "details-body"});
+  const override = make("input", {type: "checkbox"});
+  const sessionsWrap = make("div", {className: "grid", hidden: true});
+  const boxes = {};
+  for (const [type, label] of TYPES) {
+    boxes[type] = checkbox(label, true, render);
+    sessionsWrap.append(boxes[type]);
+  }
+  override.addEventListener("change", () => { sessionsWrap.hidden = !override.checked; render(); });
+  body.append(make("label", {className: "check"}, override, "Different sessions for this series"), sessionsWrap);
+
+  const {input: alarms, row} = textField("Reminders", "inherit", render);
+  body.append(row);
+
+  const byType = {};
+  const nested = make("div", {className: "details-body"});
+  for (const [type, label] of TYPES) {
+    const {input, row} = textField(label, "inherit", render);
+    byType[type] = input;
+    nested.append(row);
+  }
+  body.append(make("details", {}, make("summary", {}, "Per session type"), nested));
+
+  const mark = make("span", {className: "tag", textContent: ""});
+  const block = make("details", {}, make("summary", {}, name, mark), body);
+  per[key] = {block, mark, override, boxes, alarms, byType};
+  document.getElementById("perSeries").append(block);
+}
+
+document.getElementById("emoji").addEventListener("change", render);
+document.getElementById("name").addEventListener("input", render);
+alarmsInput.addEventListener("input", render);
+for (const radio of document.querySelectorAll("[name=alarmMode]")) radio.addEventListener("change", render);
+
+// --- render ----------------------------------------------------------------
+function readState() {
+  state.series = SERIES.filter(s => seriesBoxes[s.key].querySelector("input").checked).map(s => s.key);
+  state.sessions = TYPES.filter(([t]) => sessionBoxes[t].querySelector("input").checked).map(([t]) => t);
+  state.emoji = document.getElementById("emoji").checked;
+  state.name = document.getElementById("name").value;
+  state.alarmMode = document.querySelector("[name=alarmMode]:checked").value;
+  state.alarms = alarmsInput.value;
+  state.alarmsByType = Object.fromEntries(TYPES.map(([t]) => [t, alarmsByType[t].value]));
+  state.per = {};
+  for (const {key} of SERIES) {
+    const p = per[key];
+    state.per[key] = {
+      sessions: p.override.checked
+        ? TYPES.filter(([t]) => p.boxes[t].querySelector("input").checked).map(([t]) => t)
+        : null,
+      alarms: p.alarms.value,
+      byType: Object.fromEntries(TYPES.map(([t]) => [t, p.byType[t].value])),
+    };
+  }
+}
+
+function render() {
+  readState();
+  document.getElementById("alarmFields").hidden = state.alarmMode !== "set";
+  const carried = new Set(state.series);
+  for (const {key} of SERIES) {
+    const own = state.per[key];
+    per[key].block.hidden = !carried.has(key);
+    per[key].mark.textContent =
+      own && (own.sessions || own.alarms || Object.values(own.byType).some(Boolean)) ? "set" : "";
+  }
+
+  const built = buildURL(state);
+  const {url, bad, error} = built;
+  const box = document.getElementById("url");
+  const copy = document.getElementById("copy");
+  const sub = document.getElementById("subscribe");
+  box.classList.toggle("bad", error !== null);
+  box.textContent = error ?? url;
+
+  const summary = document.getElementById("sentence");
+  summary.textContent = "";
+  if (!error) {
+    const [who, rest] = sentence(state, built.picked);
+    summary.append(make("em", {textContent: who}), rest);
+  }
+  renderNext(built, state.emoji);
+  copy.disabled = error !== null;
+  sub.setAttribute("aria-disabled", String(error !== null));
+  sub.href = error ? "#" : url.replace(/^https?:/, "webcal:");
+
+  alarmsInput.classList.toggle("bad", bad.includes("alarms"));
+  for (const [type, input] of Object.entries(alarmsByType)) {
+    input.classList.toggle("bad", bad.includes(`alarms_${type}`));
+  }
+  for (const {key} of SERIES) {
+    per[key].alarms.classList.toggle("bad", bad.includes(`${key}.alarms`));
+    for (const [type, input] of Object.entries(per[key].byType)) {
+      input.classList.toggle("bad", bad.includes(`${key}.alarms_${type}`));
+    }
+  }
+}
+
+document.getElementById("copy").addEventListener("click", async (event) => {
+  await navigator.clipboard.writeText(buildURL(state).url);
+  const button = event.currentTarget;
+  button.textContent = "Copied";
+  setTimeout(() => { button.textContent = "Copy URL"; }, 1200);
+});
+
+render();
+
+// --- self-check ------------------------------------------------------------
+// The URL builder is the only real logic here; this fails loudly in the console
+// if it starts emitting something the server would reject.
+(function selfCheck() {
+  const keys = SERIES.map(s => s.key);
+  const [first, second] = keys;
+  const base = {
+    series: keys, sessions: TYPES.map(t => t[0]), emoji: false, name: "",
+    alarmMode: "default", alarms: "", alarmsByType: {}, per: {},
+  };
+  const at = (over) => buildURL({...base, ...over}).url.slice(location.origin.length);
+  const cases = [
+    [at({}), "/motorsports.ics", "everything ticked = bare combined feed"],
+    [at({series: [first]}), `/${first}.ics`, "one series = its own path, never series="],
+    [at({series: [first, second]}), `/motorsports.ics?series=${first},${second}`, "subset = series="],
+    [at({sessions: ["race"]}), "/motorsports.ics?sessions=race", "session subset"],
+    [at({alarmMode: "silence"}), "/motorsports.ics?alarms=", "silence is an empty value"],
+    [at({alarmMode: "set", alarms: "-1d, -10m"}), "/motorsports.ics?alarms=-1d,-10m", "offsets trimmed"],
+    [at({series: [first], per: {[first]: {sessions: null, alarms: "-1h", byType: {}}}}),
+      `/${first}.ics?${first}.alarms=-1h`, "per-series override"],
+    [at({per: {[second]: {sessions: null, alarms: "-1h", byType: {}}}, series: [first]}),
+      `/${first}.ics`, "override for a series not in the feed is dropped"],
+  ];
+  let ok = true;
+  for (const [got, want, what] of cases) {
+    if (got !== want) { ok = false; console.error(`self-check: ${what}\n  got  ${got}\n  want ${want}`); }
+  }
+  if (buildURL({...base, alarmMode: "set", alarms: "1h"}).bad.length !== 1) {
+    ok = false; console.error("self-check: '1h' should be rejected (offsets are negative)");
+  }
+  // Nothing ticked must be an error: the bare URL would mean the opposite.
+  const empties = [
+    [buildURL({...base, series: []}).error, "no series"],
+    [buildURL({...base, sessions: []}).error, "no session types"],
+    [buildURL({...base, series: [first], per: {[first]: {sessions: [], alarms: "", byType: {}}}}).error,
+      "no session types for one series"],
+  ];
+  for (const [error, what] of empties) {
+    if (!error) { ok = false; console.error(`self-check: ${what} should be rejected`); }
+  }
+  if (remindText(["-1d", "-10m"]) !== "1 day and 10 minutes before"
+      || remindText(["-1h", "0"]) !== "1 hour before and at the start") {
+    ok = false; console.error("self-check: reminder wording is wrong");
+  }
+
+  // The preview must resolve an event the same way the server would.
+  const sample = {
+    series: first, type: "race", title: "Example Grand Prix", location: "Somewhere",
+    start: "2999-01-01T12:00:00+00:00", date: null, duration: 5400,
+    time_confirmed: true, alarms: ["-15m"],
+  };
+  const preview = (over) => {
+    const saved = UPCOMING.slice();
+    UPCOMING.length = 0;
+    UPCOMING.push(sample, {...sample, type: "practice", alarms: []});
+    const got = nextEvent(buildURL({...base, ...over}));
+    UPCOMING.length = 0;
+    UPCOMING.push(...saved);
+    return got;
+  };
+  const previews = [
+    [preview({}).alarms.join(), "-15m", "no alarm params = the series' own alarms"],
+    [preview({alarmMode: "silence"}).alarms.join(), "", "alarms= silences the preview too"],
+    [preview({alarmMode: "set", alarmsByType: {race: "-1h"}}).alarms.join(), "-1h", "alarms_race wins"],
+    [preview({series: [first], per: {[first]: {sessions: null, alarms: "-2h", byType: {}}}}).alarms.join(),
+      "-2h", "a per-series override beats the series default"],
+    [preview({sessions: ["practice"]}).type, "practice", "the preview obeys the session filter"],
+    [String(preview({series: [second]})), "null", "nothing matching = no preview"],
+  ];
+  for (const [got, want, what] of previews) {
+    if (got !== want) { ok = false; console.error(`self-check: ${what}\n  got  ${got}\n  want ${want}`); }
+  }
+  console.log(ok ? "self-check ok" : "self-check FAILED");
+})();
+</script>
+</body>
+</html>

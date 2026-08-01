@@ -44,6 +44,9 @@ anything else in there.
    `https://<your-domain>/motorsports.ics` for every series in one calendar.
    Shape the feed from the URL — see "Feed parameters" below.
 
+   Or open `https://<your-domain>/` and tick what you want: the page builds the
+   URL for you and previews the next event the feed would carry.
+
 5. Edit events by hand in the series YAML files under `data/`. Changes are
    picked up within ~30 seconds.
 
@@ -52,7 +55,8 @@ anything else in there.
 Both feeds take query parameters, so one deployment can serve as many different
 calendars as you have subscriptions. Nothing is stored — the URL *is* the
 setting, and two people can subscribe to the same server and get different
-feeds.
+feeds. The builder page at `/` writes these for you; the table below is what it
+is writing.
 
 | Parameter | Example | Applies to |
 | --- | --- | --- |
