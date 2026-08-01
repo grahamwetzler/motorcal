@@ -94,14 +94,18 @@
 
   .preview { margin-top: 1rem; }
   .preview h2 { margin-bottom: .5rem; }
+  #next { display: flex; flex-direction: column; gap: .6rem; }
   .event {
     border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: .5rem;
     background: var(--panel); padding: .75rem .9rem;
   }
+  .event .series { font-size: .74rem; font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: .2rem; }
   .event .title { font-weight: 650; line-height: 1.35; }
   .event .when { font-size: .87rem; margin-top: .2rem; }
   .event .where, .event .alarm { color: var(--muted); font-size: .84rem; margin-top: .15rem; }
   .event.none { border-left-color: var(--line); color: var(--muted); font-size: .88rem; }
+  .event.none .series { color: var(--muted); }
 </style>
 </head>
 <body>
@@ -147,7 +151,12 @@
 
       <section>
         <h2>Appearance</h2>
-        <label class="check"><input type="checkbox" id="emoji"> Put 🏁 in front of every event</label>
+        <p class="hint">Put an emoji in front of every event title.</p>
+        <div class="radios">
+          <label class="check"><input type="radio" name="emoji" value="none" checked> None</label>
+          <label class="check"><input type="radio" name="emoji" value="flag"> 🏁</label>
+          <label class="check"><input type="radio" name="emoji" value="car"> 🏎️</label>
+        </div>
         <div class="row" style="margin-top:.7rem"><span>Calendar name</span><input type="text" id="name" placeholder="Motorsports"></div>
       </section>
     </div>
@@ -195,6 +204,8 @@ const OFFSET_UNIT_SECONDS = {d: 86400, h: 3600, m: 60};
 const MAX_ALARM_OFFSET_SECONDS = 7 * 86400;
 // Mirrors _MAX_ALARMS in src/motorcal/web.py.
 const MAX_ALARMS = 10;
+// Mirrors EmojiOption/_EMOJI_PREFIXES in src/motorcal/web.py.
+const EMOJI_PREFIXES = {none: "", flag: "\u{1F3C1} ", car: "\u{1F3CE}️ "};
 
 // --- url building ----------------------------------------------------------
 // Mirrors _parse_selection in src/motorcal/web.py: only ever emit a URL the
@@ -235,7 +246,7 @@ function buildURL(state) {
   if (state.sessions.length && state.sessions.length !== TYPES.length) {
     params.push(["sessions", state.sessions.join(",")]);
   }
-  if (state.emoji) params.push(["emoji", "true"]);
+  if (state.emoji !== "none") params.push(["emoji", state.emoji]);
   if (state.name.trim()) params.push(["name", state.name.trim()]);
 
   if (state.alarmMode === "silence") params.push(["alarms", ""]);
@@ -247,12 +258,13 @@ function buildURL(state) {
   for (const key of picked) {
     const own = state.per[key];
     if (!own) continue;
+    const keyTypes = TYPES_FOR[key] || TYPES;
     if (own.sessions && !own.sessions.length) empty.push(`${NAMES[key]} session type`);
-    if (own.sessions && own.sessions.length && own.sessions.length !== TYPES.length) {
+    if (own.sessions && own.sessions.length && own.sessions.length !== keyTypes.length) {
       params.push([`${key}.sessions`, own.sessions.join(",")]);
     }
     push(`${key}.alarms`, own.alarms || "");
-    for (const [type] of TYPES) push(`${key}.alarms_${type}`, own.byType[type] || "");
+    for (const [type] of keyTypes) push(`${key}.alarms_${type}`, own.byType[type] || "");
   }
 
   // Commas stay literal: they are legal in a query value and `sessions=race,qualifying`
@@ -272,6 +284,9 @@ function buildURL(state) {
 // --- plain english ---------------------------------------------------------
 const NAMES = Object.fromEntries(SERIES.map(s => [s.key, s.name]));
 const LABELS = Object.fromEntries(TYPES.map(([t, l]) => [t, l.toLowerCase()]));
+// A series never runs every session type (WEC has hyperpole, IndyCar doesn't),
+// so its per-series overrides only offer the types it actually has.
+const TYPES_FOR = Object.fromEntries(SERIES.map(s => [s.key, TYPES.filter(([t]) => s.sessions.includes(t))]));
 const UNITS = {d: ["day", "days"], h: ["hour", "hours"], m: ["minute", "minutes"]};
 
 function list(items) {
@@ -317,14 +332,14 @@ function sentence(state, picked) {
 
 // --- next event ------------------------------------------------------------
 // UPCOMING holds the next real session of each series/type pair, so the
-// earliest survivor of the feed's own filters is the feed's actual next event.
+// earliest survivor of the feed's own filters is the feed's actual next event
+// for that series.
 function starts(event) { return new Date(event.start || event.date + "T00:00:00"); }
 
-function nextEvent(built) {
-  const params = new Map(built.params);
+function nextEventFor(built, params, series) {
   const kept = UPCOMING.filter((event) => {
-    if (!built.picked.includes(event.series)) return false;
-    const sessions = params.get(`${event.series}.sessions`) ?? params.get("sessions");
+    if (event.series !== series) return false;
+    const sessions = params.get(`${series}.sessions`) ?? params.get("sessions");
     return sessions === undefined || sessions.split(",").includes(event.type);
   });
   if (!kept.length) return null;
@@ -335,12 +350,24 @@ function nextEvent(built) {
   // is what `_select` does server-side -- a URL override is not a way around it.
   let alarms = event.alarms;
   if (event.time_confirmed && event.type !== "testing" && event.type !== "unknown") {
-    for (const key of [`${event.series}.alarms_${event.type}`, `${event.series}.alarms`,
+    for (const key of [`${series}.alarms_${event.type}`, `${series}.alarms`,
                        `alarms_${event.type}`, "alarms"]) {
       if (params.has(key)) { alarms = params.get(key).split(",").filter(Boolean); break; }
     }
   }
   return {...event, alarms};
+}
+
+// One entry per selected series, soonest event first -- what's coming up next
+// across the whole feed, not just an alphabetical list of series. A series
+// with nothing upcoming has no start to sort by, so it sinks to the bottom.
+function nextEvents(built) {
+  const params = new Map(built.params);
+  const results = built.picked.map(series => ({series, event: nextEventFor(built, params, series)}));
+  return results.sort((a, b) => {
+    if (!a.event || !b.event) return (a.event ? 0 : 1) - (b.event ? 0 : 1);
+    return starts(a.event) - starts(b.event);
+  });
 }
 
 function whenText(event) {
@@ -354,28 +381,38 @@ function whenText(event) {
   return `${day}, ${time(start)} – ${time(new Date(start.getTime() + event.duration * 1000))}`;
 }
 
-function renderNext(built, emoji) {
-  const event = nextEvent(built);
-  const box = document.getElementById("next");
-  box.textContent = "";
+function eventCard(series, event, prefix) {
+  const card = make("div", {className: event ? "event" : "event none"});
+  card.append(make("div", {className: "series", textContent: NAMES[series]}));
   if (!event) {
-    box.className = "event none";
-    box.textContent = "Nothing upcoming matches these settings.";
-    return;
+    card.append(make("div", {textContent: "Nothing upcoming matches these settings."}));
+    return card;
   }
-  box.className = "event";
-  box.append(
-    make("div", {className: "title", textContent: (emoji ? "🏁 " : "") + event.title}),
+  card.append(
+    make("div", {className: "title", textContent: prefix + event.title}),
     make("div", {className: "when", textContent: whenText(event)}),
   );
-  if (event.location) box.append(make("div", {className: "where", textContent: event.location}));
-  box.append(make("div", {className: "alarm", textContent: event.alarms.length
+  if (event.location) card.append(make("div", {className: "where", textContent: event.location}));
+  card.append(make("div", {className: "alarm", textContent: event.alarms.length
     ? "Alert " + remindText(event.alarms) : "No alert"}));
+  return card;
+}
+
+function renderNext(built, emoji) {
+  const box = document.getElementById("next");
+  box.textContent = "";
+  const prefix = EMOJI_PREFIXES[emoji];
+  const results = nextEvents(built);
+  if (!results.length) {
+    box.append(make("div", {className: "event none", textContent: "Pick at least one series."}));
+    return;
+  }
+  for (const {series, event} of results) box.append(eventCard(series, event, prefix));
 }
 
 // --- state -----------------------------------------------------------------
 const state = {
-  series: [], sessions: TYPES.map(t => t[0]), emoji: false, name: "",
+  series: [], sessions: TYPES.map(t => t[0]), emoji: "none", name: "",
   alarmMode: "default", alarms: "", alarmsByType: {}, per: {},
 };
 
@@ -416,11 +453,12 @@ for (const [type, label] of TYPES) {
 }
 const per = {};
 for (const {key, name} of SERIES) {
+  const types = TYPES_FOR[key];
   const body = make("div", {className: "details-body"});
   const override = make("input", {type: "checkbox"});
   const sessionsWrap = make("div", {className: "grid", hidden: true});
   const boxes = {};
-  for (const [type, label] of TYPES) {
+  for (const [type, label] of types) {
     boxes[type] = checkbox(label, true, render);
     sessionsWrap.append(boxes[type]);
   }
@@ -432,7 +470,7 @@ for (const {key, name} of SERIES) {
 
   const byType = {};
   const nested = make("div", {className: "details-body"});
-  for (const [type, label] of TYPES) {
+  for (const [type, label] of types) {
     const {input, row} = textField(label, "inherit", render);
     byType[type] = input;
     nested.append(row);
@@ -441,11 +479,11 @@ for (const {key, name} of SERIES) {
 
   const mark = make("span", {className: "tag", textContent: ""});
   const block = make("details", {}, make("summary", {}, name, mark), body);
-  per[key] = {block, mark, override, boxes, alarms, byType};
+  per[key] = {block, mark, override, types, boxes, alarms, byType};
   document.getElementById("perSeries").append(block);
 }
 
-document.getElementById("emoji").addEventListener("change", render);
+for (const radio of document.querySelectorAll("[name=emoji]")) radio.addEventListener("change", render);
 document.getElementById("name").addEventListener("input", render);
 alarmsInput.addEventListener("input", render);
 for (const radio of document.querySelectorAll("[name=alarmMode]")) radio.addEventListener("change", render);
@@ -454,7 +492,7 @@ for (const radio of document.querySelectorAll("[name=alarmMode]")) radio.addEven
 function readState() {
   state.series = SERIES.filter(s => seriesBoxes[s.key].querySelector("input").checked).map(s => s.key);
   state.sessions = TYPES.filter(([t]) => sessionBoxes[t].querySelector("input").checked).map(([t]) => t);
-  state.emoji = document.getElementById("emoji").checked;
+  state.emoji = document.querySelector("[name=emoji]:checked").value;
   state.name = document.getElementById("name").value;
   state.alarmMode = document.querySelector("[name=alarmMode]:checked").value;
   state.alarms = alarmsInput.value;
@@ -464,10 +502,10 @@ function readState() {
     const p = per[key];
     state.per[key] = {
       sessions: p.override.checked
-        ? TYPES.filter(([t]) => p.boxes[t].querySelector("input").checked).map(([t]) => t)
+        ? p.types.filter(([t]) => p.boxes[t].querySelector("input").checked).map(([t]) => t)
         : null,
       alarms: p.alarms.value,
-      byType: Object.fromEntries(TYPES.map(([t]) => [t, p.byType[t].value])),
+      byType: Object.fromEntries(p.types.map(([t]) => [t, p.byType[t].value])),
     };
   }
 }
@@ -530,7 +568,7 @@ render();
   const keys = SERIES.map(s => s.key);
   const [first, second] = keys;
   const base = {
-    series: keys, sessions: TYPES.map(t => t[0]), emoji: false, name: "",
+    series: keys, sessions: TYPES.map(t => t[0]), emoji: "none", name: "",
     alarmMode: "default", alarms: "", alarmsByType: {}, per: {},
   };
   const at = (over) => buildURL({...base, ...over}).url.slice(location.origin.length);
@@ -580,27 +618,52 @@ render();
     start: "2999-01-01T12:00:00+00:00", date: null, duration: 5400,
     time_confirmed: true, alarms: ["-15m"],
   };
-  const preview = (over) => {
+  const preview = (series, over) => {
     const saved = UPCOMING.slice();
     UPCOMING.length = 0;
     UPCOMING.push(sample, {...sample, type: "practice", alarms: []});
-    const got = nextEvent(buildURL({...base, ...over}));
+    const built = buildURL({...base, ...over});
+    const got = nextEventFor(built, new Map(built.params), series);
     UPCOMING.length = 0;
     UPCOMING.push(...saved);
     return got;
   };
   const previews = [
-    [preview({}).alarms.join(), "-15m", "no alarm params = the series' own alarms"],
-    [preview({alarmMode: "silence"}).alarms.join(), "", "alarms= silences the preview too"],
-    [preview({alarmMode: "set", alarmsByType: {race: "-1h"}}).alarms.join(), "-1h", "alarms_race wins"],
-    [preview({series: [first], per: {[first]: {sessions: null, alarms: "-2h", byType: {}}}}).alarms.join(),
+    [preview(first, {}).alarms.join(), "-15m", "no alarm params = the series' own alarms"],
+    [preview(first, {alarmMode: "silence"}).alarms.join(), "", "alarms= silences the preview too"],
+    [preview(first, {alarmMode: "set", alarmsByType: {race: "-1h"}}).alarms.join(), "-1h", "alarms_race wins"],
+    [preview(first, {series: [first], per: {[first]: {sessions: null, alarms: "-2h", byType: {}}}}).alarms.join(),
       "-2h", "a per-series override beats the series default"],
-    [preview({sessions: ["practice"]}).type, "practice", "the preview obeys the session filter"],
-    [String(preview({series: [second]})), "null", "nothing matching = no preview"],
+    [preview(first, {sessions: ["practice"]}).type, "practice", "the preview obeys the session filter"],
+    [String(preview(second, {series: [second]})), "null", "nothing matching for this series = no preview"],
   ];
   for (const [got, want, what] of previews) {
     if (got !== want) { ok = false; console.error(`self-check: ${what}\n  got  ${got}\n  want ${want}`); }
   }
+
+  // "Next in this feed" must show one card per selected series, soonest
+  // first -- not series order, and not just the single earliest overall.
+  // `second` is sooner than `first` here, and a third series with nothing
+  // upcoming has to sink to the bottom rather than sort by missing data.
+  if (keys.length >= 3) {
+    const third = keys[2];
+    const saved = UPCOMING.slice();
+    UPCOMING.length = 0;
+    UPCOMING.push(
+      sample,
+      {...sample, series: second, title: "Sooner Series Race",
+        start: "2998-01-01T12:00:00+00:00"},
+    );
+    const built = buildURL({...base, series: [first, second, third]});
+    const results = nextEvents(built);
+    UPCOMING.length = 0;
+    UPCOMING.push(...saved);
+    if (results.length !== 3 || results[0].series !== second || results[1].series !== first
+        || results[2].series !== third || results[2].event !== null) {
+      ok = false; console.error("self-check: nextEvents should sort by soonest event, empty series last");
+    }
+  }
+
   console.log(ok ? "self-check ok" : "self-check FAILED");
 })();
 </script>

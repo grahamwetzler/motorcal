@@ -211,10 +211,23 @@ def test_a_malformed_alarm_offset_is_rejected():
 # ------------------------------------------------------------------ emoji, name
 
 
-def test_emoji_prefixes_every_title():
-    body = _get(query="emoji=true").content
+def test_emoji_flag_prefixes_every_title():
+    body = _get(query="emoji=flag").content
 
     assert "SUMMARY:\N{CHEQUERED FLAG} WEC: wec-race".encode() in body
+
+
+def test_emoji_car_prefixes_every_title():
+    body = _get(query="emoji=car").content
+
+    assert "SUMMARY:\N{RACING CAR} WEC: wec-race".encode() in body
+
+
+def test_emoji_true_and_false_are_kept_as_aliases():
+    # Predates the choice of emoji -- feeds already subscribed with these must
+    # keep behaving exactly as they always have.
+    assert "SUMMARY:\N{CHEQUERED FLAG} WEC: wec-race".encode() in _get(query="emoji=true").content
+    assert "\N{CHEQUERED FLAG}".encode() not in _get(query="emoji=false").content
 
 
 def test_emoji_defaults_to_off():
@@ -225,7 +238,7 @@ def test_emoji_cannot_be_set_for_one_series():
     assert _get(query="wec.emoji=true").status_code == 400
 
 
-def test_a_non_boolean_emoji_value_is_rejected():
+def test_an_unknown_emoji_value_is_rejected():
     assert _get(query="emoji=maybe").status_code == 400
 
 

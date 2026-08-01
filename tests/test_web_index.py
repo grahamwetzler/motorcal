@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-from tests.conftest import make_config, make_series
+from tests.conftest import make_config, make_event, make_series
 
 import motorcal.web
 from motorcal.models import EventStatus, PublishedEvent, SessionType
@@ -69,7 +69,33 @@ def test_index_offers_exactly_the_configured_series():
 
     series = _injected(_client(config).get("/").text, "SERIES")
 
-    assert series == [{"key": "wec", "name": "WEC"}, {"key": "f1", "name": "Formula 1"}]
+    assert series == [
+        {"key": "wec", "name": "WEC", "sessions": []},
+        {"key": "f1", "name": "Formula 1", "sessions": []},
+    ]
+
+
+def test_index_offers_only_the_session_types_a_series_actually_runs():
+    # WEC runs hyperpole; IndyCar in this config never does -- the per-series
+    # override on the page must not offer a session type a series never has.
+    config = make_config(series={
+        "wec": make_series(name="WEC", events=[
+            make_event("wec-race", type="race"),
+            make_event("wec-hyperpole", type="hyperpole"),
+        ]),
+        "indycar": make_series(name="IndyCar", events=[
+            make_event("indy-race", type="race"),
+            make_event("indy-quali", type="qualifying"),
+        ]),
+    })
+
+    series = _injected(_client(config).get("/").text, "SERIES")
+
+    by_key = {entry["key"]: entry["sessions"] for entry in series}
+    assert by_key == {
+        "wec": ["hyperpole", "race"],
+        "indycar": ["qualifying", "race"],
+    }
 
 
 def test_both_placeholders_are_substituted():
@@ -86,7 +112,9 @@ def test_a_series_name_cannot_break_out_of_the_script_block():
     body = _client(config).get("/").text
 
     assert "</script><b>pwned" not in body
-    assert _injected(body, "SERIES") == [{"key": "wec", "name": "</script><b>pwned"}]
+    assert _injected(body, "SERIES") == [
+        {"key": "wec", "name": "</script><b>pwned", "sessions": []}
+    ]
 
 
 # ------------------------------------------------------------- the example events

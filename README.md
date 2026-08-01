@@ -69,7 +69,7 @@ is writing.
 | Parameter | Example | Applies to |
 | --- | --- | --- |
 | `series` | `series=f1,wec` | which series to include; leave off for all of them |
-| `emoji` | `emoji=true` | whole feed — puts 🏁 in front of every title |
+| `emoji` | `emoji=flag` | whole feed — puts an emoji in front of every title: `flag` (🏁), `car` (🏎️), or `none` (default) |
 | `name` | `name=Racing` | whole feed — the calendar's display name |
 | `sessions` | `sessions=race,qualifying` | whole feed, or one series: `f1.sessions=race` |
 | `alarms` | `alarms=-1d,-30m` | whole feed, or one series: `f1.alarms=-1h` |
@@ -94,7 +94,7 @@ So a feed of nothing but F1 and WEC races, flagged, reminding you a day and ten
 minutes ahead, with F1 races an hour ahead instead:
 
 ```
-/events.ics?series=f1,wec&sessions=race&emoji=true&alarms=-1d,-10m&f1.alarms=-1h
+/events.ics?series=f1,wec&sessions=race&emoji=flag&alarms=-1d,-10m&f1.alarms=-1h
 ```
 
 A malformed parameter — an unknown name, an unknown series, a repeated key, a
