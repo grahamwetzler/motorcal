@@ -59,6 +59,9 @@ def test_index_is_html_that_revalidates():
     assert response.headers["content-type"].startswith("text/html")
     # The page carries live event times, so it must not sit in a browser cache.
     assert response.headers["cache-control"] == "public, no-cache"
+    assert '<meta property="og:title" content="Motorcal — your customized motorsports calendar">' in response.text
+    assert '<meta property="og:description" content="Build a motorsports calendar that follows the racing series and sessions you care about.">' in response.text
+    assert '<meta name="twitter:card" content="summary">' in response.text
 
 
 def test_index_offers_exactly_the_configured_series():
