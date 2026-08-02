@@ -26,9 +26,8 @@ def test_rebuild_publishes_every_configured_event():
     config = _config(wec_events=[make_event("r1", start="2026-04-19T13:00:00+00:00")])
     state = make_state()
 
-    published, report = rebuild_publication(config, state, now=NOW)
+    published = rebuild_publication(config, state, now=NOW)
 
-    assert report.events_published == 1
     assert _find(published, f"local-r1@{UID_DOMAIN}") is not None
 
 
@@ -38,14 +37,14 @@ def test_rebuild_groups_events_by_series():
         imsa_events=[make_event("r2", start="2026-04-19T13:00:00+00:00")],
     )
 
-    published, _ = rebuild_publication(config, make_state(), now=NOW)
+    published = rebuild_publication(config, make_state(), now=NOW)
 
     assert len(published["wec"]) == 1
     assert len(published["imsa"]) == 1
 
 
 def test_a_series_with_no_events_yields_an_empty_list_not_a_missing_key():
-    published, _ = rebuild_publication(_config(), make_state(), now=NOW)
+    published = rebuild_publication(_config(), make_state(), now=NOW)
 
     assert published["wec"] == []
     assert published["imsa"] == []
@@ -55,7 +54,7 @@ def test_rebuild_records_the_version_ledger():
     config = _config(wec_events=[make_event("r1", start="2026-04-19T13:00:00+00:00")])
     state = make_state()
 
-    published, _ = rebuild_publication(config, state, now=NOW)
+    published = rebuild_publication(config, state, now=NOW)
 
     built = published["wec"][0]
     assert state.versions[built.uid] == VersionState(
@@ -64,22 +63,12 @@ def test_rebuild_records_the_version_ledger():
     )
 
 
-def test_rebuild_counts_cancelled_events():
-    config = _config(wec_events=[
-        make_event("r1", start="2026-04-19T13:00:00+00:00", status="CANCELLED")
-    ])
-
-    _, report = rebuild_publication(config, make_state(), now=NOW)
-
-    assert report.events_cancelled == 1
-
-
 def test_rebuild_is_idempotent_for_unchanged_input():
     config = _config(wec_events=[make_event("r1", start="2026-04-19T13:00:00+00:00")])
     state = make_state()
-    first, _ = rebuild_publication(config, state, now=NOW)
+    first = rebuild_publication(config, state, now=NOW)
 
-    second, _ = rebuild_publication(config, state, now=datetime(2026, 6, 1, tzinfo=timezone.utc))
+    second = rebuild_publication(config, state, now=datetime(2026, 6, 1, tzinfo=timezone.utc))
 
     assert second["wec"][0].sequence == first["wec"][0].sequence
     assert second["wec"][0].dtstamp == first["wec"][0].dtstamp
@@ -91,11 +80,10 @@ def test_a_long_past_session_drops_out_of_the_feed_and_the_ledger():
     rebuild_publication(config, state, now=NOW)
 
     # >180 days (historical_days) after the event
-    published, report = rebuild_publication(
+    published = rebuild_publication(
         config, state, now=datetime(2026, 8, 1, tzinfo=timezone.utc)
     )
 
-    assert report.events_pruned == 1
     assert published["wec"] == []
     assert state.versions == {}
     # The data directory is never touched -- this process only reads it.
@@ -110,20 +98,18 @@ def test_a_long_cancelled_event_is_pruned_on_the_shorter_window():
     rebuild_publication(config, state, now=datetime(2025, 12, 1, tzinfo=timezone.utc))
 
     # >90 days (cancelled_after_event_days), but < the 180-day historical window
-    published, report = rebuild_publication(
+    published = rebuild_publication(
         config, state, now=datetime(2026, 4, 15, tzinfo=timezone.utc)
     )
 
-    assert report.events_pruned == 1
     assert published["wec"] == []
 
 
 def test_a_future_event_is_never_pruned():
     config = _config(wec_events=[make_event("r1", start="2099-01-01T13:00:00+00:00")])
 
-    published, report = rebuild_publication(config, make_state(), now=NOW)
+    published = rebuild_publication(config, make_state(), now=NOW)
 
-    assert report.events_pruned == 0
     assert len(published["wec"]) == 1
 
 
@@ -135,7 +121,7 @@ def test_pruning_one_series_leaves_another_untouched():
     state = make_state()
     rebuild_publication(config, state, now=NOW)
 
-    published, _ = rebuild_publication(config, state, now=datetime(2026, 8, 1, tzinfo=timezone.utc))
+    published = rebuild_publication(config, state, now=datetime(2026, 8, 1, tzinfo=timezone.utc))
 
     assert published["wec"] == []
     assert len(published["imsa"]) == 1

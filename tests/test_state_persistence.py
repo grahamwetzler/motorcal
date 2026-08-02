@@ -84,11 +84,11 @@ def test_sequence_and_dtstamp_survive_a_save_load_cycle(tmp_path):
     path = tmp_path / "state.yaml"
     config = make_config(series={"wec": make_series(events=[make_event("wec-2026-imola-race", start="2026-04-19T13:00:00+00:00")])})
     state = make_state()
-    first, _ = rebuild_publication(config, state, now=NOW)
+    first = rebuild_publication(config, state, now=NOW)
     state_module.save(path, state)
 
     reloaded = state_module.load(path)
-    second, _ = rebuild_publication(config, reloaded, now=datetime(2026, 6, 1, tzinfo=timezone.utc))
+    second = rebuild_publication(config, reloaded, now=datetime(2026, 6, 1, tzinfo=timezone.utc))
 
     assert second["wec"][0].sequence == first["wec"][0].sequence
     assert second["wec"][0].dtstamp == first["wec"][0].dtstamp
@@ -119,10 +119,10 @@ def test_an_all_day_event_keeps_its_version_across_a_reload(tmp_path):
     path = tmp_path / "state.yaml"
     config = make_config(series={"wec": make_series(events=[make_event("mine")])})
     state = make_state()
-    first, _ = rebuild_publication(config, state, now=NOW)
+    first = rebuild_publication(config, state, now=NOW)
     state_module.save(path, state)
 
-    second, _ = rebuild_publication(
+    second = rebuild_publication(
         config, state_module.load(path), now=datetime(2026, 6, 1, tzinfo=timezone.utc)
     )
 

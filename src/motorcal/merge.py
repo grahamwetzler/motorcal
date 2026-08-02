@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 from motorcal.config import (
@@ -107,7 +106,7 @@ def build_description(*, event: EventConfig, session: SessionConfig) -> str:
     its own LOCATION field.
     """
     lines: list[str] = []
-    round_number = event.round_of(session)
+    round_number = session.round if session.round is not None else event.round
     if round_number is not None:
         lines.append(f"Round: {round_number}")
 
@@ -192,16 +191,9 @@ def build_published_event(
     )
 
 
-@dataclass
-class RebuildReport:
-    events_published: int
-    events_cancelled: int
-    events_pruned: int
-
-
 def rebuild_publication(
     config: Config, state: State, *, now: datetime
-) -> tuple[dict[str, list[PublishedEvent]], RebuildReport]:
+) -> dict[str, list[PublishedEvent]]:
     """Rebuild every published event from the data directory and the version ledger.
 
     Mutates `state.versions` but writes nothing to disk, and never touches `config`:
@@ -220,7 +212,7 @@ def rebuild_publication(
             )
             published[series].append(built)
 
-    events_pruned = _prune_expired(config, published, now=now)
+    _prune_expired(config, published, now=now)
 
     for events in published.values():
         for built in events:
@@ -237,21 +229,14 @@ def rebuild_publication(
     live_uids = {built.uid for events in published.values() for built in events}
     state.versions = {uid: v for uid, v in state.versions.items() if uid in live_uids}
 
-    all_events = [e for events in published.values() for e in events]
-    report = RebuildReport(
-        events_published=len(all_events),
-        events_cancelled=sum(1 for e in all_events if e.status == EventStatus.CANCELLED),
-        events_pruned=events_pruned,
-    )
-    return published, report
+    return published
 
 
 def _prune_expired(
     config: Config, published: dict[str, list[PublishedEvent]], *, now: datetime
-) -> int:
-    """Drop sessions past their retention window from the feed. Returns how many."""
+) -> None:
+    """Drop sessions past their retention window from the feed."""
     retention: RetentionConfig = config.globals.retention
-    pruned = 0
 
     for series, events in published.items():
         kept = []
@@ -267,8 +252,4 @@ def _prune_expired(
             # Still current/future, or inside the retention window: keep it.
             if effective_end >= now or now <= effective_end + timedelta(days=days):
                 kept.append(built)
-            else:
-                pruned += 1
         published[series] = kept
-
-    return pruned

@@ -75,7 +75,7 @@ def check_and_reload_config(
         return rejected(str(exc))
 
     try:
-        published, _report = rebuild_publication(new_config, state, now=now)
+        published = rebuild_publication(new_config, state, now=now)
     except Exception as exc:  # noqa: BLE001 -- any rebuild failure must be rejected, not crash the job
         return rejected(str(exc))
 

@@ -247,9 +247,6 @@ class EventConfig(StrictModel):
     round: int | None = None
     sessions: list[SessionConfig] = []
 
-    def round_of(self, session: SessionConfig) -> int | None:
-        return session.round if session.round is not None else self.round
-
     @model_validator(mode="after")
     def validate_has_sessions(self) -> "EventConfig":
         if not self.sessions:
@@ -367,7 +364,3 @@ def load_config(config_dir: Path, *, uid_domain: str) -> Config:
             owner[uid] = key
 
     return Config(globals=globals_, series=series)
-
-
-def series_path(config_dir: Path, series: str) -> Path:
-    return Path(config_dir) / f"{series}.yaml"

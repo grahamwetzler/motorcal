@@ -54,7 +54,7 @@ def _cmd_serve(args: argparse.Namespace) -> int:
         return 1
 
     now = datetime.now(timezone.utc)
-    published, _report = rebuild_publication(config, state, now=now)
+    published = rebuild_publication(config, state, now=now)
     state_module.save(state_path, state)
 
     # app.state is the single source of truth for everything the HTTP layer and the
