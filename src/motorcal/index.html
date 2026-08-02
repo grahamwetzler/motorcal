@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>motorcal — feed builder</title>
+<title>motorcal — your motorsports calendar</title>
 <style>
   :root {
     --bg: #f4f5f7; --panel: #ffffff; --fg: #16191d; --muted: #626d79; --line: #e2e6eb;
@@ -139,30 +139,30 @@
   </a>
   <header>
     <h1>motor<b>cal</b></h1>
-    <p>Build your custom motorsports calendar subscription.</p>
+    <p>Choose the races you follow, then subscribe from your calendar app.</p>
   </header>
 
   <div class="cols">
     <div>
       <section>
         <h2>Series</h2>
-        <p class="hint">All of them selected gives you one combined calendar.</p>
+        <p class="hint">Choose one or more series. Select all for one combined calendar.</p>
         <div class="chips" id="series"></div>
       </section>
 
       <section>
         <h2>Sessions</h2>
-        <p class="hint">Which parts of a race weekend to keep.</p>
+        <p class="hint">Choose the race-weekend sessions to include.</p>
         <div class="grid" id="sessions"></div>
       </section>
 
       <section>
         <h2>Reminders</h2>
-        <p class="hint">Offsets before the start: <code>-1d</code>, <code>-1h</code>, <code>-30m</code>, or <code>0</code> for on time.</p>
+        <p class="hint">Use the series defaults or set your own. Examples: <code>-1d</code>, <code>-1h</code>, <code>-30m</code>, or <code>0</code> at the start.</p>
         <div class="radios">
-          <label class="check"><input type="radio" name="alarmMode" value="default" checked> Series defaults</label>
-          <label class="check"><input type="radio" name="alarmMode" value="set"> Set my own</label>
-          <label class="check"><input type="radio" name="alarmMode" value="silence"> None</label>
+          <label class="check"><input type="radio" name="alarmMode" value="default" checked> Use series defaults</label>
+          <label class="check"><input type="radio" name="alarmMode" value="set"> Set custom reminders</label>
+          <label class="check"><input type="radio" name="alarmMode" value="silence"> No reminders</label>
         </div>
         <div id="alarmFields" hidden style="margin-top:.9rem">
           <div class="row"><span>Every session</span><input type="text" id="alarms" placeholder="-1d,-10m"></div>
@@ -171,20 +171,20 @@
       </section>
 
       <section>
-        <h2>Per-series overrides</h2>
-        <p class="hint">Only when one series needs something different from the rest.</p>
+        <h2>Series-specific options</h2>
+        <p class="hint">Change sessions or reminders for one series.</p>
         <div id="perSeries"></div>
       </section>
 
       <section>
-        <h2>Appearance</h2>
-        <p class="hint">Put an emoji in front of every event title.</p>
+        <h2>Event titles</h2>
+        <p class="hint">Add an emoji to the start of each event title.</p>
         <div class="radios">
           <label class="check"><input type="radio" name="emoji" value="none" checked> None</label>
           <label class="check"><input type="radio" name="emoji" value="flag"> 🏁</label>
           <label class="check"><input type="radio" name="emoji" value="car"> 🏎️</label>
         </div>
-        <div class="row" style="margin-top:.7rem"><span>Calendar name</span><input type="text" id="name" placeholder="Motorsports"></div>
+        <div class="row" style="margin-top:.7rem"><span>Calendar name (optional)</span><input type="text" id="name" placeholder="Motorsports"></div>
       </section>
     </div>
 
@@ -193,14 +193,14 @@
         <p class="sentence" id="sentence"></p>
         <code id="url"></code>
         <div class="actions">
-          <button type="button" class="primary" id="copy">Copy URL</button>
+          <button type="button" class="primary" id="copy">Copy link</button>
           <a class="btn" id="subscribe" href="#">Subscribe</a>
         </div>
-        <p class="foot">Nothing is stored — the URL <em>is</em> the setting.</p>
+        <p class="foot">Your settings live in this link — nothing is stored.</p>
       </div>
 
       <div class="result preview">
-        <h2>Next in this feed</h2>
+        <h2>Coming up next</h2>
         <div id="next"></div>
       </div>
     </aside>
@@ -505,7 +505,7 @@ for (const {key, name} of SERIES) {
     sessionsWrap.append(boxes[type]);
   }
   override.addEventListener("change", () => { sessionsWrap.hidden = !override.checked; render(); });
-  body.append(make("label", {className: "check"}, override, "Different sessions for this series"), sessionsWrap);
+  body.append(make("label", {className: "check"}, override, "Use different sessions for this series"), sessionsWrap);
 
   const {input: alarms, row} = textField("Reminders", "inherit", render);
   body.append(row);
@@ -517,7 +517,7 @@ for (const {key, name} of SERIES) {
     byType[type] = input;
     nested.append(row);
   }
-  body.append(make("details", {}, make("summary", {}, "Per session type"), nested));
+  body.append(make("details", {}, make("summary", {}, "By session type"), nested));
 
   const mark = make("span", {className: "tag", textContent: ""});
   const block = make("details", {}, make("summary", {}, name, mark), body);
@@ -598,7 +598,7 @@ document.getElementById("copy").addEventListener("click", async (event) => {
   await navigator.clipboard.writeText(buildURL(state).url);
   const button = event.currentTarget;
   button.textContent = "Copied";
-  setTimeout(() => { button.textContent = "Copy URL"; }, 1200);
+  setTimeout(() => { button.textContent = "Copy link"; }, 1200);
 });
 
 render();
