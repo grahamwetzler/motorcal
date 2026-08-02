@@ -4,624 +4,624 @@ durations:
   race: 90m
 alerts:
   race:
-  - -15m
+    - -15m
   qualifying:
-  - '0'
+    - '0'
 events:
-- name: Australian Grand Prix
-  location: Albert Park Circuit, Australia
-  round: 1
-  sessions:
-  - uid: f1-2026-australian-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-03-06T01:30:00+00:00'
-    duration: 90m
-    status: CONFIRMED
-  - uid: f1-2026-australian-grand-prix-practice-2
-    label: Practice 2
-    type: practice
-    start: '2026-03-06T05:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-australian-grand-prix-practice-3
-    label: Practice 3
-    type: practice
-    start: '2026-03-07T01:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-australian-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-03-07T05:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-australian-grand-prix-race
-    type: race
-    start: '2026-03-08T04:00:00+00:00'
-    status: CONFIRMED
-- name: Chinese Grand Prix
-  location: Shanghai International Circuit, China
-  round: 2
-  sessions:
-  - uid: f1-2026-chinese-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-03-13T03:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-chinese-grand-prix-sprint-qualifying
-    label: Sprint Qualifying
-    type: sprint_qualifying
-    start: '2026-03-13T07:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-chinese-grand-prix-sprint
-    label: Sprint
-    type: sprint
-    start: '2026-03-14T03:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-chinese-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-03-14T07:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-chinese-grand-prix-race
-    type: race
-    start: '2026-03-15T07:00:00+00:00'
-    status: CONFIRMED
-- name: Japanese Grand Prix
-  location: Suzuka International Racing Course, Japan
-  round: 3
-  sessions:
-  - uid: f1-2026-japanese-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-03-27T02:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-japanese-grand-prix-practice-2
-    label: Practice 2
-    type: practice
-    start: '2026-03-27T06:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-japanese-grand-prix-practice-3
-    label: Practice 3
-    type: practice
-    start: '2026-03-28T02:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-japanese-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-03-28T06:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-japanese-grand-prix-race
-    type: race
-    start: '2026-03-29T05:00:00+00:00'
-    status: CONFIRMED
-- name: Miami Grand Prix
-  location: Miami International Autodrome, United States
-  round: 4
-  sessions:
-  - uid: f1-2026-miami-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-05-01T16:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-miami-grand-prix-sprint-qualifying
-    label: Sprint Qualifying
-    type: sprint_qualifying
-    start: '2026-05-01T20:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-miami-grand-prix-sprint
-    label: Sprint
-    type: sprint
-    start: '2026-05-02T16:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-miami-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-05-02T20:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-miami-grand-prix-race
-    type: race
-    start: '2026-05-03T17:00:00+00:00'
-    status: CONFIRMED
-- name: Canadian Grand Prix
-  location: Circuit Gilles Villeneuve, Canada
-  round: 5
-  sessions:
-  - uid: f1-2026-canadian-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-05-22T16:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-canadian-grand-prix-sprint-qualifying
-    label: Sprint Qualifying
-    type: sprint_qualifying
-    start: '2026-05-22T20:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-canadian-grand-prix-sprint
-    label: Sprint
-    type: sprint
-    start: '2026-05-23T16:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-canadian-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-05-23T20:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-canadian-grand-prix-race
-    type: race
-    start: '2026-05-24T20:00:00+00:00'
-    status: CONFIRMED
-- name: Monaco Grand Prix
-  location: Circuit de Monaco, Monaco
-  round: 6
-  sessions:
-  - uid: f1-2026-monaco-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-06-05T11:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-monaco-grand-prix-practice-2
-    label: Practice 2
-    type: practice
-    start: '2026-06-05T15:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-monaco-grand-prix-practice-3
-    label: Practice 3
-    type: practice
-    start: '2026-06-06T10:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-monaco-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-06-06T14:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-monaco-grand-prix-race
-    type: race
-    start: '2026-06-07T13:00:00+00:00'
-    status: CONFIRMED
-- name: Barcelona-Catalunya Grand Prix
-  location: Circuit de Barcelona-Catalunya, Spain
-  round: 7
-  sessions:
-  - uid: f1-2026-barcelona-catalunya-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-06-12T11:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-barcelona-catalunya-grand-prix-practice-2
-    label: Practice 2
-    type: practice
-    start: '2026-06-12T15:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-barcelona-catalunya-grand-prix-practice-3
-    label: Practice 3
-    type: practice
-    start: '2026-06-13T10:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-barcelona-catalunya-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-06-13T14:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-barcelona-catalunya-grand-prix-race
-    type: race
-    start: '2026-06-14T13:00:00+00:00'
-    status: CONFIRMED
-- name: Austrian Grand Prix
-  location: Red Bull Ring, Austria
-  round: 8
-  sessions:
-  - uid: f1-2026-austrian-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-06-26T11:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-austrian-grand-prix-practice-2
-    label: Practice 2
-    type: practice
-    start: '2026-06-26T15:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-austrian-grand-prix-practice-3
-    label: Practice 3
-    type: practice
-    start: '2026-06-27T10:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-austrian-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-06-27T14:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-austrian-grand-prix-race
-    type: race
-    start: '2026-06-28T13:00:00+00:00'
-    status: CONFIRMED
-- name: British Grand Prix
-  location: Silverstone Circuit, United Kingdom
-  round: 9
-  sessions:
-  - uid: f1-2026-british-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-07-03T11:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-british-grand-prix-sprint-qualifying
-    label: Sprint Qualifying
-    type: sprint_qualifying
-    start: '2026-07-03T15:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-british-grand-prix-sprint
-    label: Sprint
-    type: sprint
-    start: '2026-07-04T11:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-british-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-07-04T15:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-british-grand-prix-race
-    type: race
-    start: '2026-07-05T14:00:00+00:00'
-    status: CONFIRMED
-- name: Belgian Grand Prix
-  location: Circuit de Spa-Francorchamps, Belgium
-  round: 10
-  sessions:
-  - uid: f1-2026-belgian-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-07-17T11:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-belgian-grand-prix-practice-2
-    label: Practice 2
-    type: practice
-    start: '2026-07-17T15:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-belgian-grand-prix-practice-3
-    label: Practice 3
-    type: practice
-    start: '2026-07-18T10:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-belgian-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-07-18T14:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-belgian-grand-prix-race
-    type: race
-    start: '2026-07-19T13:00:00+00:00'
-    status: CONFIRMED
-- name: Hungarian Grand Prix
-  location: Hungaroring, Hungary
-  round: 11
-  sessions:
-  - uid: f1-2026-hungarian-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-07-24T11:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-hungarian-grand-prix-practice-2
-    label: Practice 2
-    type: practice
-    start: '2026-07-24T15:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-hungarian-grand-prix-practice-3
-    label: Practice 3
-    type: practice
-    start: '2026-07-25T10:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-hungarian-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-07-25T14:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-hungarian-grand-prix-race
-    type: race
-    start: '2026-07-26T13:00:00+00:00'
-    status: CONFIRMED
-- name: Dutch Grand Prix
-  location: Circuit Zandvoort, The Netherlands
-  round: 12
-  sessions:
-  - uid: f1-2026-dutch-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-08-21T10:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-dutch-grand-prix-sprint-qualifying
-    label: Sprint Qualifying
-    type: sprint_qualifying
-    start: '2026-08-21T14:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-dutch-grand-prix-sprint
-    label: Sprint
-    type: sprint
-    start: '2026-08-22T10:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-dutch-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-08-22T14:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-dutch-grand-prix-race
-    type: race
-    start: '2026-08-23T13:00:00+00:00'
-    status: CONFIRMED
-- name: Italian Grand Prix
-  location: Monza Circuit, Italy
-  round: 13
-  sessions:
-  - uid: f1-2026-italian-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-09-04T10:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-italian-grand-prix-practice-2
-    label: Practice 2
-    type: practice
-    start: '2026-09-04T14:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-italian-grand-prix-practice-3
-    label: Practice 3
-    type: practice
-    start: '2026-09-05T10:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-italian-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-09-05T14:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-italian-grand-prix-race
-    type: race
-    start: '2026-09-06T13:00:00+00:00'
-    status: CONFIRMED
-- name: Spanish Grand Prix
-  location: Madring, Spain
-  round: 14
-  sessions:
-  - uid: f1-2026-spanish-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-09-11T11:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-spanish-grand-prix-practice-2
-    label: Practice 2
-    type: practice
-    start: '2026-09-11T15:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-spanish-grand-prix-practice-3
-    label: Practice 3
-    type: practice
-    start: '2026-09-12T10:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-spanish-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-09-12T14:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-spanish-grand-prix-race
-    type: race
-    start: '2026-09-13T13:00:00+00:00'
-    status: CONFIRMED
-- name: Azerbaijan Grand Prix
-  location: Baku City Circuit, Azerbaijan
-  round: 15
-  sessions:
-  - uid: f1-2026-azerbaijan-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-09-24T08:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-azerbaijan-grand-prix-practice-2
-    label: Practice 2
-    type: practice
-    start: '2026-09-24T12:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-azerbaijan-grand-prix-practice-3
-    label: Practice 3
-    type: practice
-    start: '2026-09-25T08:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-azerbaijan-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-09-25T12:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-azerbaijan-grand-prix-race
-    type: race
-    start: '2026-09-26T11:00:00+00:00'
-    status: CONFIRMED
-- name: Singapore Grand Prix
-  location: Marina Bay Street Circuit, Singapore
-  round: 16
-  sessions:
-  - uid: f1-2026-singapore-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-10-09T08:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-singapore-grand-prix-sprint-qualifying
-    label: Sprint Qualifying
-    type: sprint_qualifying
-    start: '2026-10-09T12:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-singapore-grand-prix-sprint
-    label: Sprint
-    type: sprint
-    start: '2026-10-10T09:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-singapore-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-10-10T13:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-singapore-grand-prix-race
-    type: race
-    start: '2026-10-11T12:00:00+00:00'
-    status: CONFIRMED
-- name: United States Grand Prix
-  location: Circuit of the Americas, United States
-  round: 17
-  sessions:
-  - uid: f1-2026-united-states-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-10-23T17:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-united-states-grand-prix-practice-2
-    label: Practice 2
-    type: practice
-    start: '2026-10-23T21:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-united-states-grand-prix-practice-3
-    label: Practice 3
-    type: practice
-    start: '2026-10-24T17:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-united-states-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-10-24T21:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-united-states-grand-prix-race
-    type: race
-    start: '2026-10-25T20:00:00+00:00'
-    status: CONFIRMED
-- name: Mexico City Grand Prix
-  location: "Aut\xF3dromo Hermanos Rodr\xEDguez, Mexico"
-  round: 18
-  sessions:
-  - uid: f1-2026-mexico-city-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-10-30T18:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-mexico-city-grand-prix-practice-2
-    label: Practice 2
-    type: practice
-    start: '2026-10-30T22:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-mexico-city-grand-prix-practice-3
-    label: Practice 3
-    type: practice
-    start: '2026-10-31T17:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-mexico-city-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-10-31T21:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-mexico-city-grand-prix-race
-    type: race
-    start: '2026-11-01T20:00:00+00:00'
-    status: CONFIRMED
-- name: "S\xE3o Paulo Grand Prix"
-  location: Interlagos Circuit, Brazil
-  round: 19
-  sessions:
-  - uid: f1-2026-s-o-paulo-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-11-06T15:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-s-o-paulo-grand-prix-practice-2
-    label: Practice 2
-    type: practice
-    start: '2026-11-06T19:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-s-o-paulo-grand-prix-practice-3
-    label: Practice 3
-    type: practice
-    start: '2026-11-07T14:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-s-o-paulo-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-11-07T18:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-s-o-paulo-grand-prix-race
-    type: race
-    start: '2026-11-08T17:00:00+00:00'
-    status: CONFIRMED
-- name: Las Vegas Grand Prix
-  location: Las Vegas Strip Circuit, United States
-  round: 20
-  sessions:
-  - uid: f1-2026-las-vegas-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-11-20T00:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-las-vegas-grand-prix-practice-2
-    label: Practice 2
-    type: practice
-    start: '2026-11-20T04:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-las-vegas-grand-prix-practice-3
-    label: Practice 3
-    type: practice
-    start: '2026-11-21T00:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-las-vegas-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-11-21T04:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-las-vegas-grand-prix-race
-    type: race
-    start: '2026-11-22T04:00:00+00:00'
-    status: CONFIRMED
-- name: Qatar Grand Prix
-  location: Lusail International Circuit, Qatar
-  round: 21
-  sessions:
-  - uid: f1-2026-qatar-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-11-27T13:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-qatar-grand-prix-practice-2
-    label: Practice 2
-    type: practice
-    start: '2026-11-27T17:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-qatar-grand-prix-practice-3
-    label: Practice 3
-    type: practice
-    start: '2026-11-28T14:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-qatar-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-11-28T18:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-qatar-grand-prix-race
-    type: race
-    start: '2026-11-29T16:00:00+00:00'
-    status: CONFIRMED
-- name: Abu Dhabi Grand Prix
-  location: Yas Marina Circuit, United Arab Emirates
-  round: 22
-  sessions:
-  - uid: f1-2026-abu-dhabi-grand-prix-practice-1
-    label: Practice 1
-    type: practice
-    start: '2026-12-04T09:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-abu-dhabi-grand-prix-practice-2
-    label: Practice 2
-    type: practice
-    start: '2026-12-04T13:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-abu-dhabi-grand-prix-practice-3
-    label: Practice 3
-    type: practice
-    start: '2026-12-05T10:30:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-abu-dhabi-grand-prix-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-12-05T14:00:00+00:00'
-    status: CONFIRMED
-  - uid: f1-2026-abu-dhabi-grand-prix-race
-    type: race
-    start: '2026-12-06T13:00:00+00:00'
-    status: CONFIRMED
+  - name: Australian Grand Prix
+    location: Albert Park Circuit, Australia
+    round: 1
+    sessions:
+      - uid: f1-2026-australian-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-03-06T01:30:00+00:00'
+        duration: 90m
+        status: CONFIRMED
+      - uid: f1-2026-australian-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-03-06T05:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-australian-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-03-07T01:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-australian-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-03-07T05:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-australian-grand-prix-race
+        type: race
+        start: '2026-03-08T04:00:00+00:00'
+        status: CONFIRMED
+  - name: Chinese Grand Prix
+    location: Shanghai International Circuit, China
+    round: 2
+    sessions:
+      - uid: f1-2026-chinese-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-03-13T03:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-chinese-grand-prix-sprint-qualifying
+        label: Sprint Qualifying
+        type: sprint_qualifying
+        start: '2026-03-13T07:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-chinese-grand-prix-sprint
+        label: Sprint
+        type: sprint
+        start: '2026-03-14T03:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-chinese-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-03-14T07:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-chinese-grand-prix-race
+        type: race
+        start: '2026-03-15T07:00:00+00:00'
+        status: CONFIRMED
+  - name: Japanese Grand Prix
+    location: Suzuka International Racing Course, Japan
+    round: 3
+    sessions:
+      - uid: f1-2026-japanese-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-03-27T02:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-japanese-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-03-27T06:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-japanese-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-03-28T02:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-japanese-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-03-28T06:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-japanese-grand-prix-race
+        type: race
+        start: '2026-03-29T05:00:00+00:00'
+        status: CONFIRMED
+  - name: Miami Grand Prix
+    location: Miami International Autodrome, United States
+    round: 4
+    sessions:
+      - uid: f1-2026-miami-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-05-01T16:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-miami-grand-prix-sprint-qualifying
+        label: Sprint Qualifying
+        type: sprint_qualifying
+        start: '2026-05-01T20:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-miami-grand-prix-sprint
+        label: Sprint
+        type: sprint
+        start: '2026-05-02T16:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-miami-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-05-02T20:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-miami-grand-prix-race
+        type: race
+        start: '2026-05-03T17:00:00+00:00'
+        status: CONFIRMED
+  - name: Canadian Grand Prix
+    location: Circuit Gilles Villeneuve, Canada
+    round: 5
+    sessions:
+      - uid: f1-2026-canadian-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-05-22T16:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-canadian-grand-prix-sprint-qualifying
+        label: Sprint Qualifying
+        type: sprint_qualifying
+        start: '2026-05-22T20:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-canadian-grand-prix-sprint
+        label: Sprint
+        type: sprint
+        start: '2026-05-23T16:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-canadian-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-05-23T20:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-canadian-grand-prix-race
+        type: race
+        start: '2026-05-24T20:00:00+00:00'
+        status: CONFIRMED
+  - name: Monaco Grand Prix
+    location: Circuit de Monaco, Monaco
+    round: 6
+    sessions:
+      - uid: f1-2026-monaco-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-06-05T11:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-monaco-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-06-05T15:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-monaco-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-06-06T10:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-monaco-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-06-06T14:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-monaco-grand-prix-race
+        type: race
+        start: '2026-06-07T13:00:00+00:00'
+        status: CONFIRMED
+  - name: Barcelona-Catalunya Grand Prix
+    location: Circuit de Barcelona-Catalunya, Spain
+    round: 7
+    sessions:
+      - uid: f1-2026-barcelona-catalunya-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-06-12T11:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-barcelona-catalunya-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-06-12T15:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-barcelona-catalunya-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-06-13T10:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-barcelona-catalunya-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-06-13T14:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-barcelona-catalunya-grand-prix-race
+        type: race
+        start: '2026-06-14T13:00:00+00:00'
+        status: CONFIRMED
+  - name: Austrian Grand Prix
+    location: Red Bull Ring, Austria
+    round: 8
+    sessions:
+      - uid: f1-2026-austrian-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-06-26T11:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-austrian-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-06-26T15:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-austrian-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-06-27T10:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-austrian-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-06-27T14:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-austrian-grand-prix-race
+        type: race
+        start: '2026-06-28T13:00:00+00:00'
+        status: CONFIRMED
+  - name: British Grand Prix
+    location: Silverstone Circuit, United Kingdom
+    round: 9
+    sessions:
+      - uid: f1-2026-british-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-07-03T11:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-british-grand-prix-sprint-qualifying
+        label: Sprint Qualifying
+        type: sprint_qualifying
+        start: '2026-07-03T15:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-british-grand-prix-sprint
+        label: Sprint
+        type: sprint
+        start: '2026-07-04T11:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-british-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-07-04T15:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-british-grand-prix-race
+        type: race
+        start: '2026-07-05T14:00:00+00:00'
+        status: CONFIRMED
+  - name: Belgian Grand Prix
+    location: Circuit de Spa-Francorchamps, Belgium
+    round: 10
+    sessions:
+      - uid: f1-2026-belgian-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-07-17T11:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-belgian-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-07-17T15:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-belgian-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-07-18T10:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-belgian-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-07-18T14:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-belgian-grand-prix-race
+        type: race
+        start: '2026-07-19T13:00:00+00:00'
+        status: CONFIRMED
+  - name: Hungarian Grand Prix
+    location: Hungaroring, Hungary
+    round: 11
+    sessions:
+      - uid: f1-2026-hungarian-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-07-24T11:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-hungarian-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-07-24T15:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-hungarian-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-07-25T10:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-hungarian-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-07-25T14:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-hungarian-grand-prix-race
+        type: race
+        start: '2026-07-26T13:00:00+00:00'
+        status: CONFIRMED
+  - name: Dutch Grand Prix
+    location: Circuit Zandvoort, The Netherlands
+    round: 12
+    sessions:
+      - uid: f1-2026-dutch-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-08-21T10:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-dutch-grand-prix-sprint-qualifying
+        label: Sprint Qualifying
+        type: sprint_qualifying
+        start: '2026-08-21T14:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-dutch-grand-prix-sprint
+        label: Sprint
+        type: sprint
+        start: '2026-08-22T10:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-dutch-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-08-22T14:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-dutch-grand-prix-race
+        type: race
+        start: '2026-08-23T13:00:00+00:00'
+        status: CONFIRMED
+  - name: Italian Grand Prix
+    location: Monza Circuit, Italy
+    round: 13
+    sessions:
+      - uid: f1-2026-italian-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-09-04T10:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-italian-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-09-04T14:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-italian-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-09-05T10:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-italian-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-09-05T14:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-italian-grand-prix-race
+        type: race
+        start: '2026-09-06T13:00:00+00:00'
+        status: CONFIRMED
+  - name: Spanish Grand Prix
+    location: Madring, Spain
+    round: 14
+    sessions:
+      - uid: f1-2026-spanish-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-09-11T11:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-spanish-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-09-11T15:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-spanish-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-09-12T10:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-spanish-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-09-12T14:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-spanish-grand-prix-race
+        type: race
+        start: '2026-09-13T13:00:00+00:00'
+        status: CONFIRMED
+  - name: Azerbaijan Grand Prix
+    location: Baku City Circuit, Azerbaijan
+    round: 15
+    sessions:
+      - uid: f1-2026-azerbaijan-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-09-24T08:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-azerbaijan-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-09-24T12:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-azerbaijan-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-09-25T08:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-azerbaijan-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-09-25T12:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-azerbaijan-grand-prix-race
+        type: race
+        start: '2026-09-26T11:00:00+00:00'
+        status: CONFIRMED
+  - name: Singapore Grand Prix
+    location: Marina Bay Street Circuit, Singapore
+    round: 16
+    sessions:
+      - uid: f1-2026-singapore-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-10-09T08:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-singapore-grand-prix-sprint-qualifying
+        label: Sprint Qualifying
+        type: sprint_qualifying
+        start: '2026-10-09T12:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-singapore-grand-prix-sprint
+        label: Sprint
+        type: sprint
+        start: '2026-10-10T09:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-singapore-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-10-10T13:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-singapore-grand-prix-race
+        type: race
+        start: '2026-10-11T12:00:00+00:00'
+        status: CONFIRMED
+  - name: United States Grand Prix
+    location: Circuit of the Americas, United States
+    round: 17
+    sessions:
+      - uid: f1-2026-united-states-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-10-23T17:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-united-states-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-10-23T21:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-united-states-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-10-24T17:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-united-states-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-10-24T21:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-united-states-grand-prix-race
+        type: race
+        start: '2026-10-25T20:00:00+00:00'
+        status: CONFIRMED
+  - name: Mexico City Grand Prix
+    location: "Autódromo Hermanos Rodríguez, Mexico"
+    round: 18
+    sessions:
+      - uid: f1-2026-mexico-city-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-10-30T18:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-mexico-city-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-10-30T22:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-mexico-city-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-10-31T17:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-mexico-city-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-10-31T21:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-mexico-city-grand-prix-race
+        type: race
+        start: '2026-11-01T20:00:00+00:00'
+        status: CONFIRMED
+  - name: "São Paulo Grand Prix"
+    location: Interlagos Circuit, Brazil
+    round: 19
+    sessions:
+      - uid: f1-2026-s-o-paulo-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-11-06T15:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-s-o-paulo-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-11-06T19:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-s-o-paulo-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-11-07T14:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-s-o-paulo-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-11-07T18:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-s-o-paulo-grand-prix-race
+        type: race
+        start: '2026-11-08T17:00:00+00:00'
+        status: CONFIRMED
+  - name: Las Vegas Grand Prix
+    location: Las Vegas Strip Circuit, United States
+    round: 20
+    sessions:
+      - uid: f1-2026-las-vegas-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-11-20T00:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-las-vegas-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-11-20T04:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-las-vegas-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-11-21T00:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-las-vegas-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-11-21T04:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-las-vegas-grand-prix-race
+        type: race
+        start: '2026-11-22T04:00:00+00:00'
+        status: CONFIRMED
+  - name: Qatar Grand Prix
+    location: Lusail International Circuit, Qatar
+    round: 21
+    sessions:
+      - uid: f1-2026-qatar-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-11-27T13:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-qatar-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-11-27T17:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-qatar-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-11-28T14:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-qatar-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-11-28T18:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-qatar-grand-prix-race
+        type: race
+        start: '2026-11-29T16:00:00+00:00'
+        status: CONFIRMED
+  - name: Abu Dhabi Grand Prix
+    location: Yas Marina Circuit, United Arab Emirates
+    round: 22
+    sessions:
+      - uid: f1-2026-abu-dhabi-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-12-04T09:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-abu-dhabi-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-12-04T13:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-abu-dhabi-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-12-05T10:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-abu-dhabi-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-12-05T14:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-abu-dhabi-grand-prix-race
+        type: race
+        start: '2026-12-06T13:00:00+00:00'
+        status: CONFIRMED
