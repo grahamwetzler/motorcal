@@ -189,7 +189,6 @@ def test_renaming_a_series_advances_every_session_it_holds():
     previous = VersionState(
         fingerprint=first.fingerprint, sequence=first.sequence,
         dtstamp=first.dtstamp.isoformat(), last_modified=first.last_modified.isoformat(),
-        series_name=original_series.name,
     )
 
     later = datetime(2026, 6, 1, tzinfo=timezone.utc)

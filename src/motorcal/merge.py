@@ -33,8 +33,9 @@ def compute_fingerprint(
     all_day_date: str | None,
     duration_seconds: int | None,
     alarms: list[str],
+    series_name: str,
 ) -> str:
-    """A stable digest over every client-visible session field. Alarm order never matters."""
+    """A stable digest over every client-visible VEVENT field. Alarm order never matters."""
     payload = {
         "summary": summary,
         "description": description,
@@ -44,6 +45,7 @@ def compute_fingerprint(
         "all_day_date": all_day_date,
         "duration_seconds": duration_seconds,
         "alarms": sorted(alarms),
+        "series_name": series_name,
     }
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
@@ -170,15 +172,11 @@ def build_published_event(
     fingerprint = compute_fingerprint(
         summary=summary, description=description, location=event.location, status=status.value,
         start=start.isoformat() if start else None, all_day_date=all_day_date,
-        duration_seconds=duration_seconds, alarms=alarms,
+        duration_seconds=duration_seconds, alarms=alarms, series_name=series_config.name,
     )
 
     now_unix_minute = int(now.timestamp() // 60)
-    if (
-        previous is not None
-        and previous.fingerprint == fingerprint
-        and (previous.series_name is None or previous.series_name == series_config.name)
-    ):
+    if previous is not None and previous.fingerprint == fingerprint:
         sequence = previous.sequence
         dtstamp = datetime.fromisoformat(previous.dtstamp)
         last_modified = datetime.fromisoformat(previous.last_modified)
@@ -224,7 +222,6 @@ def rebuild_publication(
                 fingerprint=built.fingerprint, sequence=built.sequence,
                 dtstamp=built.dtstamp.isoformat(),
                 last_modified=built.last_modified.isoformat(),
-                series_name=config.series[built.series].name,
             )
 
     # The ledger exists to keep SEQUENCE stable for events a subscriber can still
