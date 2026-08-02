@@ -1,7 +1,7 @@
 name: IndyCar
 schedule_url: https://www.indycar.com/Schedule
 durations:
-  race: 120m
+  race: 160m
 alerts:
   race:
     - 0m
