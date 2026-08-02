@@ -21,9 +21,10 @@ import logging
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import unquote_plus
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from starlette.datastructures import QueryParams
 
 from motorcal.config import COMBINED_SERIES_KEY, Config, ConfigError, parse_alarm_offset
@@ -72,6 +73,19 @@ _BOOLEANS = {
     "false": False, "0": False, "off": False, "no": False,
 }
 
+# The feed's filter URL is public input. These bounds are deliberately well
+# above every supported combination of options but keep one request from tying
+# up the parser or producing an oversized rendered calendar name.
+_MAX_QUERY_STRING_BYTES = 8 * 1024
+_MAX_QUERY_PARAMETERS = 128
+_MAX_CALENDAR_NAME_LENGTH = 128
+_HEX_DIGITS = frozenset(b"0123456789abcdefABCDEF")
+_SECURITY_HEADERS = {
+    "Referrer-Policy": "no-referrer",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+}
+
 
 @dataclass(frozen=True)
 class Publication:
@@ -112,13 +126,34 @@ def create_app(config: Config) -> FastAPI:
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     app.state.publication = Publication(config=config, feed=b"", published={})
 
+    @app.middleware("http")
+    async def harden_request(request: Request, call_next):
+        # Every route is read-only and takes all supported input in the URL.
+        # Rejecting bodies avoids silently accepting an input this app never uses.
+        if (
+            request.headers.get("content-length") not in (None, "0")
+            or "transfer-encoding" in request.headers
+        ):
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "request bodies are not supported"},
+                headers=_SECURITY_HEADERS,
+            )
+
+        response = await call_next(request)
+        for key, value in _SECURITY_HEADERS.items():
+            response.headers.setdefault(key, value)
+        return response
+
     @app.get("/healthz")
-    def healthz():
+    def healthz(request: Request):
+        _reject_query_parameters(request)
         return {"ok": True}
 
     # The builder page.
     @app.get("/", response_class=HTMLResponse)
-    def get_index():
+    def get_index(request: Request):
+        _reject_query_parameters(request)
         publication = app.state.publication
 
         series = [
@@ -151,7 +186,7 @@ def create_app(config: Config) -> FastAPI:
         if not ics_bytes:
             raise HTTPException(status_code=503, detail="no usable events")
 
-        selection = _parse_selection(request.query_params, publication.config)
+        selection = _parse_selection(_validated_query_params(request), publication.config)
         if not selection.is_default:
             published = {
                 series: _select(publication.published.get(series, []), selection.filters[series])
@@ -246,6 +281,36 @@ def _bad_request(message: str) -> HTTPException:
     return HTTPException(status_code=400, detail=message)
 
 
+def _validated_query_params(request: Request) -> QueryParams:
+    """Return bounded, valid UTF-8 query parameters before interpreting them."""
+    raw_query = request.scope["query_string"]
+    if len(raw_query) > _MAX_QUERY_STRING_BYTES:
+        raise _bad_request(f"query string exceeds {_MAX_QUERY_STRING_BYTES} bytes")
+    if any(
+        byte == ord("%") and (
+            index + 2 >= len(raw_query)
+            or raw_query[index + 1] not in _HEX_DIGITS
+            or raw_query[index + 2] not in _HEX_DIGITS
+        )
+        for index, byte in enumerate(raw_query)
+    ):
+        raise _bad_request("query string must use valid percent-encoding")
+    try:
+        unquote_plus(raw_query.decode("ascii"), encoding="utf-8", errors="strict")
+    except UnicodeError:
+        raise _bad_request("query string must be valid UTF-8 percent-encoding") from None
+
+    query = request.query_params
+    if len(query.multi_items()) > _MAX_QUERY_PARAMETERS:
+        raise _bad_request(f"query string accepts at most {_MAX_QUERY_PARAMETERS} parameters")
+    return query
+
+
+def _reject_query_parameters(request: Request) -> None:
+    if _validated_query_params(request):
+        raise _bad_request("this endpoint does not accept query parameters")
+
+
 def _split(value: str, key: str) -> list[str]:
     """Split a comma-separated parameter, rejecting empty members."""
     parts = [part.strip() for part in value.split(",")]
@@ -269,6 +334,16 @@ def _parse_emoji(value: str, key: str) -> str:
     except KeyError:
         valid = ", ".join(_EMOJI_PREFIXES)
         raise _bad_request(f"{key!r} must be one of: {valid} (got {value!r})") from None
+
+
+def _parse_calendar_name(value: str) -> str:
+    if not value.strip():
+        raise _bad_request("'name' must not be empty")
+    if len(value) > _MAX_CALENDAR_NAME_LENGTH:
+        raise _bad_request(f"'name' accepts at most {_MAX_CALENDAR_NAME_LENGTH} characters")
+    if any(ord(character) < 32 or 127 <= ord(character) < 160 for character in value):
+        raise _bad_request("'name' must not contain control characters")
+    return value
 
 
 def _parse_sessions(value: str, key: str) -> frozenset[SessionType]:
@@ -319,8 +394,13 @@ def _parse_selection(query: QueryParams, config: Config) -> Selection:
     tell -- an ICS feed reports nothing back.
     """
     items = query.multi_items()
-    keys = [key for key, _ in items]
-    repeated = sorted({key for key in keys if keys.count(key) > 1})
+    seen: set[str] = set()
+    repeated: set[str] = set()
+    for key, _ in items:
+        if key in seen:
+            repeated.add(key)
+        seen.add(key)
+    repeated = sorted(repeated)
     if repeated:
         raise _bad_request(
             f"repeated query parameter(s): {', '.join(repeated)}. Give one comma-separated "
@@ -429,7 +509,7 @@ def _parse_selection(query: QueryParams, config: Config) -> Selection:
         series=selected,
         filters=filters,
         prefix=_parse_emoji(global_raw.get("emoji", "none"), "emoji"),
-        calname=global_raw.get("name") or None,
+        calname=_parse_calendar_name(global_raw["name"]) if "name" in global_raw else None,
         is_default=not items,
     )
 

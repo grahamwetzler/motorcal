@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+import pytest
 from fastapi.testclient import TestClient
 from tests.conftest import make_config, make_series
 
@@ -32,6 +33,23 @@ def _event(uid, session_type):
 
 def test_unmatched_path_returns_404():
     assert _client().get("/nonexistent-series.ics").status_code == 404
+
+
+@pytest.mark.parametrize("path", ["/healthz", "/", "/events.ics"])
+def test_endpoints_reject_request_bodies_and_set_security_headers(path):
+    client = _client(ICS)
+    rejected = client.request("GET", path, content=b"unexpected")
+    response = client.get(path)
+
+    assert rejected.status_code == 400
+    assert response.headers["referrer-policy"] == "no-referrer"
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["x-frame-options"] == "DENY"
+
+
+@pytest.mark.parametrize("path", ["/healthz", "/"])
+def test_endpoints_without_inputs_reject_query_parameters(path):
+    assert _client(ICS).get(f"{path}?unexpected=true").status_code == 400
 
 
 def test_combined_serves_the_precomputed_combined_feed():

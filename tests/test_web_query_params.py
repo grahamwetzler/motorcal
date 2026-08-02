@@ -246,6 +246,11 @@ def test_name_sets_the_calendar_name():
     assert b"X-WR-CALNAME:My Racing" in _get(query="name=My Racing").content
 
 
+@pytest.mark.parametrize("name", ["", "   ", "x" * 129, "Racing\r\nX-Evil: yes"])
+def test_invalid_calendar_names_are_rejected(name):
+    assert _client().get("/events.ics", params={"name": name}).status_code == 400
+
+
 # ------------------------------------------------------------- malformed input
 
 
@@ -269,6 +274,18 @@ def test_an_unknown_prefix_is_reported_as_an_unknown_series():
 
 def test_settings_for_a_series_outside_the_selection_are_rejected():
     assert _get(query="series=f1&wec.sessions=race").status_code == 400
+
+
+def test_malformed_query_encoding_is_rejected():
+    assert _client().get("/events.ics?name=%FF").status_code == 400
+    assert _client().get("/events.ics?name=%").status_code == 400
+
+
+def test_query_parameter_count_is_bounded_before_parsing():
+    response = _client().get("/events.ics?" + "&".join("emoji=none" for _ in range(129)))
+
+    assert response.status_code == 400
+    assert "at most 128" in response.json()["detail"]
 
 
 # ------------------------------------------------------- legacy alias handling
