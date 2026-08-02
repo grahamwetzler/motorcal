@@ -1,6 +1,6 @@
 # motorcal
 
-Self-hosted motorsports ICS calendar publisher. It publishes one combined ICS
+[motorcal](https://motorcal.wetzler.dev/) publishes one combined ICS
 feed — every session of every race weekend, practice through race, across
 every series — that you can subscribe to from any calendar app, filtered down
 to just the series and sessions you want via the URL.
@@ -13,50 +13,11 @@ these files. Nothing in the app fetches anything or writes to `data/`, so there
 is no database, no patch layer, no override file, and no merge to lose an edit
 to — you edit the event.
 
-The feed is exposed to the internet via a Cloudflare Tunnel, so nothing needs
-to be port-forwarded. It is **not** access-controlled — anyone who knows your
-hostname can fetch `/events.ics`. That's fine for public race schedules; don't
-put anything else in there.
+## Subscribe
 
-## Quick start
-
-1. Copy the example env file and fill it in:
-
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Copy the example data directory and adjust it:
-
-   ```bash
-   cp -r data.example data
-   ```
-
-   Add one file per series you want. The filename is the series key, used to
-   select or configure it in the feed URL: `f1.yaml` is series key `f1`.
-   `events` is reserved for the combined feed, so there can be no `events.yaml`.
-
-3. Make the state directory writable by the container's user:
-
-   ```bash
-   mkdir -p state && chown -R 1000:1000 state
-   ```
-
-4. Start everything:
-
-   ```bash
-   docker compose up -d
-   ```
-
-5. Subscribe at `https://<your-domain>/events.ics` — every series in one
-   calendar by default. Shape the feed from the URL — see "Feed parameters"
-   below — to cut it down to just the series and sessions you want.
-
-   Or open `https://<your-domain>/` and tick what you want: the page builds the
-   URL for you and previews the next event the feed would carry.
-
-6. Edit events by hand in the series YAML files under `data/`. Changes are
-   picked up within ~30 seconds.
+Open [motorcal.wetzler.dev](https://motorcal.wetzler.dev/) and tick the series
+and sessions you want. The page builds the subscription URL and previews the
+next event it contains.
 
 ## Feed parameters
 
@@ -118,9 +79,8 @@ state/
   state.yaml          # machine-owned, gitignored -- see "State" below
 ```
 
-`compose.yaml` mounts `./data` read-only and gives `state.yaml` its own writable
-directory. `./state` must be writable by the container's user (uid 1000) — e.g.
-`chown -R 1000:1000 state`.
+The deployed image contains this directory at `/data`. `compose.yaml` gives
+`state.yaml` its own writable directory.
 
 ### One event
 
@@ -218,14 +178,10 @@ on each series is where it looks.
 A hand edit is picked up by the hot-reload within ~30 seconds. A bad one is
 rejected and logged, and the previous configuration stays active.
 
-## Environment variables
-
-Set these in a `.env` file next to `compose.yaml`. Both are required —
-`compose.yaml` fails fast at startup if either is unset.
+## Deployment configuration
 
 | Variable | Description |
 | --- | --- |
-| `CLOUDFLARE_TUNNEL_TOKEN` | Token for a Cloudflare Tunnel (Zero Trust dashboard → Networks → Tunnels → create a tunnel → choose the Docker connector → copy the token shown, not the certificate). |
 | `UID_DOMAIN` | Domain baked into every event's stable ICS UID. Pick it once — changing it later republishes and duplicates every event for subscribers (see `docs/operations.md`, "Changing UID_DOMAIN"). |
 
 Validate config changes before restarting:

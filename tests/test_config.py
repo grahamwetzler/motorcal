@@ -12,7 +12,7 @@ from motorcal.config import (
     series_path,
 )
 
-EXAMPLE_DIR = "data.example"
+EXAMPLE_DIR = "data"
 
 
 def _dir(tmp_path):
@@ -64,12 +64,12 @@ def test_parse_alarm_offset_rejects_more_than_a_week():
 # --------------------------------------------------------------- directory loading
 
 
-def test_the_shipped_example_directory_is_valid():
+def test_the_shipped_data_directory_is_valid():
     config = load_config(EXAMPLE_DIR, uid_domain=UID_DOMAIN)
 
     assert config.globals.uid_domain == "racing.example.com"
     assert "f1" in config.series
-    assert len(config.series["f1"].events) == 2
+    assert config.series["f1"].events
     assert config.series["f1"].schedule_url is not None
 
 
