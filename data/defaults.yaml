@@ -9,17 +9,18 @@ defaults:
     warmup: 20m
   alerts:
     race:
-      - -1d
       - -30m
     qualifying:
-      - -15m
+      - -5m
     hyperpole:
-      - -15m
+      - -10m
     sprint:
       - -15m
     sprint_qualifying:
-      - -15m
-    practice: []
-    warmup: []
+      - -5m
+    practice:
+      - 0m
+    warmup:
+      - 0m
 unknown_time:
   summary_suffix: ' (time TBC)'
