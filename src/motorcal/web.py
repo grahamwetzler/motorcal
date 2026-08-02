@@ -20,6 +20,7 @@ import json
 import logging
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
+from enum import Enum
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -44,7 +45,22 @@ _QUALIFYING_TYPES = {
 # must not be a way around that.
 _NO_ALARM_TYPES = {SessionType.TESTING}
 
-_EMOJI_PREFIX = "\N{CHEQUERED FLAG} "
+class EmojiOption(str, Enum):
+    """What, if anything, to put in front of every published title."""
+
+    NONE = "none"
+    FLAG = "flag"
+    CAR = "car"
+
+
+_EMOJI_PREFIXES = {
+    EmojiOption.NONE: "",
+    EmojiOption.FLAG: "\N{CHEQUERED FLAG} ",
+    EmojiOption.CAR: "\N{RACING CAR} ",
+}
+# `emoji=true`/`emoji=false` predate the choice of emoji and are kept as
+# aliases for the two options they used to mean.
+_EMOJI_BOOL_ALIASES = {"true": EmojiOption.FLAG, "false": EmojiOption.NONE}
 
 # The feed-builder page served at `/`. Read once at import: it ships inside the
 # package, so it can only change with a new image.
@@ -115,7 +131,15 @@ def create_app(config: Config) -> FastAPI:
         publication = app.state.publication
 
         series = [
-            {"key": key, "name": series_config.name}
+            {
+                "key": key,
+                "name": series_config.name,
+                # Only the session types this series actually runs -- e.g. WEC's
+                # hyperpole has no business as a per-series override for IndyCar.
+                "sessions": sorted({
+                    session.type.value for _, session in series_config.iter_sessions()
+                }),
+            }
             for key, series_config in publication.config.series.items()
         ]
         upcoming = _example_events(
@@ -244,6 +268,18 @@ def _parse_bool(value: str, key: str) -> bool:
         return _BOOLEANS[value.strip().lower()]
     except KeyError:
         raise _bad_request(f"{key!r} must be true or false (got {value!r})") from None
+
+
+def _parse_emoji(value: str, key: str) -> str:
+    normalized = value.strip().lower()
+    option = _EMOJI_BOOL_ALIASES.get(normalized)
+    if option is None:
+        try:
+            option = EmojiOption(normalized)
+        except ValueError:
+            valid = ", ".join(o.value for o in EmojiOption)
+            raise _bad_request(f"{key!r} must be one of: {valid} (got {value!r})") from None
+    return _EMOJI_PREFIXES[option]
 
 
 def _parse_sessions(value: str, key: str) -> frozenset[SessionType]:
@@ -403,7 +439,7 @@ def _parse_selection(query: QueryParams, config: Config) -> Selection:
     return Selection(
         series=selected,
         filters=filters,
-        prefix=_EMOJI_PREFIX if _parse_bool(global_raw.get("emoji", "false"), "emoji") else "",
+        prefix=_parse_emoji(global_raw.get("emoji", "none"), "emoji"),
         calname=global_raw.get("name") or None,
         is_default=not items,
     )
