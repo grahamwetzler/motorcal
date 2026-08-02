@@ -227,7 +227,7 @@ def rebuild_publication(
             state.versions[built.uid] = VersionState(
                 fingerprint=built.fingerprint, sequence=built.sequence,
                 dtstamp=built.dtstamp.isoformat(),
-                last_modified=built.last_modified.isoformat(), status=built.status.value,
+                last_modified=built.last_modified.isoformat(),
             )
 
     # The ledger exists to keep SEQUENCE stable for events a subscriber can still

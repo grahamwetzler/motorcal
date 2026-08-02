@@ -19,7 +19,7 @@ ICS = b"BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n"
 def test_mutating_app_state_reaches_routes_immediately():
     app = create_app(make_config(series={"wec": WEC}))
     app.state.publication = Publication(
-        config=app.state.publication.config, feeds={"events": ICS}, published={}
+        config=app.state.publication.config, feed=ICS, published={}
     )
     client = TestClient(app)
 
@@ -29,7 +29,7 @@ def test_mutating_app_state_reaches_routes_immediately():
     # in as one new Publication, together, rather than reassigning either alone.
     app.state.publication = Publication(
         config=make_config(series={"wec": WEC, "imsa": IMSA}),
-        feeds={"events": ICS + b"X"},
+        feed=ICS + b"X",
         published={},
     )
 

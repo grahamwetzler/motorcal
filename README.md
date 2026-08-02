@@ -247,4 +247,4 @@ See `docs/operations.md` for what losing it costs.
 ## More
 
 See `docs/operations.md` for backups, adding a series, changing `UID_DOMAIN`,
-migrating a pre-TheSportsDB state file, and diagnosing a feed that looks wrong.
+and diagnosing a feed that looks wrong.

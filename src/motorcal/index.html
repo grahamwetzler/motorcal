@@ -389,7 +389,7 @@ function nextEventFor(params, series) {
   // An unconfirmed time and the two alertless types keep their own alarms, which
   // is what `_select` does server-side -- a URL override is not a way around it.
   let alarms = event.alarms;
-  if (event.time_confirmed && event.type !== "testing" && event.type !== "unknown") {
+  if (event.time_confirmed && event.type !== "testing") {
     for (const key of [`${series}.alarms_${event.type}`, `${series}.alarms`,
                        `alarms_${event.type}`, "alarms"]) {
       if (params.has(key)) { alarms = params.get(key).split(",").filter(Boolean); break; }

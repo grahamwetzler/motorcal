@@ -11,17 +11,13 @@ from pathlib import Path
 import uvicorn
 
 from motorcal import state as state_module
-from motorcal.config import COMBINED_SERIES_KEY, Config, ConfigError, load_config
+from motorcal.config import Config, ConfigError, load_config
 from motorcal.ics import render_combined_bytes
 from motorcal.merge import rebuild_publication
 from motorcal.refresh import build_scheduler, check_and_reload_config, config_bundle_hash
 from motorcal.web import Publication, create_app
 
 _logger = logging.getLogger("motorcal.serve")
-
-
-def _render_feeds(config: Config, published) -> dict[str, bytes]:
-    return {COMBINED_SERIES_KEY: render_combined_bytes(config, published)}
 
 
 def _cmd_serve(args: argparse.Namespace) -> int:
@@ -68,7 +64,7 @@ def _cmd_serve(args: argparse.Namespace) -> int:
     app = create_app(config)
     app.state.data = state
     app.state.publication = Publication(
-        config=config, published=published, feeds=_render_feeds(config, published)
+        config=config, published=published, feed=render_combined_bytes(config, published)
     )
     app.state.bundle_hash = config_bundle_hash(config_dir)
     app.state.config_dir = config_dir
@@ -90,7 +86,7 @@ def _cmd_serve(args: argparse.Namespace) -> int:
         app.state.data = working_state
         app.state.publication = Publication(
             config=result.config, published=result.published,
-            feeds=_render_feeds(result.config, result.published),
+            feed=render_combined_bytes(result.config, result.published),
         )
 
     scheduler = build_scheduler(reload_job)

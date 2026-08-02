@@ -28,7 +28,7 @@ def test_save_then_load_round_trips_every_field(tmp_path):
         uid_domain=UID_DOMAIN,
         versions={
             "u1": VersionState(
-                fingerprint="fp", sequence=42, dtstamp="t3", last_modified="t4", status="CONFIRMED"
+                fingerprint="fp", sequence=42, dtstamp="t3", last_modified="t4"
             )
         },
     )
@@ -36,6 +36,18 @@ def test_save_then_load_round_trips_every_field(tmp_path):
     state_module.save(path, original)
 
     assert state_module.load(path) == original
+
+
+def test_load_ignores_the_removed_status_field(tmp_path):
+    path = tmp_path / "state.yaml"
+    path.write_text(
+        "versions:\n  u1:\n    fingerprint: fp\n    sequence: 42\n    dtstamp: t3\n"
+        "    last_modified: t4\n    status: CONFIRMED\n"
+    )
+
+    assert state_module.load(path).versions["u1"] == VersionState(
+        fingerprint="fp", sequence=42, dtstamp="t3", last_modified="t4"
+    )
 
 
 def test_save_creates_the_parent_directory(tmp_path):

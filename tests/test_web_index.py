@@ -38,7 +38,7 @@ def _event(
 
 def _client(config=CONFIG, published=None):
     app = create_app(config)
-    app.state.publication = Publication(config=config, feeds={}, published=published or {})
+    app.state.publication = Publication(config=config, feed=b"", published=published or {})
     return TestClient(app)
 
 

@@ -92,7 +92,7 @@ class Publication:
     """
 
     config: Config
-    feeds: dict[str, bytes]
+    feed: bytes
     published: dict[str, list[PublishedEvent]]
 
 
@@ -119,7 +119,7 @@ class Selection:
 
 def create_app(config: Config) -> FastAPI:
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
-    app.state.publication = Publication(config=config, feeds={}, published={})
+    app.state.publication = Publication(config=config, feed=b"", published={})
 
     @app.get("/healthz")
     def healthz():
@@ -156,7 +156,7 @@ def create_app(config: Config) -> FastAPI:
     def get_combined_calendar(request: Request):
         publication = app.state.publication
 
-        ics_bytes = publication.feeds.get(COMBINED_SERIES_KEY)
+        ics_bytes = publication.feed
         if not ics_bytes:
             raise HTTPException(status_code=503, detail="no usable events")
 
