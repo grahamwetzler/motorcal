@@ -200,6 +200,13 @@ The Compose `state` volume holds the only machine-owned file,
 calendar clients from re-notifying subscribers on every rebuild. See
 `docs/operations.md` for backups and what losing it costs.
 
+## License
+
+The MIT License applies to this project's source code and documentation. We
+make no copyright claim over individual schedule facts in `data/`; they are
+compiled from third-party official timetables and may remain subject to their
+source terms.
+
 ## More
 
 See `docs/operations.md` for backups, adding a series, changing `UID_DOMAIN`,
