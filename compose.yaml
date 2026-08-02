@@ -5,10 +5,9 @@ services:
     environment:
       UID_DOMAIN: "${UID_DOMAIN:?UID_DOMAIN must be set}"
     volumes:
-      # Read-only: nothing in the app writes the data directory. state.yaml lives
-      # in its own writable directory because it is replaced atomically, which a
+      # data/ is baked into the image (see Dockerfile). state.yaml lives in its
+      # own writable directory because it is replaced atomically, which a
       # single-file bind mount does not survive.
-      - ./data:/data:ro
       - ./state:/state
     container_name: app
     labels:

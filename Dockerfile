@@ -15,11 +15,11 @@ WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/src /app/src
 COPY pyproject.toml ./
+COPY --chown=motorcal:motorcal data /data
 ENV PATH="/app/.venv/bin:$PATH"
 # /state is deliberately not created here. Docker creates it when compose.yaml
 # bind-mounts ./state; without that mount the first save fails loudly instead of
 # writing the version ledger into a container layer that the next update discards.
-RUN mkdir -p /data && chown motorcal:motorcal /data
 USER motorcal
 EXPOSE 8000
 ENTRYPOINT ["motorcal"]
