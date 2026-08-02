@@ -145,7 +145,7 @@ def test_a_cancelled_session_stays_cancelled_regardless_of_the_ledger():
     """Status is a field the data directory owns outright -- nothing infers it."""
     previous = VersionState(
         fingerprint="x", sequence=1, dtstamp=NOW.isoformat(),
-        last_modified=NOW.isoformat(), status="CANCELLED",
+        last_modified=NOW.isoformat(),
     )
 
     assert _build(make_event("mine"), previous=previous).status == EventStatus.CONFIRMED
@@ -158,7 +158,6 @@ def test_an_unchanged_session_keeps_its_sequence_and_dtstamp():
     previous = VersionState(
         fingerprint=first.fingerprint, sequence=first.sequence,
         dtstamp=first.dtstamp.isoformat(), last_modified=first.last_modified.isoformat(),
-        status=first.status.value,
     )
 
     second = _build(event, previous=previous, now=datetime(2026, 6, 1, tzinfo=timezone.utc))
@@ -173,7 +172,6 @@ def test_a_changed_session_advances_sequence_and_dtstamp():
     previous = VersionState(
         fingerprint=first.fingerprint, sequence=first.sequence,
         dtstamp=first.dtstamp.isoformat(), last_modified=first.last_modified.isoformat(),
-        status=first.status.value,
     )
     event.name = "Renamed"
 

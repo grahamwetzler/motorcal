@@ -12,10 +12,10 @@ ICS = b"BEGIN:VCALENDAR\r\nSUMMARY:6 Hours of Imola\r\nEND:VCALENDAR\r\n"
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 
-def _client(feeds=None, published=None):
+def _client(feed=b"", published=None):
     app = create_app(CONFIG)
     app.state.publication = Publication(
-        config=CONFIG, feeds=feeds or {}, published=published or {}
+        config=CONFIG, feed=feed, published=published or {}
     )
     return TestClient(app)
 
@@ -35,7 +35,7 @@ def test_unmatched_path_returns_404():
 
 
 def test_combined_serves_the_precomputed_combined_feed():
-    response = _client({"events": ICS}).get("/events.ics")
+    response = _client(ICS).get("/events.ics")
 
     assert response.status_code == 200
     assert response.content == ICS
@@ -48,17 +48,17 @@ def test_combined_serves_the_precomputed_combined_feed():
 
 
 def test_combined_with_no_combined_feed_returns_503():
-    assert _client({}, {}).get("/events.ics").status_code == 503
+    assert _client(b"", {}).get("/events.ics").status_code == 503
 
 
 def test_combined_filtered_request_returns_503_when_there_is_no_combined_feed():
-    response = _client({}, {}).get("/events.ics", params={"practices": "false"})
+    response = _client(b"", {}).get("/events.ics", params={"practices": "false"})
 
     assert response.status_code == 503
 
 
 def test_conditional_request_with_matching_etag_returns_304():
-    client = _client({"events": ICS})
+    client = _client(ICS)
     first = client.get("/events.ics")
 
     second = client.get("/events.ics", headers={"If-None-Match": first.headers["etag"]})
@@ -68,29 +68,29 @@ def test_conditional_request_with_matching_etag_returns_304():
 
 
 def test_conditional_request_with_stale_etag_returns_200():
-    response = _client({"events": ICS}).get("/events.ics", headers={"If-None-Match": '"stale-value"'})
+    response = _client(ICS).get("/events.ics", headers={"If-None-Match": '"stale-value"'})
 
     assert response.status_code == 200
     assert response.content == ICS
 
 
 def test_etag_changes_when_the_feed_content_changes():
-    first = _client({"events": ICS}).get("/events.ics")
-    second = _client({"events": ICS + b"X"}).get("/events.ics")
+    first = _client(ICS).get("/events.ics")
+    second = _client(ICS + b"X").get("/events.ics")
 
     assert first.headers["etag"] != second.headers["etag"]
 
 
 def test_default_request_serves_the_unfiltered_feed_unchanged():
     published = {"wec": [_event("practice", SessionType.PRACTICE), _event("race", SessionType.RACE)]}
-    response = _client({"events": ICS}, published).get("/events.ics")
+    response = _client(ICS, published).get("/events.ics")
 
     assert response.content == ICS
 
 
 def test_practices_false_excludes_practice_sessions_but_keeps_race():
     published = {"wec": [_event("practice", SessionType.PRACTICE), _event("race", SessionType.RACE)]}
-    response = _client({"events": ICS}, published).get("/events.ics", params={"practices": "false"})
+    response = _client(ICS, published).get("/events.ics", params={"practices": "false"})
 
     assert b"UID:practice" not in response.content
     assert b"UID:race" in response.content
@@ -105,7 +105,7 @@ def test_qualifying_false_excludes_qualifying_hyperpole_and_sprint_qualifying():
             _event("race", SessionType.RACE),
         ]
     }
-    response = _client({"events": ICS}, published).get("/events.ics", params={"qualifying": "false"})
+    response = _client(ICS, published).get("/events.ics", params={"qualifying": "false"})
 
     assert b"UID:q\r\n" not in response.content
     assert b"UID:hp" not in response.content
@@ -118,7 +118,7 @@ def test_combined_filter_applies_across_every_series():
         "wec": [_event("wec-practice", SessionType.PRACTICE), _event("wec-race", SessionType.RACE)],
         "f1": [_event("f1-practice", SessionType.PRACTICE), _event("f1-race", SessionType.RACE)],
     }
-    response = _client({"events": ICS}, published).get(
+    response = _client(ICS, published).get(
         "/events.ics", params={"practices": "false"}
     )
 

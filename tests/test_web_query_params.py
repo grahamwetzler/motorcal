@@ -41,7 +41,7 @@ def _client(published=None):
     app = create_app(CONFIG)
     app.state.publication = Publication(
         config=CONFIG,
-        feeds={"events": PREBUILT},
+        feed=PREBUILT,
         published=published if published is not None else PUBLISHED,
     )
     return TestClient(app)
@@ -64,7 +64,7 @@ def test_a_no_op_param_re_renders_the_exact_bytes_the_fast_path_would_serve():
     app = create_app(CONFIG)
     real_feed = render_combined_bytes(CONFIG, PUBLISHED)
     app.state.publication = Publication(
-        config=CONFIG, feeds={"events": real_feed}, published=PUBLISHED
+        config=CONFIG, feed=real_feed, published=PUBLISHED
     )
     client = TestClient(app)
 
