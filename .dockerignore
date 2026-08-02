@@ -12,3 +12,5 @@ config/overrides.yaml
 docs/
 .worktrees/
 .claude/
+data/state*.yaml
+data/pre-series-migration/
