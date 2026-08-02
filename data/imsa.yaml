@@ -116,6 +116,18 @@ events:
     location: Virginia International Raceway, United States
     round: 9
     sessions:
+      - uid: imsa-2026-vir-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-08-21T19:10:00+00:00'
+        duration: 90m
+        status: CONFIRMED
+      - uid: imsa-2026-vir-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-08-22T14:30:00+00:00'
+        duration: 90m
+        status: CONFIRMED
       - uid: imsa-2026-vir-qualifying
         label: Qualifying
         type: qualifying
@@ -130,6 +142,18 @@ events:
     location: Indianapolis Motor Speedway, United States
     round: 10
     sessions:
+      - uid: imsa-2026-indianapolis-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-09-18T19:15:00+00:00'
+        duration: 90m
+        status: CONFIRMED
+      - uid: imsa-2026-indianapolis-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-09-19T14:45:00+00:00'
+        duration: 90m
+        status: CONFIRMED
       - uid: imsa-2026-indianapolis-qualifying
         label: Qualifying
         type: qualifying
@@ -144,6 +168,24 @@ events:
     location: Michelin Raceway Road Atlanta, United States
     round: 11
     sessions:
+      - uid: imsa-2026-road-atlanta-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-10-01T14:40:00+00:00'
+        duration: 90m
+        status: CONFIRMED
+      - uid: imsa-2026-road-atlanta-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-10-01T19:20:00+00:00'
+        duration: 105m
+        status: CONFIRMED
+      - uid: imsa-2026-road-atlanta-practice-3
+        label: Night Practice
+        type: practice
+        start: '2026-10-01T23:30:00+00:00'
+        duration: 90m
+        status: CONFIRMED
       - uid: imsa-2026-road-atlanta-qualifying
         label: Qualifying
         type: qualifying
