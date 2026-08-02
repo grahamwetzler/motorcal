@@ -211,7 +211,7 @@ const TYPES = [
   ["race", "Race"],
   ["testing", "Testing"],
 ];
-const OFFSET = /^0$|^-[1-9]\d{0,4}[dhm]$/;
+const OFFSET = /^0[dhm]?$|^-[1-9]\d{0,4}[dhm]$/;
 const OFFSET_UNIT_SECONDS = {d: 86400, h: 3600, m: 60};
 // Mirrors MAX_ALARM_OFFSET_SECONDS in src/motorcal/config.py.
 const MAX_ALARM_OFFSET_SECONDS = 7 * 86400;
@@ -323,11 +323,12 @@ function spell(offset) {
   const [one, many] = UNITS[offset.slice(-1)];
   return `${amount} ${amount === 1 ? one : many}`;
 }
-// "0" is an alert at the start, so it can't take the "before" the others share.
+// A zero offset ("0", "0m", "0h", "0d") is an alert at the start, so it can't
+// take the "before" the others share.
 function remindText(alarms) {
-  const ahead = alarms.filter(a => a !== "0");
+  const ahead = alarms.filter(a => offsetSeconds(a) !== 0);
   const parts = ahead.length ? [list(ahead.map(spell)) + " before"] : [];
-  if (alarms.includes("0")) parts.push("at the start");
+  if (alarms.some(a => offsetSeconds(a) === 0)) parts.push("at the start");
   return list(parts);
 }
 // Returns the two halves rather than markup: a series name is config, and
@@ -639,8 +640,12 @@ render();
     if (!error) { ok = false; console.error(`self-check: ${what} should be rejected`); }
   }
   if (remindText(["-1d", "-10m"]) !== "1 day and 10 minutes before"
-      || remindText(["-1h", "0"]) !== "1 hour before and at the start") {
+      || remindText(["-1h", "0"]) !== "1 hour before and at the start"
+      || remindText(["-1h", "0m"]) !== "1 hour before and at the start") {
     ok = false; console.error("self-check: reminder wording is wrong");
+  }
+  if (buildURL({...base, alarmMode: "set", alarms: "0m"}).bad.length) {
+    ok = false; console.error("self-check: '0m' should be accepted");
   }
 
   // The preview must resolve an event the same way the server would.

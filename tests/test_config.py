@@ -40,6 +40,13 @@ def test_parse_alarm_offset_is_negative_seconds():
     assert parse_alarm_offset("-30m") == -1800
 
 
+def test_parse_alarm_offset_allows_zero_with_or_without_unit():
+    assert parse_alarm_offset("0") == 0
+    assert parse_alarm_offset("0m") == 0
+    assert parse_alarm_offset("0h") == 0
+    assert parse_alarm_offset("0d") == 0
+
+
 def test_parse_alarm_offset_rejects_a_positive_offset():
     with pytest.raises(ConfigError):
         parse_alarm_offset("30m")

@@ -2,11 +2,6 @@ name: Formula 1
 schedule_url: https://www.formula1.com/en/racing/2026
 durations:
   race: 90m
-alerts:
-  race:
-    - -15m
-  qualifying:
-    - '0'
 events:
   - name: Australian Grand Prix
     location: Albert Park Circuit, Australia

@@ -27,7 +27,7 @@ COMBINED_SERIES_KEY = "events"
 _DURATION_RE = re.compile(r"^([1-9]\d*)(h|m)$")
 # Digits capped at 5 so a pathological offset never reaches int() as a long
 # digit string; the real bound is MAX_ALARM_OFFSET_SECONDS below.
-_ALARM_OFFSET_RE = re.compile(r"^0$|^-[1-9]\d{0,4}[dhm]$")
+_ALARM_OFFSET_RE = re.compile(r"^0[dhm]?$|^-[1-9]\d{0,4}[dhm]$")
 # No alert needs more than a week's notice. Also keeps parse_alarm_offset's
 # result far under timedelta's range, so a crafted offset can't overflow it
 # building the VALARM in ics.py.
@@ -89,7 +89,7 @@ def parse_alarm_offset(value: str) -> int:
     """
     if not _ALARM_OFFSET_RE.match(value):
         raise ConfigError(f"Invalid alarm offset: {value!r} (expected e.g. '-1d', '-30m', '0')")
-    if value == "0":
+    if value[0] == "0":
         return 0
     amount, unit = int(value[1:-1]), value[-1]
     seconds = amount * {"d": 86400, "h": 3600, "m": 60}[unit]
