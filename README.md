@@ -180,6 +180,12 @@ rejected and logged, and the previous configuration stays active.
 
 ## Deployment configuration
 
+Before first starting the Compose stack, create its writable state directory:
+
+```bash
+mkdir -p state && chown -R 1000:1000 state
+```
+
 | Variable | Description |
 | --- | --- |
 | `UID_DOMAIN` | Domain baked into every event's stable ICS UID. Pick it once — changing it later republishes and duplicates every event for subscribers (see `docs/operations.md`, "Changing UID_DOMAIN"). |
