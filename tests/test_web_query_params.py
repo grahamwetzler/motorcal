@@ -27,7 +27,7 @@ def _event(uid, session_type=SessionType.RACE, *, series="wec", alarms=None, con
         all_day_date=None if confirmed else "2026-04-19", time_confirmed=confirmed,
         duration_seconds=3600, location=None, description="D",
         status=EventStatus.CONFIRMED, sequence=1, dtstamp=NOW, last_modified=NOW,
-        fingerprint="fp", alarms=list(alarms or []), session_key=uid,
+        fingerprint="fp", alarms=list(alarms or []),
     )
 
 

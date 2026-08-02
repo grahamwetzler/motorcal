@@ -47,7 +47,6 @@ class PublishedEvent:
     last_modified: datetime
     fingerprint: str
     alarms: list[str] = field(default_factory=list)
-    session_key: str = ""  # the session's `uid:`, for config lookups
 
 
 def session_uid(session: "SessionConfig", uid_domain: str) -> str:

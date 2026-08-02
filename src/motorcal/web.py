@@ -108,7 +108,7 @@ class _Filters:
 
 @dataclass(frozen=True)
 class Selection:
-    """One request's cut of the feed. Private to this module -- see `ics.render_bytes`."""
+    """One request's cut of the feed. Private to this module."""
 
     series: tuple[str, ...]
     filters: dict[str, _Filters]

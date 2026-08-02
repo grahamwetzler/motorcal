@@ -13,7 +13,7 @@ def _published(uid, series="wec", summary="S"):
         start=datetime(2026, 4, 19, 13, tzinfo=timezone.utc), all_day_date=None,
         time_confirmed=True, duration_seconds=3600, location="L", description="D",
         status=EventStatus.CONFIRMED, sequence=1, dtstamp=NOW, last_modified=NOW,
-        fingerprint="fp", alarms=["-1d"], session_key="1",
+        fingerprint="fp", alarms=["-1d"],
     )
 
 
@@ -25,7 +25,13 @@ def test_render_combined_bytes_carries_every_series_under_its_own_name():
 
     ics_bytes = render_combined_bytes(config, published)
 
+    assert b"VERSION:2.0" in ics_bytes
+    assert b"METHOD:PUBLISH" in ics_bytes
     assert b"X-WR-CALNAME:Motorsports" in ics_bytes
+    assert b"X-WR-CALDESC:All series" in ics_bytes
+    assert b"REFRESH-INTERVAL;VALUE=DURATION:PT1H" in ics_bytes
+    assert b"X-PUBLISHED-TTL:PT1H" in ics_bytes
+    assert b"PRODID" in ics_bytes
     assert b"SUMMARY:WEC: Imola" in ics_bytes
     assert b"SUMMARY:F1: Bahrain" in ics_bytes
 
@@ -41,13 +47,30 @@ def test_render_combined_bytes_skips_series_the_config_no_longer_has():
     assert b"UID:u2" not in ics_bytes
 
 
-def test_render_combined_bytes_is_deterministic_regardless_of_series_order():
+def test_render_combined_bytes_is_deterministic_regardless_of_input_order():
     config = make_config(
         series={"wec": make_series(), "f1": make_series(name="F1")}
     )
-    wec, f1 = {"wec": [_published("u1")]}, {"f1": [_published("u2", series="f1")]}
+    forward = {
+        "wec": [_published("u1"), _published("u3")],
+        "f1": [_published("u2", series="f1")],
+    }
+    backward = {
+        "f1": [_published("u2", series="f1")],
+        "wec": [_published("u3"), _published("u1")],
+    }
 
-    assert render_combined_bytes(config, {**wec, **f1}) == render_combined_bytes(config, {**f1, **wec})
+    assert render_combined_bytes(config, forward) == render_combined_bytes(config, backward)
+
+
+def test_render_combined_bytes_is_valid_when_empty():
+    ics_bytes = render_combined_bytes(
+        make_config(series={"wec": make_series()}), {"wec": []}
+    )
+
+    assert b"BEGIN:VCALENDAR" in ics_bytes
+    assert b"END:VCALENDAR" in ics_bytes
+    assert b"BEGIN:VEVENT" not in ics_bytes
 
 
 def test_compute_content_hash_is_stable_for_identical_bytes():

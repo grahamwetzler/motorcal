@@ -188,7 +188,7 @@ def build_published_event(
         start=start, all_day_date=all_day_date, time_confirmed=time_confirmed,
         duration_seconds=duration_seconds, location=event.location, description=description,
         status=status, sequence=sequence, dtstamp=dtstamp, last_modified=last_modified,
-        fingerprint=fingerprint, alarms=alarms, session_key=session.key,
+        fingerprint=fingerprint, alarms=alarms,
     )
 
 

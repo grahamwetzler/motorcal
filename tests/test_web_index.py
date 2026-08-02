@@ -32,7 +32,7 @@ def _event(
         start=start, all_day_date=all_day_date, time_confirmed=time_confirmed,
         duration_seconds=3600, location=location, description="D", status=status,
         sequence=1, dtstamp=NOW, last_modified=NOW, fingerprint="fp",
-        session_key=uid, alarms=list(alarms),
+        alarms=list(alarms),
     )
 
 

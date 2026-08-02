@@ -31,7 +31,6 @@ def test_published_event_construction():
         last_modified=now,
         fingerprint="deadbeef",
         alarms=["-1d", "-30m"],
-        session_key="wec-2026-imola-race",
     )
     assert pub.session_type is SessionType.RACE
     assert pub.status is EventStatus.CONFIRMED
