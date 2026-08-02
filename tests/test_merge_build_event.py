@@ -182,6 +182,23 @@ def test_a_changed_session_advances_sequence_and_dtstamp():
     assert second.dtstamp == later
 
 
+def test_renaming_a_series_advances_every_session_it_holds():
+    event = make_event("r", start="2026-04-19T13:00:00+00:00")
+    original_series = make_series(name="WEC")
+    first = _build(event, series_config=original_series)
+    previous = VersionState(
+        fingerprint=first.fingerprint, sequence=first.sequence,
+        dtstamp=first.dtstamp.isoformat(), last_modified=first.last_modified.isoformat(),
+        series_name=original_series.name,
+    )
+
+    later = datetime(2026, 6, 1, tzinfo=timezone.utc)
+    renamed = _build(event, series_config=make_series(name="FIA WEC"), previous=previous, now=later)
+
+    assert renamed.sequence > first.sequence
+    assert renamed.dtstamp == later
+
+
 def test_renaming_the_event_changes_every_session_it_holds():
     """The point of the shape: the weekend's name is stored once."""
     event = EventConfig(

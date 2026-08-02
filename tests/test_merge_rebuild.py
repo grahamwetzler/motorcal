@@ -60,6 +60,7 @@ def test_rebuild_records_the_version_ledger():
     assert state.versions[built.uid] == VersionState(
         fingerprint=built.fingerprint, sequence=built.sequence,
         dtstamp=built.dtstamp.isoformat(), last_modified=built.last_modified.isoformat(),
+        series_name="WEC",
     )
 
 

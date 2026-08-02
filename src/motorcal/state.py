@@ -26,6 +26,7 @@ class VersionState(StrictModel):
     sequence: int
     dtstamp: str
     last_modified: str
+    series_name: str | None = None
 
 
 class State(StrictModel):

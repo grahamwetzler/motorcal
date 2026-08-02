@@ -34,7 +34,7 @@ def compute_fingerprint(
     duration_seconds: int | None,
     alarms: list[str],
 ) -> str:
-    """A stable digest over every client-visible VEVENT field. Alarm order never matters."""
+    """A stable digest over every client-visible session field. Alarm order never matters."""
     payload = {
         "summary": summary,
         "description": description,
@@ -174,7 +174,11 @@ def build_published_event(
     )
 
     now_unix_minute = int(now.timestamp() // 60)
-    if previous is not None and previous.fingerprint == fingerprint:
+    if (
+        previous is not None
+        and previous.fingerprint == fingerprint
+        and (previous.series_name is None or previous.series_name == series_config.name)
+    ):
         sequence = previous.sequence
         dtstamp = datetime.fromisoformat(previous.dtstamp)
         last_modified = datetime.fromisoformat(previous.last_modified)
@@ -220,6 +224,7 @@ def rebuild_publication(
                 fingerprint=built.fingerprint, sequence=built.sequence,
                 dtstamp=built.dtstamp.isoformat(),
                 last_modified=built.last_modified.isoformat(),
+                series_name=config.series[built.series].name,
             )
 
     # The ledger exists to keep SEQUENCE stable for events a subscriber can still

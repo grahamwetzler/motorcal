@@ -12,6 +12,7 @@ them, and comments in them survive.
 from __future__ import annotations
 
 import re
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -205,6 +206,30 @@ class SessionConfig(StrictModel):
             raise ValueError("A session's uid must not be empty")
         return value
 
+    @field_validator("start")
+    @classmethod
+    def validate_start(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ValueError("start must be an ISO 8601 timestamp") from exc
+        if parsed.tzinfo is None or parsed.utcoffset() is None:
+            raise ValueError("start must include a UTC offset")
+        return value
+
+    @field_validator("date")
+    @classmethod
+    def validate_date(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        try:
+            date.fromisoformat(value)
+        except ValueError as exc:
+            raise ValueError("date must be an ISO 8601 date") from exc
+        return value
+
     @field_validator("duration")
     @classmethod
     def validate_duration_format(cls, value: str | None) -> str | None:
@@ -226,9 +251,9 @@ class SessionConfig(StrictModel):
 
     @model_validator(mode="after")
     def validate_timing(self) -> "SessionConfig":
-        if bool(self.start) == bool(self.date):
+        if (self.start is None) == (self.date is None):
             raise ValueError("A session must set exactly one of start or date")
-        if self.tbc and self.start:
+        if self.tbc and self.start is not None:
             raise ValueError("A session with a confirmed start cannot also be tbc")
         return self
 
