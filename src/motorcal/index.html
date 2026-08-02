@@ -273,8 +273,17 @@ function buildURL(state) {
     if (!own) continue;
     const keyTypes = TYPES_FOR[key] || TYPES;
     if (own.sessions && !own.sessions.length) empty.push(`${NAMES[key]} session type`);
-    if (own.sessions && own.sessions.length && own.sessions.length !== keyTypes.length) {
-      params.push([`${key}.sessions`, own.sessions.join(",")]);
+    if (own.sessions && own.sessions.length) {
+      // Omitting the override means "inherit the global filter" -- so compare
+      // against what the series would get from that filter, not against
+      // "every type this series runs". Otherwise a fully-ticked override
+      // silently loses to a global `sessions=` that's narrower than it.
+      const inherited = state.sessions.length === TYPES.length
+        ? keyTypes.map(([t]) => t)
+        : keyTypes.filter(([t]) => state.sessions.includes(t)).map(([t]) => t);
+      const isInherited = own.sessions.length === inherited.length
+        && own.sessions.every((t, i) => t === inherited[i]);
+      if (!isInherited) params.push([`${key}.sessions`, own.sessions.join(",")]);
     }
     push(`${key}.alarms`, own.alarms || "");
     for (const [type] of keyTypes) push(`${key}.alarms_${type}`, own.byType[type] || "");
@@ -601,6 +610,10 @@ render();
       `/events.ics?series=${first}&${first}.alarms=-1h`, "per-series override"],
     [at({per: {[second]: {sessions: null, alarms: "-1h", byType: {}}}, series: [first]}),
       `/events.ics?series=${first}`, "override for a series not in the feed is dropped"],
+    [at({series: [first], sessions: ["race"],
+      per: {[first]: {sessions: TYPES_FOR[first].map(t => t[0]), alarms: "", byType: {}}}}),
+      `/events.ics?series=${first}&sessions=race&${first}.sessions=${TYPES_FOR[first].map(t => t[0]).join(",")}`,
+      "a fully-ticked override still overrides a narrower global session filter"],
   ];
   let ok = true;
   for (const [got, want, what] of cases) {
