@@ -3,14 +3,14 @@
 ## Where things live
 
 - `data/` is the source of truth: `defaults.yaml` plus one file per series,
-  each holding that series' settings and its full event list. It is mounted
-  **read-only** into the container — nothing in the app writes it. You and the
+  each holding that series' settings and its full event list. It is included
+  **read-only** in the image — nothing in the app writes it. You and the
   scheduled agent that reads the official timetables are the only writers.
-- `state/state.yaml` is the machine-only sidecar: the uid_domain binding and the
-  per-UID version ledger (`fingerprint`/`sequence`/`dtstamp`) that stops calendar
-  clients re-notifying subscribers on every rebuild. It gets its own writable
-  directory because it is replaced atomically (write a sibling tempfile, fsync,
-  rename), which a single-file bind mount does not survive.
+- The Compose `state` volume holds `/state/state.yaml`, the machine-only
+  sidecar: the uid_domain binding and per-UID version ledger
+  (`fingerprint`/`sequence`/`dtstamp`) that stops calendar clients re-notifying
+  subscribers on every rebuild. It is replaced atomically (write a sibling
+  tempfile, fsync, rename).
 
 ## Editing events by hand
 
@@ -35,7 +35,7 @@ the old copy until it expires. Rename only when you mean to.
 
 ```bash
 cp -r data data-$(date +%F)
-cp state/state.yaml state/state-$(date +%F).yaml
+docker compose cp app:/state/state.yaml state-$(date +%F).yaml
 ```
 
 Restoring `data/` restores your events. Restoring an older `state.yaml` rolls
@@ -89,8 +89,8 @@ the old copies expire.
 Pushing to `main` runs tests and config validation, then builds and pushes
 `ghcr.io/grahamwetzler/motorcal:latest` (and a `sha-<commit>` tag) via GitHub
 Actions. A `watchtower` container in `compose.yaml` polls GHCR every 30
-minutes and recreates `app` (and `cloudflared`) when a new image lands — no
-manual pull or restart needed on any host running this stack.
+minutes and recreates `app` when a new image lands — no manual pull or restart
+needed on any host running this stack.
 
 One-time setup after the very first push: the GHCR package is created
 private by default even though the repo is public. Open the package's

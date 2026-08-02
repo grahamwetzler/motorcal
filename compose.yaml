@@ -4,11 +4,12 @@ services:
     restart: unless-stopped
     environment:
       UID_DOMAIN: "${UID_DOMAIN:?UID_DOMAIN must be set}"
+    ports:
+      - "127.0.0.1:8000:8000"
     volumes:
-      # data/ is baked into the image (see Dockerfile). state.yaml lives in its
-      # own writable directory because it is replaced atomically, which a
-      # single-file bind mount does not survive.
-      - ./state:/state
+      # Docker initializes this named volume from the image's UID 1000-owned
+      # /state directory. state.yaml is replaced atomically on every save.
+      - state:/state
     container_name: app
     labels:
       - com.centurylinklabs.watchtower.enable=true
@@ -19,20 +20,12 @@ services:
       retries: 3
       start_period: 10s
 
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    restart: unless-stopped
-    command: tunnel --no-autoupdate run
-    environment:
-      TUNNEL_TOKEN: "${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN must be set}"
-    labels:
-      - com.centurylinklabs.watchtower.enable=true
-    depends_on:
-      - app
-
   watchtower:
     image: ghcr.io/nicholas-fedor/watchtower:latest
     restart: unless-stopped
     command: --label-enable --cleanup --interval 1800
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  state:

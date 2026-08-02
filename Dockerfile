@@ -10,16 +10,14 @@ COPY src ./src
 RUN uv sync --frozen --no-dev
 
 FROM python:3.13-slim AS runtime
-RUN groupadd --gid 1000 motorcal && useradd --uid 1000 --gid motorcal --create-home motorcal
+RUN groupadd --gid 1000 motorcal && useradd --uid 1000 --gid motorcal --create-home motorcal \
+    && mkdir /state && chown motorcal:motorcal /state
 WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/src /app/src
 COPY pyproject.toml ./
 COPY --chown=motorcal:motorcal data /data
 ENV PATH="/app/.venv/bin:$PATH"
-# /state is deliberately not created here. Docker creates it when compose.yaml
-# bind-mounts ./state; without that mount the first save fails loudly instead of
-# writing the version ledger into a container layer that the next update discards.
 USER motorcal
 EXPOSE 8000
 ENTRYPOINT ["motorcal"]

@@ -1,7 +1,7 @@
 [project]
 name = "motorcal"
 version = "0.1.0"
-description = "Self-hosted per-series motorsports ICS calendar publisher"
+description = "Motorsports ICS calendar publisher"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115",

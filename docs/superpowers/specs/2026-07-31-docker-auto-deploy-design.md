@@ -33,11 +33,8 @@ though the repo is public.
 
 ## `compose.yaml` changes
 
-- `app` gets `image: ghcr.io/grahamwetzler/motorcal:latest` added alongside
-  its existing `build:` — a dev machine can still `docker compose build` to
-  test uncommitted changes; a deployment host with no source checked out just
-  pulls
-- `app` and `cloudflared` get label `com.centurylinklabs.watchtower.enable=true`
+- `app` gets `image: ghcr.io/grahamwetzler/motorcal:latest`
+- `app` gets label `com.centurylinklabs.watchtower.enable=true`
 - new `watchtower` service (`containrrr/watchtower` image), docker.sock
   mounted read-only, `--label-enable --cleanup --interval 1800`, restart
   unless-stopped
@@ -53,6 +50,5 @@ tag is switched back to `:latest`.
 - Push a trivial commit to `main`, confirm the `build-and-push` job runs and
   the GHCR package appears with `latest` + `sha-*` tags
 - On this machine: `docker compose pull && docker compose up -d`, confirm
-  `docker compose logs watchtower` shows it monitoring `app` and
-  `cloudflared`
+  `docker compose logs watchtower` shows it monitoring `app`
 - Confirm `docker compose config` is valid and existing tests still pass
