@@ -39,11 +39,6 @@ def load(path: Path) -> State:
     if not path.exists():
         return State()
     raw = yaml.safe_load(path.read_text()) or {}
-    versions = raw.get("versions") if isinstance(raw, dict) else None
-    if isinstance(versions, dict):
-        for version in versions.values():
-            if isinstance(version, dict):
-                version.pop("status", None)
     return State.model_validate(raw)
 
 

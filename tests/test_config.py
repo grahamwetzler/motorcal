@@ -9,7 +9,6 @@ from motorcal.config import (
     load_config,
     parse_alarm_offset,
     parse_duration,
-    series_path,
 )
 
 EXAMPLE_DIR = "data.example"
@@ -253,7 +252,7 @@ def test_duplicate_session_uids_across_two_series_are_rejected(tmp_path):
     """A UID keys the version ledger and identifies the event in /events.ics, so it has
     to be unique across the whole directory, not just within one series file."""
     config_dir = _dir(tmp_path)
-    series_path(config_dir, "f1").write_text(
+    (config_dir / "f1.yaml").write_text(
         (config_dir / "wec.yaml").read_text().replace("name: WEC", "name: F1")
     )
 

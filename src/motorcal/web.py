@@ -20,7 +20,6 @@ import json
 import logging
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
-from enum import Enum
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -45,22 +44,14 @@ _QUALIFYING_TYPES = {
 # must not be a way around that.
 _NO_ALARM_TYPES = {SessionType.TESTING}
 
-class EmojiOption(str, Enum):
-    """What, if anything, to put in front of every published title."""
-
-    NONE = "none"
-    FLAG = "flag"
-    CAR = "car"
-
-
 _EMOJI_PREFIXES = {
-    EmojiOption.NONE: "",
-    EmojiOption.FLAG: "\N{CHEQUERED FLAG} ",
-    EmojiOption.CAR: "\N{RACING CAR} ",
+    "none": "",
+    "flag": "\N{CHEQUERED FLAG} ",
+    "car": "\N{RACING CAR} ",
 }
 # `emoji=true`/`emoji=false` predate the choice of emoji and are kept as
 # aliases for the two options they used to mean.
-_EMOJI_BOOL_ALIASES = {"true": EmojiOption.FLAG, "false": EmojiOption.NONE}
+_EMOJI_BOOL_ALIASES = {"true": "flag", "false": "none"}
 
 # The feed-builder page served at `/`. Read once at import: it ships inside the
 # package, so it can only change with a new image.
@@ -272,14 +263,12 @@ def _parse_bool(value: str, key: str) -> bool:
 
 def _parse_emoji(value: str, key: str) -> str:
     normalized = value.strip().lower()
-    option = _EMOJI_BOOL_ALIASES.get(normalized)
-    if option is None:
-        try:
-            option = EmojiOption(normalized)
-        except ValueError:
-            valid = ", ".join(o.value for o in EmojiOption)
-            raise _bad_request(f"{key!r} must be one of: {valid} (got {value!r})") from None
-    return _EMOJI_PREFIXES[option]
+    option = _EMOJI_BOOL_ALIASES.get(normalized, normalized)
+    try:
+        return _EMOJI_PREFIXES[option]
+    except KeyError:
+        valid = ", ".join(_EMOJI_PREFIXES)
+        raise _bad_request(f"{key!r} must be one of: {valid} (got {value!r})") from None
 
 
 def _parse_sessions(value: str, key: str) -> frozenset[SessionType]:

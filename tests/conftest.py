@@ -9,7 +9,6 @@ from motorcal.config import (
     SeriesConfig,
     SessionConfig,
     UnknownTimeConfig,
-    series_path,
 )
 from motorcal.state import State
 
@@ -83,7 +82,7 @@ def write_config_dir(tmp_path, config: Config):
         )
     )
     for series, series_config in config.series.items():
-        series_path(config_dir, series).write_text(
+        (config_dir / f"{series}.yaml").write_text(
             yaml.safe_dump(
                 series_config.model_dump(mode="json", exclude_none=True), sort_keys=False
             )
