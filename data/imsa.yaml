@@ -4,177 +4,177 @@ durations:
   race: 160m
 alerts:
   race:
-  - '0'
+    - '0'
 events:
-- name: Mobil 1 Twelve Hours of Sebring
-  location: Sebring International Raceway, United States
-  round: 2
-  sessions:
-  - uid: imsa-2026-sebring-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-03-20T15:25:00+00:00'
-    duration: 75m
-    status: CONFIRMED
-    alarms:
-    - '0'
-  - uid: imsa-2026-mobil-1-twelve-hours-of-sebring-race
-    type: race
-    start: '2026-03-21T14:00:00+00:00'
-    duration: 720m
-    status: CONFIRMED
-- name: Acura Grand Prix of Long Beach
-  location: Long Beach Street Circuit, United States
-  round: 3
-  sessions:
-  - uid: imsa-2026-long-beach-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-04-18T00:25:00+00:00'
-    duration: 35m
-    status: CONFIRMED
-    alarms:
-    - '0'
-  - uid: imsa-2026-acura-grand-prix-of-long-beach-race
-    type: race
-    start: '2026-04-18T20:05:00+00:00'
-    duration: 100m
-    status: CONFIRMED
-- name: Motul Course de Monterey
-  location: Laguna Seca, United States
-  round: 4
-  sessions:
-  - uid: imsa-2026-laguna-seca-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-05-02T22:10:00+00:00'
-    duration: 60m
-    status: CONFIRMED
-    alarms:
-    - '0'
-  - uid: imsa-2026-motul-course-de-monterey-race
-    type: race
-    date: '2026-05-03'
-    tbc: true
-    status: CONFIRMED
-- name: Chevrolet Detroit Grand Prix Presented By Lear
-  location: Detroit Street Circuit, United States
-  round: 5
-  sessions:
-  - uid: imsa-2026-detroit-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-05-29T20:50:00+00:00'
-    duration: 35m
-    status: CONFIRMED
-    alarms:
-    - '0'
-  - uid: imsa-2026-chevrolet-detroit-grand-prix-presented-by-lear-race
-    type: race
-    date: '2026-05-30'
-    tbc: true
-    duration: 100m
-    status: CONFIRMED
-- name: Sahlen's Six Hours of The Glen
-  location: Watkins Glen International, United States
-  round: 6
-  sessions:
-  - uid: imsa-2026-watkins-glen-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-06-27T19:40:00+00:00'
-    duration: 75m
-    status: CONFIRMED
-    alarms:
-    - '0'
-  - uid: imsa-2026-sahlen-s-six-hours-of-the-glen-race
-    type: race
-    start: '2026-06-28T16:00:00+00:00'
-    duration: 360m
-    status: CONFIRMED
-- name: Chevrolet Grand Prix
-  location: Canadian Tire Motorsport Park, Canada
-  round: 7
-  sessions:
-  - uid: imsa-2026-ctmp-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-07-11T20:00:00+00:00'
-    duration: 65m
-    status: CONFIRMED
-    alarms:
-    - '0'
-  - uid: imsa-2026-chevrolet-grand-prix-race
-    type: race
-    start: '2026-07-12T18:00:00+00:00'
-    status: CONFIRMED
-- name: Motul SportsCar Endurance Grand Prix
-  location: Road America, United States
-  round: 8
-  sessions:
-  - uid: imsa-2026-road-america-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-08-01T20:25:00+00:00'
-    duration: 75m
-    status: CONFIRMED
-    alarms:
-    - '0'
-  - uid: imsa-2026-motul-sportscar-endurance-grand-prix-race
-    type: race
-    start: '2026-08-02T15:40:00+00:00'
-    duration: 360m
-    status: CONFIRMED
-    note: Green flag confirmed 11:40am ET per IMSA's official race-week schedule
-    alarms:
-    - '0'
-    - '-10m'
-- name: Michelin GT Challenge at VIR
-  location: Virginia International Raceway, United States
-  round: 9
-  sessions:
-  - uid: imsa-2026-vir-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-08-22T20:45:00+00:00'
-    duration: 40m
-    status: CONFIRMED
-    alarms:
-    - '0'
-  - uid: imsa-2026-michelin-gt-challenge-at-vir-race
-    type: race
-    start: '2026-08-23T16:00:00+00:00'
-    status: CONFIRMED
-- name: TireRack.com Battle On The Bricks
-  location: Indianapolis Motor Speedway, United States
-  round: 10
-  sessions:
-  - uid: imsa-2026-indianapolis-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-09-19T21:00:00+00:00'
-    duration: 80m
-    status: CONFIRMED
-    alarms:
-    - '0'
-  - uid: imsa-2026-tirerack-com-battle-on-the-bricks-race
-    type: race
-    start: '2026-09-20T19:00:00+00:00'
-    status: CONFIRMED
-- name: Motul Petit Le Mans
-  location: Michelin Raceway Road Atlanta, United States
-  round: 11
-  sessions:
-  - uid: imsa-2026-road-atlanta-qualifying
-    label: Qualifying
-    type: qualifying
-    start: '2026-10-02T18:15:00+00:00'
-    duration: 80m
-    status: CONFIRMED
-    alarms:
-    - '0'
-  - uid: imsa-2026-motul-petit-le-mans-race
-    type: race
-    start: '2026-10-03T16:00:00+00:00'
-    duration: 600m
-    status: CONFIRMED
+  - name: Mobil 1 Twelve Hours of Sebring
+    location: Sebring International Raceway, United States
+    round: 2
+    sessions:
+      - uid: imsa-2026-sebring-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-03-20T15:25:00+00:00'
+        duration: 75m
+        status: CONFIRMED
+        alarms:
+          - '0'
+      - uid: imsa-2026-mobil-1-twelve-hours-of-sebring-race
+        type: race
+        start: '2026-03-21T14:00:00+00:00'
+        duration: 720m
+        status: CONFIRMED
+  - name: Acura Grand Prix of Long Beach
+    location: Long Beach Street Circuit, United States
+    round: 3
+    sessions:
+      - uid: imsa-2026-long-beach-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-04-18T00:25:00+00:00'
+        duration: 35m
+        status: CONFIRMED
+        alarms:
+          - '0'
+      - uid: imsa-2026-acura-grand-prix-of-long-beach-race
+        type: race
+        start: '2026-04-18T20:05:00+00:00'
+        duration: 100m
+        status: CONFIRMED
+  - name: Motul Course de Monterey
+    location: Laguna Seca, United States
+    round: 4
+    sessions:
+      - uid: imsa-2026-laguna-seca-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-05-02T22:10:00+00:00'
+        duration: 60m
+        status: CONFIRMED
+        alarms:
+          - '0'
+      - uid: imsa-2026-motul-course-de-monterey-race
+        type: race
+        date: '2026-05-03'
+        tbc: true
+        status: CONFIRMED
+  - name: Chevrolet Detroit Grand Prix Presented By Lear
+    location: Detroit Street Circuit, United States
+    round: 5
+    sessions:
+      - uid: imsa-2026-detroit-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-05-29T20:50:00+00:00'
+        duration: 35m
+        status: CONFIRMED
+        alarms:
+          - '0'
+      - uid: imsa-2026-chevrolet-detroit-grand-prix-presented-by-lear-race
+        type: race
+        date: '2026-05-30'
+        tbc: true
+        duration: 100m
+        status: CONFIRMED
+  - name: Sahlen's Six Hours of The Glen
+    location: Watkins Glen International, United States
+    round: 6
+    sessions:
+      - uid: imsa-2026-watkins-glen-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-06-27T19:40:00+00:00'
+        duration: 75m
+        status: CONFIRMED
+        alarms:
+          - '0'
+      - uid: imsa-2026-sahlen-s-six-hours-of-the-glen-race
+        type: race
+        start: '2026-06-28T16:00:00+00:00'
+        duration: 360m
+        status: CONFIRMED
+  - name: Chevrolet Grand Prix
+    location: Canadian Tire Motorsport Park, Canada
+    round: 7
+    sessions:
+      - uid: imsa-2026-ctmp-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-07-11T20:00:00+00:00'
+        duration: 65m
+        status: CONFIRMED
+        alarms:
+          - '0'
+      - uid: imsa-2026-chevrolet-grand-prix-race
+        type: race
+        start: '2026-07-12T18:00:00+00:00'
+        status: CONFIRMED
+  - name: Motul SportsCar Endurance Grand Prix
+    location: Road America, United States
+    round: 8
+    sessions:
+      - uid: imsa-2026-road-america-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-08-01T20:25:00+00:00'
+        duration: 75m
+        status: CONFIRMED
+        alarms:
+          - '0'
+      - uid: imsa-2026-motul-sportscar-endurance-grand-prix-race
+        type: race
+        start: '2026-08-02T15:40:00+00:00'
+        duration: 360m
+        status: CONFIRMED
+        note: Green flag confirmed 11:40am ET per IMSA's official race-week schedule
+        alarms:
+          - '0'
+          - '-10m'
+  - name: Michelin GT Challenge at VIR
+    location: Virginia International Raceway, United States
+    round: 9
+    sessions:
+      - uid: imsa-2026-vir-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-08-22T20:45:00+00:00'
+        duration: 40m
+        status: CONFIRMED
+        alarms:
+          - '0'
+      - uid: imsa-2026-michelin-gt-challenge-at-vir-race
+        type: race
+        start: '2026-08-23T16:00:00+00:00'
+        status: CONFIRMED
+  - name: TireRack.com Battle On The Bricks
+    location: Indianapolis Motor Speedway, United States
+    round: 10
+    sessions:
+      - uid: imsa-2026-indianapolis-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-09-19T21:00:00+00:00'
+        duration: 80m
+        status: CONFIRMED
+        alarms:
+          - '0'
+      - uid: imsa-2026-tirerack-com-battle-on-the-bricks-race
+        type: race
+        start: '2026-09-20T19:00:00+00:00'
+        status: CONFIRMED
+  - name: Motul Petit Le Mans
+    location: Michelin Raceway Road Atlanta, United States
+    round: 11
+    sessions:
+      - uid: imsa-2026-road-atlanta-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-10-02T18:15:00+00:00'
+        duration: 80m
+        status: CONFIRMED
+        alarms:
+          - '0'
+      - uid: imsa-2026-motul-petit-le-mans-race
+        type: race
+        start: '2026-10-03T16:00:00+00:00'
+        duration: 600m
+        status: CONFIRMED

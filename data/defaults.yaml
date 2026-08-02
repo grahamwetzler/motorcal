@@ -9,16 +9,16 @@ defaults:
     warmup: 20m
   alerts:
     race:
-    - -1d
-    - -30m
+      - -1d
+      - -30m
     qualifying:
-    - -15m
+      - -15m
     hyperpole:
-    - -15m
+      - -15m
     sprint:
-    - -15m
+      - -15m
     sprint_qualifying:
-    - -15m
+      - -15m
     practice: []
     warmup: []
 unknown_time:
