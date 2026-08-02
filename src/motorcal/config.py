@@ -232,17 +232,6 @@ class SessionConfig(StrictModel):
             raise ValueError("A session with a confirmed start cannot also be tbc")
         return self
 
-    @property
-    def key(self) -> str:
-        """The identity this session is matched on within its series file."""
-        return self.uid
-
-    @property
-    def when(self) -> str:
-        """Sort key: whichever of start/date is set, both ISO and so both ordered."""
-        return self.start or self.date or ""
-
-
 class EventConfig(StrictModel):
     """One race event -- a weekend -- and its list of sessions.
 
@@ -267,11 +256,6 @@ class EventConfig(StrictModel):
             raise ValueError(f"Event {self.name!r} has no sessions")
         return self
 
-    @property
-    def when(self) -> str:
-        return min((session.when for session in self.sessions), default="")
-
-
 class SeriesConfig(StrictModel):
     """One data/<series>.yaml. The series key is the filename stem."""
 
@@ -295,9 +279,9 @@ class SeriesConfig(StrictModel):
     def validate_unique_session_keys(self) -> "SeriesConfig":
         seen: set[str] = set()
         for _, session in self.iter_sessions():
-            if session.key in seen:
-                raise ValueError(f"Duplicate session uid in this series: {session.key!r}")
-            seen.add(session.key)
+            if session.uid in seen:
+                raise ValueError(f"Duplicate session uid in this series: {session.uid!r}")
+            seen.add(session.uid)
         return self
 
     def iter_sessions(self) -> list[tuple[EventConfig, SessionConfig]]:
@@ -313,10 +297,6 @@ class Config(StrictModel):
 
     globals: GlobalConfig
     series: dict[str, SeriesConfig]
-
-    def events_for(self, series: str) -> list[EventConfig]:
-        return self.series[series].events
-
 
 _SERIES_KEY_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 
@@ -381,7 +361,7 @@ def load_config(config_dir: Path, *, uid_domain: str) -> Config:
             uid = session_uid(session, uid_domain)
             if uid in owner:
                 raise ConfigError(
-                    f"Duplicate session uid {session.key!r} in {key}.yaml: already used in "
+                    f"Duplicate session uid {session.uid!r} in {key}.yaml: already used in "
                     f"{owner[uid]}.yaml. A uid must be unique across the whole data directory."
                 )
             owner[uid] = key

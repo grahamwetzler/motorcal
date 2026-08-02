@@ -26,7 +26,7 @@ def _event(uid, session_type):
         start=datetime(2026, 4, 19, 13, tzinfo=timezone.utc), all_day_date=None,
         time_confirmed=True, duration_seconds=3600, location=None, description="D",
         status=EventStatus.CONFIRMED, sequence=1, dtstamp=NOW, last_modified=NOW,
-        fingerprint="fp", session_key=uid,
+        fingerprint="fp",
     )
 
 

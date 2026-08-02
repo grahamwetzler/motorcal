@@ -361,7 +361,7 @@ function sentence(state, picked) {
 // for that series.
 function starts(event) { return new Date(event.start || event.date + "T00:00:00"); }
 
-function nextEventFor(built, params, series) {
+function nextEventFor(params, series) {
   const kept = UPCOMING.filter((event) => {
     if (event.series !== series) return false;
     const sessions = params.get(`${series}.sessions`) ?? params.get("sessions");
@@ -388,7 +388,7 @@ function nextEventFor(built, params, series) {
 // with nothing upcoming has no start to sort by, so it sinks to the bottom.
 function nextEvents(built) {
   const params = new Map(built.params);
-  const results = built.picked.map(series => ({series, event: nextEventFor(built, params, series)}));
+  const results = built.picked.map(series => ({series, event: nextEventFor(params, series)}));
   return results.sort((a, b) => {
     if (!a.event || !b.event) return (a.event ? 0 : 1) - (b.event ? 0 : 1);
     return starts(a.event) - starts(b.event);
@@ -654,7 +654,7 @@ render();
     UPCOMING.length = 0;
     UPCOMING.push(sample, {...sample, type: "practice", alarms: []});
     const built = buildURL({...base, ...over});
-    const got = nextEventFor(built, new Map(built.params), series);
+    const got = nextEventFor(new Map(built.params), series);
     UPCOMING.length = 0;
     UPCOMING.push(...saved);
     return got;
