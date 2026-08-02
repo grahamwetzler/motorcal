@@ -33,6 +33,7 @@ def compute_fingerprint(
     all_day_date: str | None,
     duration_seconds: int | None,
     alarms: list[str],
+    series_name: str,
 ) -> str:
     """A stable digest over every client-visible VEVENT field. Alarm order never matters."""
     payload = {
@@ -44,6 +45,7 @@ def compute_fingerprint(
         "all_day_date": all_day_date,
         "duration_seconds": duration_seconds,
         "alarms": sorted(alarms),
+        "series_name": series_name,
     }
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
@@ -170,7 +172,7 @@ def build_published_event(
     fingerprint = compute_fingerprint(
         summary=summary, description=description, location=event.location, status=status.value,
         start=start.isoformat() if start else None, all_day_date=all_day_date,
-        duration_seconds=duration_seconds, alarms=alarms,
+        duration_seconds=duration_seconds, alarms=alarms, series_name=series_config.name,
     )
 
     now_unix_minute = int(now.timestamp() // 60)

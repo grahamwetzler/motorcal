@@ -8,12 +8,12 @@ def test_compute_fingerprint_is_deterministic_for_identical_inputs():
     fp1 = compute_fingerprint(
         summary="Race", description="desc", location="Imola", status="CONFIRMED",
         start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600,
-        alarms=["-1d", "-30m"],
+        alarms=["-1d", "-30m"], series_name="WEC",
     )
     fp2 = compute_fingerprint(
         summary="Race", description="desc", location="Imola", status="CONFIRMED",
         start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600,
-        alarms=["-1d", "-30m"],
+        alarms=["-1d", "-30m"], series_name="WEC",
     )
     assert fp1 == fp2
 
@@ -22,12 +22,12 @@ def test_compute_fingerprint_alarm_order_does_not_matter():
     fp1 = compute_fingerprint(
         summary="Race", description="desc", location="Imola", status="CONFIRMED",
         start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600,
-        alarms=["-1d", "-30m"],
+        alarms=["-1d", "-30m"], series_name="WEC",
     )
     fp2 = compute_fingerprint(
         summary="Race", description="desc", location="Imola", status="CONFIRMED",
         start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600,
-        alarms=["-30m", "-1d"],
+        alarms=["-30m", "-1d"], series_name="WEC",
     )
     assert fp1 == fp2
 
@@ -35,11 +35,13 @@ def test_compute_fingerprint_alarm_order_does_not_matter():
 def test_compute_fingerprint_changes_when_status_changes():
     fp1 = compute_fingerprint(
         summary="Race", description="desc", location="Imola", status="CONFIRMED",
-        start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600, alarms=[],
+        start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600,
+        alarms=[], series_name="WEC",
     )
     fp2 = compute_fingerprint(
         summary="Race", description="desc", location="Imola", status="CANCELLED",
-        start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600, alarms=[],
+        start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600,
+        alarms=[], series_name="WEC",
     )
     assert fp1 != fp2
 
@@ -47,11 +49,13 @@ def test_compute_fingerprint_changes_when_status_changes():
 def test_compute_fingerprint_changes_when_alarm_set_changes():
     fp1 = compute_fingerprint(
         summary="Race", description="desc", location="Imola", status="CONFIRMED",
-        start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600, alarms=["-1d"],
+        start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600,
+        alarms=["-1d"], series_name="WEC",
     )
     fp2 = compute_fingerprint(
         summary="Race", description="desc", location="Imola", status="CONFIRMED",
-        start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600, alarms=["-30m"],
+        start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600,
+        alarms=["-30m"], series_name="WEC",
     )
     assert fp1 != fp2
 

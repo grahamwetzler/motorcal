@@ -222,6 +222,19 @@ def test_a_session_with_a_confirmed_start_cannot_be_tbc():
         SessionConfig(uid="mine", type="race", start="2026-01-01T13:00:00Z", tbc=True)
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("start", "not-a-timestamp"),
+        ("start", "2026-01-01T13:00:00"),
+        ("date", "not-a-date"),
+    ],
+)
+def test_a_session_rejects_an_invalid_start_or_date(field, value):
+    with pytest.raises(ValueError):
+        SessionConfig(uid="mine", type="race", **{field: value})
+
+
 def test_an_event_needs_at_least_one_session():
     with pytest.raises(ValueError, match="has no sessions"):
         EventConfig(name="Empty Weekend")
