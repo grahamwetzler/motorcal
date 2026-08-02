@@ -109,10 +109,25 @@ events:
     location: Portland International Raceway, United States
     round: 13
     sessions:
+      - uid: indycar-2026-portland-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-08-07T21:30:00+00:00'
+        status: CONFIRMED
+      - uid: indycar-2026-portland-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-08-08T17:00:00+00:00'
+        status: CONFIRMED
       - uid: indycar-2026-portland-qualifying
         label: Qualifying
         type: qualifying
         start: '2026-08-08T23:00:00+00:00'
+        status: CONFIRMED
+      - uid: indycar-2026-portland-warmup
+        label: Warmup
+        type: warmup
+        start: '2026-08-09T17:00:00+00:00'
         status: CONFIRMED
       - uid: indycar-2026-onlybulls-grand-prix-of-portland-race
         type: race
@@ -122,10 +137,25 @@ events:
     location: Streets of Markham, Canada
     round: 14
     sessions:
+      - uid: indycar-2026-markham-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-08-14T19:00:00+00:00'
+        status: CONFIRMED
+      - uid: indycar-2026-markham-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-08-15T14:00:00+00:00'
+        status: CONFIRMED
       - uid: indycar-2026-markham-qualifying
         label: Qualifying
         type: qualifying
         start: '2026-08-15T18:25:00+00:00'
+        status: CONFIRMED
+      - uid: indycar-2026-markham-warmup
+        label: Warmup
+        type: warmup
+        start: '2026-08-16T12:30:00+00:00'
         status: CONFIRMED
       - uid: indycar-2026-ontario-honda-dealers-indy-at-markham-race
         type: race
@@ -135,11 +165,26 @@ events:
     location: Streets of Washington, United States
     round: 15
     sessions:
+      - uid: indycar-2026-washington-dc-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-08-22T13:00:00+00:00'
+        status: CONFIRMED
+      - uid: indycar-2026-washington-dc-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-08-22T17:00:00+00:00'
+        status: CONFIRMED
       - uid: indycar-2026-washington-dc-qualifying
         label: Qualifying
         type: qualifying
         start: '2026-08-22T21:00:00+00:00'
         duration: 90m
+        status: CONFIRMED
+      - uid: indycar-2026-washington-dc-warmup
+        label: Warmup
+        type: warmup
+        start: '2026-08-23T13:00:00+00:00'
         status: CONFIRMED
       - uid: indycar-2026-washington-dc
         type: race
@@ -150,6 +195,11 @@ events:
     location: Milwaukee Mile, United States
     round: 16
     sessions:
+      - uid: indycar-2026-milwaukee-practice
+        label: Practice
+        type: practice
+        start: '2026-08-28T22:00:00+00:00'
+        status: CONFIRMED
       - uid: indycar-2026-milwaukee-qualifying
         label: Qualifying
         type: qualifying
@@ -171,10 +221,25 @@ events:
     location: WeatherTech Raceway Laguna Seca, United States
     round: 18
     sessions:
+      - uid: indycar-2026-monterey-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-09-04T21:00:00+00:00'
+        status: CONFIRMED
+      - uid: indycar-2026-monterey-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-09-05T17:00:00+00:00'
+        status: CONFIRMED
       - uid: indycar-2026-monterey-qualifying
         label: Qualifying
         type: qualifying
         start: '2026-09-05T20:30:00+00:00'
+        status: CONFIRMED
+      - uid: indycar-2026-monterey-practice-3
+        label: Final Practice
+        type: practice
+        start: '2026-09-06T00:00:00+00:00'
         status: CONFIRMED
       - uid: indycar-2026-indycar-grand-prix-of-monterey-race
         type: race
