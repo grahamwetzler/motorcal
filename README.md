@@ -69,18 +69,18 @@ the other.
 ## The data directory
 
 ```
-data/                 # mounted read-only; nothing in the app writes it
+data/                 # included read-only in the image; nothing in the app writes it
   defaults.yaml       # settings no single series owns
   f1.yaml             # everything about F1: settings + events
   wec.yaml
   indycar.yaml
   imsa.yaml
-state/
-  state.yaml          # machine-owned, gitignored -- see "State" below
+Docker volume `state`
+  state.yaml          # machine-owned -- see "State" below
 ```
 
 The deployed image contains this directory at `/data`. `compose.yaml` gives
-`state.yaml` its own writable directory.
+`state.yaml` its own Docker-managed volume.
 
 ### One event
 
@@ -180,12 +180,6 @@ rejected and logged, and the previous configuration stays active.
 
 ## Deployment configuration
 
-Before first starting the Compose stack, create its writable state directory:
-
-```bash
-mkdir -p state && chown -R 1000:1000 state
-```
-
 | Variable | Description |
 | --- | --- |
 | `UID_DOMAIN` | Domain baked into every event's stable ICS UID. Pick it once — changing it later republishes and duplicates every event for subscribers (see `docs/operations.md`, "Changing UID_DOMAIN"). |
@@ -201,10 +195,10 @@ active if validation fails.
 
 ## State
 
-`./state/state.yaml` is the only machine-owned file. It holds the uid_domain
-binding and the version ledger that keeps calendar clients from re-notifying
-subscribers on every rebuild. You never need to read it; `cp` is a valid backup.
-See `docs/operations.md` for what losing it costs.
+The Compose `state` volume holds the only machine-owned file,
+`state.yaml`. It contains the uid_domain binding and version ledger that keeps
+calendar clients from re-notifying subscribers on every rebuild. See
+`docs/operations.md` for backups and what losing it costs.
 
 ## More
 

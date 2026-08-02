@@ -7,10 +7,9 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
-      # data/ is baked into the image (see Dockerfile). state.yaml lives in its
-      # own writable directory because it is replaced atomically, which a
-      # single-file bind mount does not survive.
-      - ./state:/state
+      # Docker initializes this named volume from the image's UID 1000-owned
+      # /state directory. state.yaml is replaced atomically on every save.
+      - state:/state
     container_name: app
     labels:
       - com.centurylinklabs.watchtower.enable=true
@@ -27,3 +26,6 @@ services:
     command: --label-enable --cleanup --interval 1800
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  state:
