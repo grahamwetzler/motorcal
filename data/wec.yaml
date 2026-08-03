@@ -172,6 +172,7 @@ events:
         start: '2026-07-12T16:30:00+00:00'
         status: CONFIRMED
   - name: Lone Star Le Mans
+    url: https://www.fiawec.com/en/race/lone-star-le-mans-2026
     location: Circuit of the Americas, United States
     round: 5
     sessions:
@@ -224,6 +225,7 @@ events:
         duration: 360m
         status: CONFIRMED
   - name: 6 Hours of Fuji
+    url: https://www.fiawec.com/en/race/6-hours-of-fuji-2026
     location: Fuji Speedway, Japan
     round: 6
     sessions:

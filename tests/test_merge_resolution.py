@@ -32,6 +32,7 @@ def test_compute_fingerprint_is_deterministic_for_identical_inputs():
         series_name="WEC",
     )
     assert fp1 == fp2
+    assert fp1 == "cbae4c804946e27a2c33ce27870b02dae66fc12527e021bbe0afd18ed35e6543"
 
 
 def test_compute_fingerprint_alarm_order_does_not_matter():
@@ -110,6 +111,24 @@ def test_compute_fingerprint_changes_when_alarm_set_changes():
         series_name="WEC",
     )
     assert fp1 != fp2
+
+
+def test_compute_fingerprint_changes_when_url_changes():
+    kwargs = {
+        "summary": "Race",
+        "description": "desc",
+        "location": "Imola",
+        "status": "CONFIRMED",
+        "start": "2026-04-19T13:00:00+00:00",
+        "all_day_date": None,
+        "duration_seconds": 21600,
+        "alarms": [],
+        "series_name": "WEC",
+    }
+
+    assert compute_fingerprint(**kwargs) != compute_fingerprint(
+        **kwargs, url="https://example.com/race"
+    )
 
 
 def test_next_sequence_for_a_brand_new_event():

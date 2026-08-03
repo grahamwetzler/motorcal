@@ -250,6 +250,14 @@ def test_an_event_needs_at_least_one_session():
         EventConfig(name="Empty Weekend")
 
 
+def test_an_event_url_must_be_http_or_https():
+    assert str(make_event(url="https://example.com/race").url) == (
+        "https://example.com/race"
+    )
+    with pytest.raises(ValueError):
+        make_event(url="not-a-url")
+
+
 def test_a_session_rejects_a_bad_duration():
     with pytest.raises(ValueError):
         SessionConfig(uid="mine", type="race", date="2026-01-01", duration="ages")

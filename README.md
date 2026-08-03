@@ -91,6 +91,7 @@ differs per session lives on the session.
 ```yaml
 events:
   - name: 6 Hours of Imola
+    url: https://www.fiawec.com/en/race/6-hours-of-imola-2026
     location: Imola Circuit, Italy
     round: 1
     sessions:
@@ -108,6 +109,9 @@ events:
 Each session is published as `{series}: {event name} {label}` — "WEC: 6 Hours of
 Imola Qualifying". Drop the `label:` and you get just the event name, which is
 how a race reads best.
+
+`url:` is the official event page. It is published on every session in the
+weekend as the ICS `URL` property.
 
 `uid:` is the session's identity. It is what the published ICS UID is built from,
 so renaming one republishes that session as a new event — subscribers keep the

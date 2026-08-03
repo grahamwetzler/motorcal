@@ -162,6 +162,12 @@ def test_the_events_location_reaches_every_session_it_holds():
     assert "Note: official timetable" in built.description
 
 
+def test_the_events_url_reaches_every_session_it_holds():
+    built = _build(make_event("r", url="https://example.com/race"))
+
+    assert built.url == "https://example.com/race"
+
+
 def test_the_round_is_named_in_the_description():
     assert "Round: 1" in _build(make_event("r", round=1)).description
 

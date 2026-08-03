@@ -18,6 +18,7 @@ def test_confirmed_timed_event_with_duration_and_alarm():
         description="Round: 1\nNote: from the official timetable",
         location="Imola, Italy",
         alarms=["-1d", "-30m"],
+        url="https://example.com/race",
     )
     ics_bytes = event.to_ical()
 
@@ -26,6 +27,7 @@ def test_confirmed_timed_event_with_duration_and_alarm():
     assert b"DTEND:20260419T190000Z" in ics_bytes
     assert b"UID:local-wec-2026-imola-race@x.example.com" in ics_bytes
     assert b"STATUS:CONFIRMED" in ics_bytes
+    assert b"URL:https://example.com/race" in ics_bytes
     assert b"SUMMARY:WEC: 6 Hours of Imola" in ics_bytes
     assert ics_bytes.count(b"BEGIN:VALARM") == 2
     assert b"TRIGGER:-P1D" in ics_bytes
@@ -144,6 +146,7 @@ def test_location_omitted_when_none():
     )
     ics_bytes = event.to_ical()
     assert b"LOCATION" not in ics_bytes
+    assert b"URL" not in ics_bytes
 
 
 def test_rendering_the_same_input_twice_is_byte_identical():
