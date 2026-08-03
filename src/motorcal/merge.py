@@ -48,8 +48,9 @@ def compute_fingerprint(
         "duration_seconds": duration_seconds,
         "alarms": sorted(alarms),
         "series_name": series_name,
-        "url": url,
     }
+    if url is not None:
+        payload["url"] = url
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 

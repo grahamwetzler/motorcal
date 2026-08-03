@@ -32,6 +32,7 @@ def test_compute_fingerprint_is_deterministic_for_identical_inputs():
         series_name="WEC",
     )
     assert fp1 == fp2
+    assert fp1 == "cbae4c804946e27a2c33ce27870b02dae66fc12527e021bbe0afd18ed35e6543"
 
 
 def test_compute_fingerprint_alarm_order_does_not_matter():
