@@ -38,6 +38,7 @@ def build_vevent(
     description: str,
     location: str | None,
     alarms: list[str],
+    url: str | None = None,
     prefix: str = "",
 ) -> Event:
     """Render one published event into an icalendar VEVENT component.
@@ -65,6 +66,8 @@ def build_vevent(
     event.add("description", description)
     if location:
         event.add("location", location)
+    if url:
+        event.add("url", url)
 
     for offset in alarms:
         alarm = Alarm()
@@ -109,6 +112,7 @@ def _to_vevent(event: PublishedEvent, series_name: str, prefix: str) -> Event:
         description=event.description,
         location=event.location,
         alarms=event.alarms,
+        url=event.url,
         prefix=prefix,
     )
 

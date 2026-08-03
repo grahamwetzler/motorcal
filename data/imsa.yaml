@@ -113,6 +113,7 @@ events:
         status: CONFIRMED
         note: Green flag confirmed 11:40am ET per IMSA's official race-week schedule
   - name: Michelin GT Challenge at VIR
+    url: https://www.imsa.com/events/2026-virginia-international-raceway/
     location: Virginia International Raceway, United States
     round: 9
     sessions:
@@ -139,6 +140,7 @@ events:
         start: '2026-08-23T16:00:00+00:00'
         status: CONFIRMED
   - name: TireRack.com Battle On The Bricks
+    url: https://www.imsa.com/events/2026-indianapolis-motor-speedway/
     location: Indianapolis Motor Speedway, United States
     round: 10
     sessions:
@@ -165,6 +167,7 @@ events:
         start: '2026-09-20T19:00:00+00:00'
         status: CONFIRMED
   - name: Motul Petit Le Mans
+    url: https://www.imsa.com/events/2026-michelin-raceway-road-atlanta/
     location: Michelin Raceway Road Atlanta, United States
     round: 11
     sessions:

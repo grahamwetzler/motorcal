@@ -35,6 +35,7 @@ def compute_fingerprint(
     duration_seconds: int | None,
     alarms: list[str],
     series_name: str,
+    url: str | None = None,
 ) -> str:
     """A stable digest over every client-visible VEVENT field. Alarm order never matters."""
     payload = {
@@ -47,6 +48,7 @@ def compute_fingerprint(
         "duration_seconds": duration_seconds,
         "alarms": sorted(alarms),
         "series_name": series_name,
+        "url": url,
     }
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
@@ -177,6 +179,7 @@ def build_published_event(
 
     status = EventStatus(session.status)
     description = build_description(event=event, session=session)
+    url = str(event.url) if event.url else None
     fingerprint = compute_fingerprint(
         summary=summary,
         description=description,
@@ -187,6 +190,7 @@ def build_published_event(
         duration_seconds=duration_seconds,
         alarms=alarms,
         series_name=series_config.name,
+        url=url,
     )
 
     now_unix_minute = int(now.timestamp() // 60)
@@ -216,6 +220,7 @@ def build_published_event(
         dtstamp=dtstamp,
         last_modified=last_modified,
         fingerprint=fingerprint,
+        url=url,
         alarms=alarms,
     )
 

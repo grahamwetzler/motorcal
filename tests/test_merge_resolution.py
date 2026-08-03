@@ -112,6 +112,24 @@ def test_compute_fingerprint_changes_when_alarm_set_changes():
     assert fp1 != fp2
 
 
+def test_compute_fingerprint_changes_when_url_changes():
+    kwargs = {
+        "summary": "Race",
+        "description": "desc",
+        "location": "Imola",
+        "status": "CONFIRMED",
+        "start": "2026-04-19T13:00:00+00:00",
+        "all_day_date": None,
+        "duration_seconds": 21600,
+        "alarms": [],
+        "series_name": "WEC",
+    }
+
+    assert compute_fingerprint(**kwargs) != compute_fingerprint(
+        **kwargs, url="https://example.com/race"
+    )
+
+
 def test_next_sequence_for_a_brand_new_event():
     assert next_sequence(None, now_unix_minute=12345678) == 12345678
 

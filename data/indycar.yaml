@@ -107,6 +107,7 @@ events:
         status: CONFIRMED
         note: Rescheduled from Sunday to Monday 3pm ET due to rain
   - name: OnlyBulls Grand Prix of Portland
+    url: https://www.indycar.com/Schedule/2026/Portland
     location: Portland International Raceway, United States
     round: 13
     sessions:
@@ -140,6 +141,7 @@ events:
         duration: 150m
         status: CONFIRMED
   - name: Ontario Honda Dealers Indy at Markham
+    url: https://www.indycar.com/Schedule/2026/Markham
     location: Streets of Markham, Canada
     round: 14
     sessions:
@@ -173,6 +175,7 @@ events:
         duration: 150m
         status: CONFIRMED
   - name: Freedom 250 Grand Prix of Washington, D.C.
+    url: https://www.indycar.com/Schedule/2026/Washington-DC
     location: Streets of Washington, United States
     round: 15
     sessions:
@@ -237,6 +240,7 @@ events:
         status: CONFIRMED
         round: 17
   - name: IndyCar Grand Prix of Monterey
+    url: https://www.indycar.com/Schedule/2026/Laguna-Seca
     location: WeatherTech Raceway Laguna Seca, United States
     round: 18
     sessions:

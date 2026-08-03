@@ -21,6 +21,7 @@ import yaml
 from pydantic import (
     BaseModel,
     ConfigDict,
+    HttpUrl,
     ValidationError,
     field_validator,
     model_validator,
@@ -280,6 +281,7 @@ class EventConfig(StrictModel):
     """
 
     name: str
+    url: HttpUrl | None = None
     location: str | None = None
     round: int | None = None
     sessions: list[SessionConfig] = []

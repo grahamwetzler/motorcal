@@ -47,6 +47,7 @@ class PublishedEvent:
     dtstamp: datetime
     last_modified: datetime
     fingerprint: str
+    url: str | None = None
     alarms: list[str] = field(default_factory=list)
 
 

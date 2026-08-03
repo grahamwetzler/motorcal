@@ -71,6 +71,7 @@ def make_event(
     uid: str = "my-event",
     *,
     name: str = "6 Hours of Imola",
+    url: str | None = None,
     location: str | None = None,
     round: int | None = None,
     **kwargs,
@@ -78,6 +79,7 @@ def make_event(
     """A race event of one session."""
     return EventConfig(
         name=name,
+        url=url,
         location=location,
         round=round,
         sessions=[make_session(uid, **kwargs)],
