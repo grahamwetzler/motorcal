@@ -9,19 +9,31 @@ NOW = datetime(2026, 1, 1, tzinfo=UTC)
 
 def _published(uid, series="wec", summary="S"):
     return PublishedEvent(
-        uid=uid, series=series, session_type=SessionType.RACE, summary=summary,
-        start=datetime(2026, 4, 19, 13, tzinfo=UTC), all_day_date=None,
-        time_confirmed=True, duration_seconds=3600, location="L", description="D",
-        status=EventStatus.CONFIRMED, sequence=1, dtstamp=NOW, last_modified=NOW,
-        fingerprint="fp", alarms=["-1d"],
+        uid=uid,
+        series=series,
+        session_type=SessionType.RACE,
+        summary=summary,
+        start=datetime(2026, 4, 19, 13, tzinfo=UTC),
+        all_day_date=None,
+        time_confirmed=True,
+        duration_seconds=3600,
+        location="L",
+        description="D",
+        status=EventStatus.CONFIRMED,
+        sequence=1,
+        dtstamp=NOW,
+        last_modified=NOW,
+        fingerprint="fp",
+        alarms=["-1d"],
     )
 
 
 def test_render_combined_bytes_carries_every_series_under_its_own_name():
-    config = make_config(
-        series={"wec": make_series(), "f1": make_series(name="F1")}
-    )
-    published = {"wec": [_published("u1", summary="Imola")], "f1": [_published("u2", summary="Bahrain")]}
+    config = make_config(series={"wec": make_series(), "f1": make_series(name="F1")})
+    published = {
+        "wec": [_published("u1", summary="Imola")],
+        "f1": [_published("u2", summary="Bahrain")],
+    }
 
     ics_bytes = render_combined_bytes(config, published)
 
@@ -48,9 +60,7 @@ def test_render_combined_bytes_skips_series_the_config_no_longer_has():
 
 
 def test_render_combined_bytes_is_deterministic_regardless_of_input_order():
-    config = make_config(
-        series={"wec": make_series(), "f1": make_series(name="F1")}
-    )
+    config = make_config(series={"wec": make_series(), "f1": make_series(name="F1")})
     forward = {
         "wec": [_published("u1"), _published("u3")],
         "f1": [_published("u2", series="f1")],
@@ -60,7 +70,9 @@ def test_render_combined_bytes_is_deterministic_regardless_of_input_order():
         "wec": [_published("u3"), _published("u1")],
     }
 
-    assert render_combined_bytes(config, forward) == render_combined_bytes(config, backward)
+    assert render_combined_bytes(config, forward) == render_combined_bytes(
+        config, backward
+    )
 
 
 def test_render_combined_bytes_is_valid_when_empty():

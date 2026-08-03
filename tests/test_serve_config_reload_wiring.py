@@ -6,6 +6,7 @@ request without recreating or restarting the app -- and that config and feeds
 always arrive together, never as two separate reassignments a request could land
 between.
 """
+
 from fastapi.testclient import TestClient
 
 from motorcal.web import Publication, create_app

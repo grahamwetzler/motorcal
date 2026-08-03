@@ -1,4 +1,5 @@
 """Canonical data models shared across motorcal."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

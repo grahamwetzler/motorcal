@@ -18,7 +18,9 @@ def _config(wec_events=None, imsa_events=None, **kwargs):
 
 
 def _find(published, uid):
-    return next((e for events in published.values() for e in events if e.uid == uid), None)
+    return next(
+        (e for events in published.values() for e in events if e.uid == uid), None
+    )
 
 
 def test_rebuild_publishes_every_configured_event():
@@ -57,8 +59,10 @@ def test_rebuild_records_the_version_ledger():
 
     built = published["wec"][0]
     assert state.versions[built.uid] == VersionState(
-        fingerprint=built.fingerprint, sequence=built.sequence,
-        dtstamp=built.dtstamp.isoformat(), last_modified=built.last_modified.isoformat(),
+        fingerprint=built.fingerprint,
+        sequence=built.sequence,
+        dtstamp=built.dtstamp.isoformat(),
+        last_modified=built.last_modified.isoformat(),
     )
 
 
@@ -79,9 +83,7 @@ def test_a_long_past_session_drops_out_of_the_feed_and_the_ledger():
     rebuild_publication(config, state, now=NOW)
 
     # >180 days (historical_days) after the event
-    published = rebuild_publication(
-        config, state, now=datetime(2026, 8, 1, tzinfo=UTC)
-    )
+    published = rebuild_publication(config, state, now=datetime(2026, 8, 1, tzinfo=UTC))
 
     assert published["wec"] == []
     assert state.versions == {}
@@ -90,9 +92,11 @@ def test_a_long_past_session_drops_out_of_the_feed_and_the_ledger():
 
 
 def test_a_long_cancelled_event_is_pruned_on_the_shorter_window():
-    config = _config(wec_events=[
-        make_event("r1", start="2026-01-01T13:00:00+00:00", status="CANCELLED")
-    ])
+    config = _config(
+        wec_events=[
+            make_event("r1", start="2026-01-01T13:00:00+00:00", status="CANCELLED")
+        ]
+    )
     state = make_state()
     rebuild_publication(config, state, now=datetime(2025, 12, 1, tzinfo=UTC))
 

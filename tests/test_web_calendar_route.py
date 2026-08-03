@@ -23,10 +23,20 @@ def _client(feed=b"", published=None):
 
 def _event(uid, session_type):
     return PublishedEvent(
-        uid=uid, series="wec", session_type=session_type, summary=uid,
-        start=datetime(2026, 4, 19, 13, tzinfo=UTC), all_day_date=None,
-        time_confirmed=True, duration_seconds=3600, location=None, description="D",
-        status=EventStatus.CONFIRMED, sequence=1, dtstamp=NOW, last_modified=NOW,
+        uid=uid,
+        series="wec",
+        session_type=session_type,
+        summary=uid,
+        start=datetime(2026, 4, 19, 13, tzinfo=UTC),
+        all_day_date=None,
+        time_confirmed=True,
+        duration_seconds=3600,
+        location=None,
+        description="D",
+        status=EventStatus.CONFIRMED,
+        sequence=1,
+        dtstamp=NOW,
+        last_modified=NOW,
         fingerprint="fp",
     )
 
@@ -86,7 +96,9 @@ def test_conditional_request_with_matching_etag_returns_304():
 
 
 def test_conditional_request_with_stale_etag_returns_200():
-    response = _client(ICS).get("/events.ics", headers={"If-None-Match": '"stale-value"'})
+    response = _client(ICS).get(
+        "/events.ics", headers={"If-None-Match": '"stale-value"'}
+    )
 
     assert response.status_code == 200
     assert response.content == ICS
@@ -100,14 +112,24 @@ def test_etag_changes_when_the_feed_content_changes():
 
 
 def test_default_request_serves_the_unfiltered_feed_unchanged():
-    published = {"wec": [_event("practice", SessionType.PRACTICE), _event("race", SessionType.RACE)]}
+    published = {
+        "wec": [
+            _event("practice", SessionType.PRACTICE),
+            _event("race", SessionType.RACE),
+        ]
+    }
     response = _client(ICS, published).get("/events.ics")
 
     assert response.content == ICS
 
 
 def test_practices_false_excludes_practice_sessions_but_keeps_race():
-    published = {"wec": [_event("practice", SessionType.PRACTICE), _event("race", SessionType.RACE)]}
+    published = {
+        "wec": [
+            _event("practice", SessionType.PRACTICE),
+            _event("race", SessionType.RACE),
+        ]
+    }
     response = _client(ICS, published).get("/events.ics", params={"practices": "false"})
 
     assert b"UID:practice" not in response.content
@@ -123,7 +145,9 @@ def test_qualifying_false_excludes_qualifying_hyperpole_and_sprint_qualifying():
             _event("race", SessionType.RACE),
         ]
     }
-    response = _client(ICS, published).get("/events.ics", params={"qualifying": "false"})
+    response = _client(ICS, published).get(
+        "/events.ics", params={"qualifying": "false"}
+    )
 
     assert b"UID:q\r\n" not in response.content
     assert b"UID:hp" not in response.content
@@ -133,12 +157,16 @@ def test_qualifying_false_excludes_qualifying_hyperpole_and_sprint_qualifying():
 
 def test_combined_filter_applies_across_every_series():
     published = {
-        "wec": [_event("wec-practice", SessionType.PRACTICE), _event("wec-race", SessionType.RACE)],
-        "f1": [_event("f1-practice", SessionType.PRACTICE), _event("f1-race", SessionType.RACE)],
+        "wec": [
+            _event("wec-practice", SessionType.PRACTICE),
+            _event("wec-race", SessionType.RACE),
+        ],
+        "f1": [
+            _event("f1-practice", SessionType.PRACTICE),
+            _event("f1-race", SessionType.RACE),
+        ],
     }
-    response = _client(ICS, published).get(
-        "/events.ics", params={"practices": "false"}
-    )
+    response = _client(ICS, published).get("/events.ics", params={"practices": "false"})
 
     assert b"UID:wec-practice" not in response.content
     assert b"UID:f1-practice" not in response.content

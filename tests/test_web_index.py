@@ -6,6 +6,7 @@ hands the page a series list and a set of real upcoming events, and it has to
 hand them over correctly -- right series, right events, no way for a value in
 the data to break out of the <script> block it is embedded in.
 """
+
 import json
 import re
 from datetime import UTC, datetime, timedelta
@@ -23,22 +24,43 @@ CONFIG = make_config(series={"wec": make_series()})
 
 
 def _event(
-    uid, *, series="wec", session_type=SessionType.RACE, start=NOW + timedelta(days=1),
-    all_day_date=None, summary=None, alarms=(), status=EventStatus.CONFIRMED,
-    location="Imola", time_confirmed=True,
+    uid,
+    *,
+    series="wec",
+    session_type=SessionType.RACE,
+    start=NOW + timedelta(days=1),
+    all_day_date=None,
+    summary=None,
+    alarms=(),
+    status=EventStatus.CONFIRMED,
+    location="Imola",
+    time_confirmed=True,
 ):
     return PublishedEvent(
-        uid=uid, series=series, session_type=session_type, summary=summary or uid,
-        start=start, all_day_date=all_day_date, time_confirmed=time_confirmed,
-        duration_seconds=3600, location=location, description="D", status=status,
-        sequence=1, dtstamp=NOW, last_modified=NOW, fingerprint="fp",
+        uid=uid,
+        series=series,
+        session_type=session_type,
+        summary=summary or uid,
+        start=start,
+        all_day_date=all_day_date,
+        time_confirmed=time_confirmed,
+        duration_seconds=3600,
+        location=location,
+        description="D",
+        status=status,
+        sequence=1,
+        dtstamp=NOW,
+        last_modified=NOW,
+        fingerprint="fp",
         alarms=list(alarms),
     )
 
 
 def _client(config=CONFIG, published=None):
     app = create_app(config)
-    app.state.publication = Publication(config=config, feed=b"", published=published or {})
+    app.state.publication = Publication(
+        config=config, feed=b"", published=published or {}
+    )
     return TestClient(app)
 
 
@@ -59,16 +81,24 @@ def test_index_is_html_that_revalidates():
     assert response.headers["content-type"].startswith("text/html")
     # The page carries live event times, so it must not sit in a browser cache.
     assert response.headers["cache-control"] == "public, no-cache"
-    assert '<meta property="og:title" content="Motorcal — your customized motorsports calendar">' in response.text
-    assert '<meta property="og:description" content="Build a motorsports calendar that follows the racing series and sessions you care about.">' in response.text
+    assert (
+        '<meta property="og:title" content="Motorcal — your customized motorsports calendar">'
+        in response.text
+    )
+    assert (
+        '<meta property="og:description" content="Build a motorsports calendar that follows the racing series and sessions you care about.">'
+        in response.text
+    )
     assert '<meta name="twitter:card" content="summary">' in response.text
 
 
 def test_index_offers_exactly_the_configured_series():
-    config = make_config(series={
-        "wec": make_series(name="WEC"),
-        "f1": make_series(name="Formula 1"),
-    })
+    config = make_config(
+        series={
+            "wec": make_series(name="WEC"),
+            "f1": make_series(name="Formula 1"),
+        }
+    )
 
     series = _injected(_client(config).get("/").text, "SERIES")
 
@@ -81,16 +111,24 @@ def test_index_offers_exactly_the_configured_series():
 def test_index_offers_only_the_session_types_a_series_actually_runs():
     # WEC runs hyperpole; IndyCar in this config never does -- the per-series
     # override on the page must not offer a session type a series never has.
-    config = make_config(series={
-        "wec": make_series(name="WEC", events=[
-            make_event("wec-race", type="race"),
-            make_event("wec-hyperpole", type="hyperpole"),
-        ]),
-        "indycar": make_series(name="IndyCar", events=[
-            make_event("indy-race", type="race"),
-            make_event("indy-quali", type="qualifying"),
-        ]),
-    })
+    config = make_config(
+        series={
+            "wec": make_series(
+                name="WEC",
+                events=[
+                    make_event("wec-race", type="race"),
+                    make_event("wec-hyperpole", type="hyperpole"),
+                ],
+            ),
+            "indycar": make_series(
+                name="IndyCar",
+                events=[
+                    make_event("indy-race", type="race"),
+                    make_event("indy-quali", type="qualifying"),
+                ],
+            ),
+        }
+    )
 
     series = _injected(_client(config).get("/").text, "SERIES")
 
@@ -124,12 +162,18 @@ def test_a_series_name_cannot_break_out_of_the_script_block():
 
 
 def test_next_event_of_each_series_and_type_is_offered_soonest_first():
-    published = {"wec": [
-        _event("past", start=NOW - timedelta(days=1)),
-        _event("next-race", start=NOW + timedelta(days=1)),
-        _event("later-race", start=NOW + timedelta(days=2)),
-        _event("quali", session_type=SessionType.QUALIFYING, start=NOW + timedelta(hours=12)),
-    ]}
+    published = {
+        "wec": [
+            _event("past", start=NOW - timedelta(days=1)),
+            _event("next-race", start=NOW + timedelta(days=1)),
+            _event("later-race", start=NOW + timedelta(days=2)),
+            _event(
+                "quali",
+                session_type=SessionType.QUALIFYING,
+                start=NOW + timedelta(hours=12),
+            ),
+        ]
+    }
 
     upcoming = _example_events(CONFIG, published, NOW)
 
@@ -138,9 +182,16 @@ def test_next_event_of_each_series_and_type_is_offered_soonest_first():
 
 
 def test_an_event_carries_everything_the_preview_shows():
-    published = {"wec": [_event(
-        "race", summary="6 Hours of Imola", alarms=["-15m"], location="Imola, Italy",
-    )]}
+    published = {
+        "wec": [
+            _event(
+                "race",
+                summary="6 Hours of Imola",
+                alarms=["-15m"],
+                location="Imola, Italy",
+            )
+        ]
+    }
 
     (event,) = _example_events(CONFIG, published, NOW)
 
@@ -168,10 +219,12 @@ def test_postponed_event_is_titled_the_way_the_ics_titles_it():
 def test_all_day_event_beats_a_timed_one_later_the_same_day():
     # An all-day session is upcoming until the day is over but *starts* at
     # midnight, so it is the one the feed shows next -- not the afternoon race.
-    published = {"wec": [
-        _event("all-day", start=None, all_day_date="2026-04-01"),
-        _event("afternoon", start=NOW + timedelta(hours=6)),
-    ]}
+    published = {
+        "wec": [
+            _event("all-day", start=None, all_day_date="2026-04-01"),
+            _event("afternoon", start=NOW + timedelta(hours=6)),
+        ]
+    }
 
     (event,) = _example_events(CONFIG, published, NOW)
 

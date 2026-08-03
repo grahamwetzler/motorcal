@@ -3,6 +3,7 @@
 Every parameter is checked twice over: that it does what it says, and that a
 malformed or misplaced one is a 400 rather than something quietly ignored.
 """
+
 from datetime import UTC, datetime
 
 import pytest
@@ -14,26 +15,39 @@ from motorcal.web import Publication, create_app
 from tests.conftest import make_config, make_series
 
 NOW = datetime(2026, 1, 1, tzinfo=UTC)
-CONFIG = make_config(
-    series={"wec": make_series(), "f1": make_series(name="F1")}
-)
+CONFIG = make_config(series={"wec": make_series(), "f1": make_series(name="F1")})
 PREBUILT = b"BEGIN:VCALENDAR\r\nSUMMARY:prebuilt\r\nEND:VCALENDAR\r\n"
 
 
-def _event(uid, session_type=SessionType.RACE, *, series="wec", alarms=None, confirmed=True):
+def _event(
+    uid, session_type=SessionType.RACE, *, series="wec", alarms=None, confirmed=True
+):
     return PublishedEvent(
-        uid=uid, series=series, session_type=session_type, summary=uid,
+        uid=uid,
+        series=series,
+        session_type=session_type,
+        summary=uid,
         start=datetime(2026, 4, 19, 13, tzinfo=UTC) if confirmed else None,
-        all_day_date=None if confirmed else "2026-04-19", time_confirmed=confirmed,
-        duration_seconds=3600, location=None, description="D",
-        status=EventStatus.CONFIRMED, sequence=1, dtstamp=NOW, last_modified=NOW,
-        fingerprint="fp", alarms=list(alarms or []),
+        all_day_date=None if confirmed else "2026-04-19",
+        time_confirmed=confirmed,
+        duration_seconds=3600,
+        location=None,
+        description="D",
+        status=EventStatus.CONFIRMED,
+        sequence=1,
+        dtstamp=NOW,
+        last_modified=NOW,
+        fingerprint="fp",
+        alarms=list(alarms or []),
     )
 
 
 PUBLISHED = {
     "wec": [_event("wec-race"), _event("wec-practice", SessionType.PRACTICE)],
-    "f1": [_event("f1-race", series="f1"), _event("f1-practice", SessionType.PRACTICE, series="f1")],
+    "f1": [
+        _event("f1-race", series="f1"),
+        _event("f1-practice", SessionType.PRACTICE, series="f1"),
+    ],
 }
 
 
@@ -114,7 +128,10 @@ def test_a_per_series_sessions_override_beats_the_global_one():
 
 def test_warmup_is_a_selectable_session_type():
     """The type IMSA and IndyCar actually run, added when TheSportsDB was dropped."""
-    published = {"wec": [_event("wec-warmup", SessionType.WARMUP), _event("wec-race")], "f1": []}
+    published = {
+        "wec": [_event("wec-warmup", SessionType.WARMUP), _event("wec-race")],
+        "f1": [],
+    }
     body = _client(published).get("/events.ics?series=wec&sessions=warmup").content
 
     assert b"UID:wec-warmup" in body
@@ -167,7 +184,8 @@ def test_too_many_alarms_in_one_list_is_rejected():
 
 def test_per_type_alarms_apply_only_to_that_session_type():
     published = {
-        "wec": [_event("wec-race"), _event("wec-practice", SessionType.PRACTICE)], "f1": [],
+        "wec": [_event("wec-race"), _event("wec-practice", SessionType.PRACTICE)],
+        "f1": [],
     }
     body = _client(published).get("/events.ics?alarms_race=-1h").content
 
@@ -178,9 +196,13 @@ def test_per_type_alarms_apply_only_to_that_session_type():
 def test_alarm_precedence_runs_most_specific_first():
     """series+type > series > global type > global."""
     published = {"wec": [_event("wec-race")], "f1": [_event("f1-race", series="f1")]}
-    body = _client(published).get(
-        "/events.ics?alarms=-1d&alarms_race=-2d&wec.alarms=-3d&wec.alarms_race=-4d"
-    ).content
+    body = (
+        _client(published)
+        .get(
+            "/events.ics?alarms=-1d&alarms_race=-2d&wec.alarms=-3d&wec.alarms_race=-4d"
+        )
+        .content
+    )
 
     assert b"TRIGGER:-P4D" in body  # wec: the series+type override wins
     assert b"TRIGGER:-P2D" in body  # f1: falls back to the global per-type one
@@ -226,7 +248,10 @@ def test_emoji_car_prefixes_every_title():
 def test_emoji_true_and_false_are_kept_as_aliases():
     # Predates the choice of emoji -- feeds already subscribed with these must
     # keep behaving exactly as they always have.
-    assert "SUMMARY:\N{CHEQUERED FLAG} WEC: wec-race".encode() in _get(query="emoji=true").content
+    assert (
+        "SUMMARY:\N{CHEQUERED FLAG} WEC: wec-race".encode()
+        in _get(query="emoji=true").content
+    )
     assert "\N{CHEQUERED FLAG}".encode() not in _get(query="emoji=false").content
 
 
@@ -282,7 +307,9 @@ def test_malformed_query_encoding_is_rejected():
 
 
 def test_query_parameter_count_is_bounded_before_parsing():
-    response = _client().get("/events.ics?" + "&".join("emoji=none" for _ in range(129)))
+    response = _client().get(
+        "/events.ics?" + "&".join("emoji=none" for _ in range(129))
+    )
 
     assert response.status_code == 400
     assert "at most 128" in response.json()["detail"]

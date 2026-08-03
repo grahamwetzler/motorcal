@@ -6,6 +6,7 @@ them. The `Config`/`State` pair handed in may be mutated freely, and the caller
 persists only on success -- so a failed reload leaves the state file and the
 served feeds exactly as they were.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -59,14 +60,20 @@ def check_and_reload_config(
     new_hash = config_bundle_hash(config_dir)
     if new_hash == previous_hash:
         return ReloadResult(
-            reloaded=False, config=previous_config, published=None,
-            bundle_hash=previous_hash, error=None,
+            reloaded=False,
+            config=previous_config,
+            published=None,
+            bundle_hash=previous_hash,
+            error=None,
         )
 
     def rejected(error: str) -> ReloadResult:
         return ReloadResult(
-            reloaded=False, config=previous_config, published=None,
-            bundle_hash=previous_hash, error=error,
+            reloaded=False,
+            config=previous_config,
+            published=None,
+            bundle_hash=previous_hash,
+            error=error,
         )
 
     try:
@@ -80,12 +87,17 @@ def check_and_reload_config(
         return rejected(str(exc))
 
     return ReloadResult(
-        reloaded=True, config=new_config, published=published,
-        bundle_hash=new_hash, error=None,
+        reloaded=True,
+        config=new_config,
+        published=published,
+        bundle_hash=new_hash,
+        error=None,
     )
 
 
-def build_scheduler(reload_job, reload_interval_seconds: float = 30) -> BackgroundScheduler:
+def build_scheduler(
+    reload_job, reload_interval_seconds: float = 30
+) -> BackgroundScheduler:
     """Build (but do not start) the scheduler for the config-reload job.
 
     Deliberately single-threaded: the job swaps state onto the running app, and one

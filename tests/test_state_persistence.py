@@ -71,7 +71,15 @@ def test_load_rejects_a_structurally_invalid_state_file(tmp_path):
 def test_sequence_and_dtstamp_survive_a_save_load_cycle(tmp_path):
     """The whole reason the ledger is persisted: a restart must not re-notify clients."""
     path = tmp_path / "state.yaml"
-    config = make_config(series={"wec": make_series(events=[make_event("wec-2026-imola-race", start="2026-04-19T13:00:00+00:00")])})
+    config = make_config(
+        series={
+            "wec": make_series(
+                events=[
+                    make_event("wec-2026-imola-race", start="2026-04-19T13:00:00+00:00")
+                ]
+            )
+        }
+    )
     state = make_state()
     first = rebuild_publication(config, state, now=NOW)
     state_module.save(path, state)
@@ -87,7 +95,15 @@ def test_sequence_and_dtstamp_survive_a_save_load_cycle(tmp_path):
 def test_a_failed_rebuild_never_reaches_disk(tmp_path):
     """Copy-on-write: the caller discards the working copy, so the file is untouched."""
     path = tmp_path / "state.yaml"
-    config = make_config(series={"wec": make_series(events=[make_event("wec-2026-imola-race", start="2026-04-19T13:00:00+00:00")])})
+    config = make_config(
+        series={
+            "wec": make_series(
+                events=[
+                    make_event("wec-2026-imola-race", start="2026-04-19T13:00:00+00:00")
+                ]
+            )
+        }
+    )
     live = make_state()
     rebuild_publication(config, live, now=NOW)
     state_module.save(path, live)

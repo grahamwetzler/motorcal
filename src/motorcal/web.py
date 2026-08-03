@@ -14,6 +14,7 @@ alarms and the title prefix are applied here at render time, never written back
 to the version ledger. Nobody's calendar re-notifies because someone else asked
 for `?emoji=true`.
 """
+
 from __future__ import annotations
 
 import json
@@ -37,7 +38,9 @@ _access_logger = logging.getLogger("motorcal.access")
 # pole-setting session differently (WEC's hyperpole, F1's sprint qualifying),
 # but they're all "qualifying" from a subscriber's point of view.
 _QUALIFYING_TYPES = {
-    SessionType.QUALIFYING, SessionType.HYPERPOLE, SessionType.SPRINT_QUALIFYING,
+    SessionType.QUALIFYING,
+    SessionType.HYPERPOLE,
+    SessionType.SPRINT_QUALIFYING,
 }
 
 # An alarm needs a confirmed start to hang off, and a test day has nothing worth
@@ -59,7 +62,9 @@ _EMOJI_BOOL_ALIASES = {"true": "flag", "false": "none"}
 _INDEX_HTML = (Path(__file__).parent / "index.html").read_text()
 
 # `alarms_race=-1h` and friends: one per session type.
-_ALARM_PARAMS = {f"alarms_{session_type.value}": session_type for session_type in SessionType}
+_ALARM_PARAMS = {
+    f"alarms_{session_type.value}": session_type for session_type in SessionType
+}
 # Settable for one series as `f1.sessions=race`, or for every series unprefixed.
 _SERIES_PARAMS = {"sessions", "alarms", *_ALARM_PARAMS}
 # `practices`/`qualifying` predate `sessions` and are kept for feeds already
@@ -69,8 +74,14 @@ _GLOBAL_ONLY_PARAMS = {"series", "emoji", "name", *_LEGACY_PARAMS}
 _GLOBAL_PARAMS = _SERIES_PARAMS | _GLOBAL_ONLY_PARAMS
 
 _BOOLEANS = {
-    "true": True, "1": True, "on": True, "yes": True,
-    "false": False, "0": False, "off": False, "no": False,
+    "true": True,
+    "1": True,
+    "on": True,
+    "yes": True,
+    "false": False,
+    "0": False,
+    "off": False,
+    "no": False,
 }
 
 # The feed's filter URL is public input. These bounds are deliberately well
@@ -186,15 +197,21 @@ def create_app(config: Config) -> FastAPI:
         if not ics_bytes:
             raise HTTPException(status_code=503, detail="no usable events")
 
-        selection = _parse_selection(_validated_query_params(request), publication.config)
+        selection = _parse_selection(
+            _validated_query_params(request), publication.config
+        )
         if not selection.is_default:
             published = {
-                series: _select(publication.published.get(series, []), selection.filters[series])
+                series: _select(
+                    publication.published.get(series, []), selection.filters[series]
+                )
                 for series in selection.series
             }
             ics_bytes = render_combined_bytes(
-                publication.config, published,
-                prefix=selection.prefix, calname=selection.calname,
+                publication.config,
+                published,
+                prefix=selection.prefix,
+                calname=selection.calname,
             )
 
         return _conditional_response(ics_bytes, request, COMBINED_SERIES_KEY)
@@ -287,7 +304,8 @@ def _validated_query_params(request: Request) -> QueryParams:
     if len(raw_query) > _MAX_QUERY_STRING_BYTES:
         raise _bad_request(f"query string exceeds {_MAX_QUERY_STRING_BYTES} bytes")
     if any(
-        byte == ord("%") and (
+        byte == ord("%")
+        and (
             index + 2 >= len(raw_query)
             or raw_query[index + 1] not in _HEX_DIGITS
             or raw_query[index + 2] not in _HEX_DIGITS
@@ -298,11 +316,15 @@ def _validated_query_params(request: Request) -> QueryParams:
     try:
         unquote_plus(raw_query.decode("ascii"), encoding="utf-8", errors="strict")
     except UnicodeError:
-        raise _bad_request("query string must be valid UTF-8 percent-encoding") from None
+        raise _bad_request(
+            "query string must be valid UTF-8 percent-encoding"
+        ) from None
 
     query = request.query_params
     if len(query.multi_items()) > _MAX_QUERY_PARAMETERS:
-        raise _bad_request(f"query string accepts at most {_MAX_QUERY_PARAMETERS} parameters")
+        raise _bad_request(
+            f"query string accepts at most {_MAX_QUERY_PARAMETERS} parameters"
+        )
     return query
 
 
@@ -340,7 +362,9 @@ def _parse_calendar_name(value: str) -> str:
     if not value.strip():
         raise _bad_request("'name' must not be empty")
     if len(value) > _MAX_CALENDAR_NAME_LENGTH:
-        raise _bad_request(f"'name' accepts at most {_MAX_CALENDAR_NAME_LENGTH} characters")
+        raise _bad_request(
+            f"'name' accepts at most {_MAX_CALENDAR_NAME_LENGTH} characters"
+        )
     if any(ord(character) < 32 or 127 <= ord(character) < 160 for character in value):
         raise _bad_request("'name' must not contain control characters")
     return value
@@ -359,7 +383,9 @@ def _parse_sessions(value: str, key: str) -> frozenset[SessionType]:
     return frozenset(session_types)
 
 
-_MAX_ALARMS = 10  # one VALARM per offset per event -- caps anonymous list-based amplification
+_MAX_ALARMS = (
+    10  # one VALARM per offset per event -- caps anonymous list-based amplification
+)
 
 
 def _parse_alarms(value: str, key: str) -> list[str]:
@@ -368,7 +394,9 @@ def _parse_alarms(value: str, key: str) -> list[str]:
         return []
     offsets = _split(value, key)
     if len(offsets) > _MAX_ALARMS:
-        raise _bad_request(f"{key!r} accepts at most {_MAX_ALARMS} alarms (got {len(offsets)})")
+        raise _bad_request(
+            f"{key!r} accepts at most {_MAX_ALARMS} alarms (got {len(offsets)})"
+        )
     for offset in offsets:
         try:
             parse_alarm_offset(offset)
@@ -462,7 +490,9 @@ def _parse_selection(query: QueryParams, config: Config) -> Selection:
         )
 
     global_sessions = (
-        _parse_sessions(global_raw["sessions"], "sessions") if "sessions" in global_raw else None
+        _parse_sessions(global_raw["sessions"], "sessions")
+        if "sessions" in global_raw
+        else None
     )
     if legacy:
         excluded: set[SessionType] = set()
@@ -473,7 +503,11 @@ def _parse_selection(query: QueryParams, config: Config) -> Selection:
         if excluded:
             global_sessions = frozenset(set(SessionType) - excluded)
 
-    global_alarms = _parse_alarms(global_raw["alarms"], "alarms") if "alarms" in global_raw else None
+    global_alarms = (
+        _parse_alarms(global_raw["alarms"], "alarms")
+        if "alarms" in global_raw
+        else None
+    )
     global_by_type = {
         session_type: _parse_alarms(global_raw[param], param)
         for param, session_type in _ALARM_PARAMS.items()
@@ -484,9 +518,13 @@ def _parse_selection(query: QueryParams, config: Config) -> Selection:
     for key in selected:
         raw = per_series_raw.get(key, {})
         own_sessions = (
-            _parse_sessions(raw["sessions"], f"{key}.sessions") if "sessions" in raw else None
+            _parse_sessions(raw["sessions"], f"{key}.sessions")
+            if "sessions" in raw
+            else None
         )
-        own_alarms = _parse_alarms(raw["alarms"], f"{key}.alarms") if "alarms" in raw else None
+        own_alarms = (
+            _parse_alarms(raw["alarms"], f"{key}.alarms") if "alarms" in raw else None
+        )
         own_by_type = {
             session_type: _parse_alarms(raw[param], f"{key}.{param}")
             for param, session_type in _ALARM_PARAMS.items()
@@ -509,7 +547,9 @@ def _parse_selection(query: QueryParams, config: Config) -> Selection:
         series=selected,
         filters=filters,
         prefix=_parse_emoji(global_raw.get("emoji", "none"), "emoji"),
-        calname=_parse_calendar_name(global_raw["name"]) if "name" in global_raw else None,
+        calname=_parse_calendar_name(global_raw["name"])
+        if "name" in global_raw
+        else None,
         is_default=not items,
     )
 
@@ -525,7 +565,11 @@ def _select(events: list[PublishedEvent], filters: _Filters) -> list[PublishedEv
         if filters.sessions is not None and event.session_type not in filters.sessions:
             continue
         alarms = filters.alarms.get(event.session_type)
-        if alarms is not None and event.time_confirmed and event.session_type not in _NO_ALARM_TYPES:
+        if (
+            alarms is not None
+            and event.time_confirmed
+            and event.session_type not in _NO_ALARM_TYPES
+        ):
             event = replace(event, alarms=list(alarms))
         selected.append(event)
     return selected

@@ -3,6 +3,7 @@
 
 Usage: uv run scripts/view_ics.py <url>
 """
+
 from __future__ import annotations
 
 import sys
@@ -26,7 +27,11 @@ def fmt_trigger(alarm) -> str:
     if isinstance(delta, (datetime, date)):
         return f"at {delta}"
     seconds = int(delta.total_seconds())
-    return f"{-seconds // 60} min before" if seconds < 0 else f"{seconds // 60} min after start"
+    return (
+        f"{-seconds // 60} min before"
+        if seconds < 0
+        else f"{seconds // 60} min after start"
+    )
 
 
 def print_event(vevent) -> None:
@@ -36,7 +41,10 @@ def print_event(vevent) -> None:
     start = vevent.get("dtstart")
     end = vevent.get("dtend")
     if start is not None:
-        print(f"    When:        {fmt_dt(start.dt)}" + (f" → {fmt_dt(end.dt)}" if end is not None else ""))
+        print(
+            f"    When:        {fmt_dt(start.dt)}"
+            + (f" → {fmt_dt(end.dt)}" if end is not None else "")
+        )
 
     location = vevent.get("location")
     if location:

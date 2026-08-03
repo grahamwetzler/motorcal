@@ -4,6 +4,7 @@ Pure functions over a `Config` and the version ledger. `rebuild_publication`
 mutates `state.versions` in place but touches no file, so callers get
 all-or-nothing by rebuilding against a deep copy and persisting only on success.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -124,7 +125,9 @@ def _event_effective_end(
 ) -> datetime:
     """The last instant this event is 'happening', for retention/cancellation decisions."""
     if start is not None:
-        return start + timedelta(seconds=duration_seconds) if duration_seconds else start
+        return (
+            start + timedelta(seconds=duration_seconds) if duration_seconds else start
+        )
     day = datetime.fromisoformat(all_day_date).replace(tzinfo=UTC)
     return day + timedelta(days=1)
 
@@ -156,12 +159,17 @@ def build_published_event(
         start: datetime | None = datetime.fromisoformat(session.start)
         all_day_date: str | None = None
         duration_seconds = resolve_duration(
-            session_type, own_duration=session.duration,
-            series_config=series_config, globals_=globals_,
+            session_type,
+            own_duration=session.duration,
+            series_config=series_config,
+            globals_=globals_,
         )
         alarms = resolve_alarms(
-            session_type, own_alarms=session.alarms, time_confirmed=True,
-            series_config=series_config, globals_=globals_,
+            session_type,
+            own_alarms=session.alarms,
+            time_confirmed=True,
+            series_config=series_config,
+            globals_=globals_,
         )
     else:
         start, all_day_date = None, session.date
@@ -170,9 +178,15 @@ def build_published_event(
     status = EventStatus(session.status)
     description = build_description(event=event, session=session)
     fingerprint = compute_fingerprint(
-        summary=summary, description=description, location=event.location, status=status.value,
-        start=start.isoformat() if start else None, all_day_date=all_day_date,
-        duration_seconds=duration_seconds, alarms=alarms, series_name=series_config.name,
+        summary=summary,
+        description=description,
+        location=event.location,
+        status=status.value,
+        start=start.isoformat() if start else None,
+        all_day_date=all_day_date,
+        duration_seconds=duration_seconds,
+        alarms=alarms,
+        series_name=series_config.name,
     )
 
     now_unix_minute = int(now.timestamp() // 60)
@@ -181,15 +195,28 @@ def build_published_event(
         dtstamp = datetime.fromisoformat(previous.dtstamp)
         last_modified = datetime.fromisoformat(previous.last_modified)
     else:
-        sequence = next_sequence(previous.sequence if previous else None, now_unix_minute)
+        sequence = next_sequence(
+            previous.sequence if previous else None, now_unix_minute
+        )
         dtstamp = last_modified = now
 
     return PublishedEvent(
-        uid=uid, series=series, session_type=session_type, summary=summary,
-        start=start, all_day_date=all_day_date, time_confirmed=time_confirmed,
-        duration_seconds=duration_seconds, location=event.location, description=description,
-        status=status, sequence=sequence, dtstamp=dtstamp, last_modified=last_modified,
-        fingerprint=fingerprint, alarms=alarms,
+        uid=uid,
+        series=series,
+        session_type=session_type,
+        summary=summary,
+        start=start,
+        all_day_date=all_day_date,
+        time_confirmed=time_confirmed,
+        duration_seconds=duration_seconds,
+        location=event.location,
+        description=description,
+        status=status,
+        sequence=sequence,
+        dtstamp=dtstamp,
+        last_modified=last_modified,
+        fingerprint=fingerprint,
+        alarms=alarms,
     )
 
 
@@ -207,9 +234,14 @@ def rebuild_publication(
         published[series] = []
         for event, session in series_config.iter_sessions():
             built = build_published_event(
-                event, session, series=series, series_config=series_config,
+                event,
+                session,
+                series=series,
+                series_config=series_config,
                 globals_=config.globals,
-                previous=state.versions.get(session_uid(session, config.globals.uid_domain)),
+                previous=state.versions.get(
+                    session_uid(session, config.globals.uid_domain)
+                ),
                 now=now,
             )
             published[series].append(built)
@@ -219,7 +251,8 @@ def rebuild_publication(
     for events in published.values():
         for built in events:
             state.versions[built.uid] = VersionState(
-                fingerprint=built.fingerprint, sequence=built.sequence,
+                fingerprint=built.fingerprint,
+                sequence=built.sequence,
                 dtstamp=built.dtstamp.isoformat(),
                 last_modified=built.last_modified.isoformat(),
             )

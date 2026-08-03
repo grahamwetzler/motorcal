@@ -10,56 +10,104 @@ from tests.conftest import make_globals, make_series
 
 def test_compute_fingerprint_is_deterministic_for_identical_inputs():
     fp1 = compute_fingerprint(
-        summary="Race", description="desc", location="Imola", status="CONFIRMED",
-        start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600,
-        alarms=["-1d", "-30m"], series_name="WEC",
+        summary="Race",
+        description="desc",
+        location="Imola",
+        status="CONFIRMED",
+        start="2026-04-19T13:00:00+00:00",
+        all_day_date=None,
+        duration_seconds=21600,
+        alarms=["-1d", "-30m"],
+        series_name="WEC",
     )
     fp2 = compute_fingerprint(
-        summary="Race", description="desc", location="Imola", status="CONFIRMED",
-        start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600,
-        alarms=["-1d", "-30m"], series_name="WEC",
+        summary="Race",
+        description="desc",
+        location="Imola",
+        status="CONFIRMED",
+        start="2026-04-19T13:00:00+00:00",
+        all_day_date=None,
+        duration_seconds=21600,
+        alarms=["-1d", "-30m"],
+        series_name="WEC",
     )
     assert fp1 == fp2
 
 
 def test_compute_fingerprint_alarm_order_does_not_matter():
     fp1 = compute_fingerprint(
-        summary="Race", description="desc", location="Imola", status="CONFIRMED",
-        start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600,
-        alarms=["-1d", "-30m"], series_name="WEC",
+        summary="Race",
+        description="desc",
+        location="Imola",
+        status="CONFIRMED",
+        start="2026-04-19T13:00:00+00:00",
+        all_day_date=None,
+        duration_seconds=21600,
+        alarms=["-1d", "-30m"],
+        series_name="WEC",
     )
     fp2 = compute_fingerprint(
-        summary="Race", description="desc", location="Imola", status="CONFIRMED",
-        start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600,
-        alarms=["-30m", "-1d"], series_name="WEC",
+        summary="Race",
+        description="desc",
+        location="Imola",
+        status="CONFIRMED",
+        start="2026-04-19T13:00:00+00:00",
+        all_day_date=None,
+        duration_seconds=21600,
+        alarms=["-30m", "-1d"],
+        series_name="WEC",
     )
     assert fp1 == fp2
 
 
 def test_compute_fingerprint_changes_when_status_changes():
     fp1 = compute_fingerprint(
-        summary="Race", description="desc", location="Imola", status="CONFIRMED",
-        start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600,
-        alarms=[], series_name="WEC",
+        summary="Race",
+        description="desc",
+        location="Imola",
+        status="CONFIRMED",
+        start="2026-04-19T13:00:00+00:00",
+        all_day_date=None,
+        duration_seconds=21600,
+        alarms=[],
+        series_name="WEC",
     )
     fp2 = compute_fingerprint(
-        summary="Race", description="desc", location="Imola", status="CANCELLED",
-        start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600,
-        alarms=[], series_name="WEC",
+        summary="Race",
+        description="desc",
+        location="Imola",
+        status="CANCELLED",
+        start="2026-04-19T13:00:00+00:00",
+        all_day_date=None,
+        duration_seconds=21600,
+        alarms=[],
+        series_name="WEC",
     )
     assert fp1 != fp2
 
 
 def test_compute_fingerprint_changes_when_alarm_set_changes():
     fp1 = compute_fingerprint(
-        summary="Race", description="desc", location="Imola", status="CONFIRMED",
-        start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600,
-        alarms=["-1d"], series_name="WEC",
+        summary="Race",
+        description="desc",
+        location="Imola",
+        status="CONFIRMED",
+        start="2026-04-19T13:00:00+00:00",
+        all_day_date=None,
+        duration_seconds=21600,
+        alarms=["-1d"],
+        series_name="WEC",
     )
     fp2 = compute_fingerprint(
-        summary="Race", description="desc", location="Imola", status="CONFIRMED",
-        start="2026-04-19T13:00:00+00:00", all_day_date=None, duration_seconds=21600,
-        alarms=["-30m"], series_name="WEC",
+        summary="Race",
+        description="desc",
+        location="Imola",
+        status="CONFIRMED",
+        start="2026-04-19T13:00:00+00:00",
+        all_day_date=None,
+        duration_seconds=21600,
+        alarms=["-30m"],
+        series_name="WEC",
     )
     assert fp1 != fp2
 
@@ -95,7 +143,9 @@ def test_resolve_duration_prefers_own_duration_over_everything():
     result = resolve_duration(
         SessionType.RACE, own_duration="6h", series_config=series, globals_=globals_
     )
-    assert result == 21600  # own duration (6h), not the 3h series override or 1h global default
+    assert (
+        result == 21600
+    )  # own duration (6h), not the 3h series override or 1h global default
 
 
 def test_resolve_duration_falls_back_to_series_override():
@@ -120,7 +170,10 @@ def test_resolve_duration_returns_none_when_nothing_configured():
     globals_ = _globals(global_race_duration=None)
     series = make_series()
     result = resolve_duration(
-        SessionType.HYPERPOLE, own_duration=None, series_config=series, globals_=globals_
+        SessionType.HYPERPOLE,
+        own_duration=None,
+        series_config=series,
+        globals_=globals_,
     )
     assert result is None
 
@@ -128,8 +181,11 @@ def test_resolve_duration_returns_none_when_nothing_configured():
 def test_resolve_alarms_returns_empty_for_unconfirmed_time():
     globals_ = _globals(alerts={"race": ["-1d"]})
     result = resolve_alarms(
-        SessionType.RACE, own_alarms=None, time_confirmed=False,
-        series_config=make_series(), globals_=globals_,
+        SessionType.RACE,
+        own_alarms=None,
+        time_confirmed=False,
+        series_config=make_series(),
+        globals_=globals_,
     )
     assert result == []
 
@@ -137,8 +193,11 @@ def test_resolve_alarms_returns_empty_for_unconfirmed_time():
 def test_resolve_alarms_returns_empty_for_testing_session_type():
     globals_ = _globals(alerts={"race": ["-1d"]})
     result = resolve_alarms(
-        SessionType.TESTING, own_alarms=None, time_confirmed=True,
-        series_config=make_series(), globals_=globals_,
+        SessionType.TESTING,
+        own_alarms=None,
+        time_confirmed=True,
+        series_config=make_series(),
+        globals_=globals_,
     )
     assert result == []
 
@@ -146,8 +205,11 @@ def test_resolve_alarms_returns_empty_for_testing_session_type():
 def test_resolve_alarms_prefers_the_sessions_own_alarms():
     globals_ = _globals(alerts={"race": ["-1d"]})
     result = resolve_alarms(
-        SessionType.RACE, own_alarms=["-2d", "-1h"], time_confirmed=True,
-        series_config=make_series(alerts={"race": ["-15m"]}), globals_=globals_,
+        SessionType.RACE,
+        own_alarms=["-2d", "-1h"],
+        time_confirmed=True,
+        series_config=make_series(alerts={"race": ["-15m"]}),
+        globals_=globals_,
     )
     assert result == ["-2d", "-1h"]
 
@@ -156,8 +218,11 @@ def test_resolve_alarms_falls_back_to_series_override():
     globals_ = _globals(alerts={"race": ["-1d", "-30m"]})
     series = make_series(alerts={"race": ["-15m"]})
     result = resolve_alarms(
-        SessionType.RACE, own_alarms=None, time_confirmed=True,
-        series_config=series, globals_=globals_,
+        SessionType.RACE,
+        own_alarms=None,
+        time_confirmed=True,
+        series_config=series,
+        globals_=globals_,
     )
     assert result == ["-15m"]
 
@@ -165,8 +230,11 @@ def test_resolve_alarms_falls_back_to_series_override():
 def test_resolve_alarms_falls_back_to_the_global_defaults():
     globals_ = _globals(alerts={"race": ["-1d", "-30m"]})
     result = resolve_alarms(
-        SessionType.RACE, own_alarms=None, time_confirmed=True,
-        series_config=make_series(), globals_=globals_,
+        SessionType.RACE,
+        own_alarms=None,
+        time_confirmed=True,
+        series_config=make_series(),
+        globals_=globals_,
     )
     assert result == ["-1d", "-30m"]
 
@@ -174,7 +242,10 @@ def test_resolve_alarms_falls_back_to_the_global_defaults():
 def test_resolve_alarms_empty_list_is_a_valid_deliberate_configuration():
     globals_ = _globals(alerts={"race": ["-1d"], "practice": []})
     result = resolve_alarms(
-        SessionType.PRACTICE, own_alarms=None, time_confirmed=True,
-        series_config=make_series(), globals_=globals_,
+        SessionType.PRACTICE,
+        own_alarms=None,
+        time_confirmed=True,
+        series_config=make_series(),
+        globals_=globals_,
     )
     assert result == []

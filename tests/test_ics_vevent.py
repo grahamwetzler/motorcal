@@ -99,7 +99,9 @@ def test_tentative_status_prefixes_postponed_on_summary_and_alarm():
 
     assert b"STATUS:TENTATIVE" in ics_bytes
     assert b"SUMMARY:[Postponed] IMSA: Some Race" in ics_bytes
-    assert b"DESCRIPTION:[Postponed] IMSA: Some Race" in ics_bytes  # the VALARM's own description
+    assert (
+        b"DESCRIPTION:[Postponed] IMSA: Some Race" in ics_bytes
+    )  # the VALARM's own description
 
 
 def test_cancelled_status_has_no_special_prefix():
@@ -126,11 +128,19 @@ def test_cancelled_status_has_no_special_prefix():
 
 def test_location_omitted_when_none():
     event = build_vevent(
-        uid="u6@x.example.com", summary="S", series_name="IMSA", status="CONFIRMED",
-        start=datetime(2026, 6, 10, 16, 45, tzinfo=UTC), all_day_date=None,
-        duration_seconds=None, dtstamp=datetime(2026, 1, 1, tzinfo=UTC),
-        last_modified=datetime(2026, 1, 1, tzinfo=UTC), sequence=1,
-        description="d", location=None, alarms=[],
+        uid="u6@x.example.com",
+        summary="S",
+        series_name="IMSA",
+        status="CONFIRMED",
+        start=datetime(2026, 6, 10, 16, 45, tzinfo=UTC),
+        all_day_date=None,
+        duration_seconds=None,
+        dtstamp=datetime(2026, 1, 1, tzinfo=UTC),
+        last_modified=datetime(2026, 1, 1, tzinfo=UTC),
+        sequence=1,
+        description="d",
+        location=None,
+        alarms=[],
     )
     ics_bytes = event.to_ical()
     assert b"LOCATION" not in ics_bytes
@@ -138,11 +148,19 @@ def test_location_omitted_when_none():
 
 def test_rendering_the_same_input_twice_is_byte_identical():
     kwargs = {
-        "uid": "u7@x.example.com", "summary": "S", "series_name": "IMSA", "status": "CONFIRMED",
-        "start": datetime(2026, 6, 10, 16, 45, tzinfo=UTC), "all_day_date": None,
-        "duration_seconds": 3600, "dtstamp": datetime(2026, 1, 1, tzinfo=UTC),
-        "last_modified": datetime(2026, 1, 1, tzinfo=UTC), "sequence": 1,
-        "description": "d", "location": "L", "alarms": ["-1d", "-30m"],
+        "uid": "u7@x.example.com",
+        "summary": "S",
+        "series_name": "IMSA",
+        "status": "CONFIRMED",
+        "start": datetime(2026, 6, 10, 16, 45, tzinfo=UTC),
+        "all_day_date": None,
+        "duration_seconds": 3600,
+        "dtstamp": datetime(2026, 1, 1, tzinfo=UTC),
+        "last_modified": datetime(2026, 1, 1, tzinfo=UTC),
+        "sequence": 1,
+        "description": "d",
+        "location": "L",
+        "alarms": ["-1d", "-30m"],
     }
     b1 = build_vevent(**kwargs).to_ical()
     b2 = build_vevent(**kwargs).to_ical()

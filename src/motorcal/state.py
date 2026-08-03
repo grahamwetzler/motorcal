@@ -8,6 +8,7 @@ so calendar clients don't re-notify subscribers on every rebuild.
 Deleting it is recoverable -- the next rebuild recreates it -- but every subscriber
 sees the whole calendar as modified once.
 """
+
 from __future__ import annotations
 
 import os
