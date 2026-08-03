@@ -35,12 +35,19 @@ def make_globals(
 
 
 def make_series(
-    *, name: str = "WEC", schedule_url: str | None = None,
-    durations=None, alerts=None, events=None,
+    *,
+    name: str = "WEC",
+    schedule_url: str | None = None,
+    durations=None,
+    alerts=None,
+    events=None,
 ) -> SeriesConfig:
     return SeriesConfig(
-        name=name, schedule_url=schedule_url,
-        durations=durations, alerts=alerts, events=list(events or []),
+        name=name,
+        schedule_url=schedule_url,
+        durations=durations,
+        alerts=alerts,
+        events=list(events or []),
     )
 
 
@@ -51,7 +58,9 @@ def make_config(*, series=None, **global_kwargs) -> Config:
     )
 
 
-def make_session(uid: str = "my-session", *, type: str = "race", **kwargs) -> SessionConfig:
+def make_session(
+    uid: str = "my-session", *, type: str = "race", **kwargs
+) -> SessionConfig:
     """One session. Defaults to an all-day race, so only what a test cares about is passed."""
     if not kwargs.get("start"):
         kwargs.setdefault("date", "2026-05-01")
@@ -59,12 +68,19 @@ def make_session(uid: str = "my-session", *, type: str = "race", **kwargs) -> Se
 
 
 def make_event(
-    uid: str = "my-event", *, name: str = "6 Hours of Imola",
-    location: str | None = None, round: int | None = None, **kwargs
+    uid: str = "my-event",
+    *,
+    name: str = "6 Hours of Imola",
+    location: str | None = None,
+    round: int | None = None,
+    **kwargs,
 ) -> EventConfig:
     """A race event of one session."""
     return EventConfig(
-        name=name, location=location, round=round, sessions=[make_session(uid, **kwargs)]
+        name=name,
+        location=location,
+        round=round,
+        sessions=[make_session(uid, **kwargs)],
     )
 
 
@@ -78,13 +94,15 @@ def write_config_dir(tmp_path, config: Config):
     config_dir.mkdir(exist_ok=True)
     (config_dir / "defaults.yaml").write_text(
         yaml.safe_dump(
-            config.globals.model_dump(mode="json", exclude={"uid_domain"}), sort_keys=False
+            config.globals.model_dump(mode="json", exclude={"uid_domain"}),
+            sort_keys=False,
         )
     )
     for series, series_config in config.series.items():
         (config_dir / f"{series}.yaml").write_text(
             yaml.safe_dump(
-                series_config.model_dump(mode="json", exclude_none=True), sort_keys=False
+                series_config.model_dump(mode="json", exclude_none=True),
+                sort_keys=False,
             )
         )
     return config_dir

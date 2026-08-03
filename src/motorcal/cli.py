@@ -1,20 +1,25 @@
 """motorcal command-line interface."""
+
 from __future__ import annotations
 
 import argparse
 import logging
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import uvicorn
 
 from motorcal import state as state_module
-from motorcal.config import Config, ConfigError, load_config
+from motorcal.config import ConfigError, load_config
 from motorcal.ics import render_combined_bytes
 from motorcal.merge import rebuild_publication
-from motorcal.refresh import build_scheduler, check_and_reload_config, config_bundle_hash
+from motorcal.refresh import (
+    build_scheduler,
+    check_and_reload_config,
+    config_bundle_hash,
+)
 from motorcal.web import Publication, create_app
 
 _logger = logging.getLogger("motorcal.serve")
@@ -53,7 +58,7 @@ def _cmd_serve(args: argparse.Namespace) -> int:
         )
         return 1
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     published = rebuild_publication(config, state, now=now)
     state_module.save(state_path, state)
 
@@ -64,17 +69,23 @@ def _cmd_serve(args: argparse.Namespace) -> int:
     app = create_app(config)
     app.state.data = state
     app.state.publication = Publication(
-        config=config, published=published, feed=render_combined_bytes(config, published)
+        config=config,
+        published=published,
+        feed=render_combined_bytes(config, published),
     )
     app.state.bundle_hash = config_bundle_hash(config_dir)
     app.state.config_dir = config_dir
 
     def reload_job():
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         working_state = app.state.data.model_copy(deep=True)
         result = check_and_reload_config(
-            config_dir, working_state, app.state.bundle_hash,
-            app.state.publication.config, uid_domain, now,
+            config_dir,
+            working_state,
+            app.state.bundle_hash,
+            app.state.publication.config,
+            uid_domain,
+            now,
         )
         app.state.bundle_hash = result.bundle_hash
         if not result.reloaded:
@@ -85,7 +96,8 @@ def _cmd_serve(args: argparse.Namespace) -> int:
         state_module.save(state_path, working_state)
         app.state.data = working_state
         app.state.publication = Publication(
-            config=result.config, published=result.published,
+            config=result.config,
+            published=result.published,
             feed=render_combined_bytes(result.config, result.published),
         )
 
@@ -123,7 +135,9 @@ def _build_parser() -> argparse.ArgumentParser:
     serve_parser = subparsers.add_parser(
         "serve", help="Run the scheduler and HTTP server (feeds on :8000)"
     )
-    serve_parser.add_argument("--config", required=True, help="Path to the data directory")
+    serve_parser.add_argument(
+        "--config", required=True, help="Path to the data directory"
+    )
     serve_parser.add_argument("--state", required=True, help="Path to state.yaml")
     serve_parser.set_defaults(func=_cmd_serve)
 

@@ -1,4 +1,5 @@
 """Canonical data models shared across motorcal."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -49,7 +50,7 @@ class PublishedEvent:
     alarms: list[str] = field(default_factory=list)
 
 
-def session_uid(session: "SessionConfig", uid_domain: str) -> str:
+def session_uid(session: SessionConfig, uid_domain: str) -> str:
     """The stable ICS UID for a configured session.
 
     The `local-` prefix predates the data directory becoming the only source, and

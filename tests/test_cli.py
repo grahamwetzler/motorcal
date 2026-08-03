@@ -1,14 +1,21 @@
-from tests.conftest import UID_DOMAIN, make_config, make_event, make_series, write_config_dir
-
 from motorcal import state as state_module
 from motorcal.cli import main
 from motorcal.state import State
+from tests.conftest import (
+    UID_DOMAIN,
+    make_config,
+    make_event,
+    make_series,
+    write_config_dir,
+)
 
 
 def _config_dir(tmp_path):
     return write_config_dir(
         tmp_path,
-        make_config(series={"wec": make_series(events=[make_event("wec-2026-imola-race")])}),
+        make_config(
+            series={"wec": make_series(events=[make_event("wec-2026-imola-race")])}
+        ),
     )
 
 
@@ -42,7 +49,9 @@ def test_validate_config_rejects_a_missing_directory(tmp_path, capsys, monkeypat
     assert capsys.readouterr().err != ""
 
 
-def test_validate_config_rejects_a_directory_with_no_series(tmp_path, capsys, monkeypatch):
+def test_validate_config_rejects_a_directory_with_no_series(
+    tmp_path, capsys, monkeypatch
+):
     monkeypatch.setenv("UID_DOMAIN", UID_DOMAIN)
     config_dir = _config_dir(tmp_path)
     (config_dir / "wec.yaml").unlink()
@@ -58,7 +67,9 @@ def test_validate_config_requires_uid_domain(tmp_path, capsys, monkeypatch):
     assert "UID_DOMAIN" in capsys.readouterr().err
 
 
-def test_serve_refuses_to_start_when_uid_domain_has_changed(tmp_path, capsys, monkeypatch):
+def test_serve_refuses_to_start_when_uid_domain_has_changed(
+    tmp_path, capsys, monkeypatch
+):
     config_dir = _config_dir(tmp_path)
     state_path = tmp_path / "state.yaml"
     state_module.save(state_path, State(uid_domain="old.example.com"))
@@ -77,7 +88,11 @@ def test_serve_requires_uid_domain(tmp_path, capsys, monkeypatch):
     monkeypatch.delenv("UID_DOMAIN", raising=False)
 
     exit_code = main([
-        "serve", "--config", str(_config_dir(tmp_path)), "--state", str(tmp_path / "state.yaml"),
+        "serve",
+        "--config",
+        str(_config_dir(tmp_path)),
+        "--state",
+        str(tmp_path / "state.yaml"),
     ])
 
     assert exit_code == 1

@@ -1,22 +1,28 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
+from motorcal.refresh import check_and_reload_config, config_bundle_hash
 from tests.conftest import (
     UID_DOMAIN,
     make_config,
-    make_series,
     make_event,
+    make_series,
     make_state,
     write_config_dir,
 )
 
-from motorcal.refresh import check_and_reload_config, config_bundle_hash
-
-NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
+NOW = datetime(2026, 1, 1, tzinfo=UTC)
 
 
 def _dir(tmp_path, **kwargs):
     config = make_config(
-        series={"wec": make_series(events=[make_event("wec-2026-imola-race", start="2026-04-19T13:00:00+00:00")])}, **kwargs
+        series={
+            "wec": make_series(
+                events=[
+                    make_event("wec-2026-imola-race", start="2026-04-19T13:00:00+00:00")
+                ]
+            )
+        },
+        **kwargs,
     )
     return write_config_dir(tmp_path, config), config
 
@@ -37,7 +43,7 @@ def test_bundle_hash_is_stable_for_unchanged_content(tmp_path):
 
 
 def test_bundle_hash_notices_a_new_series_file(tmp_path):
-    config_dir, config = _dir(tmp_path)
+    config_dir, _ = _dir(tmp_path)
     before = config_bundle_hash(config_dir)
 
     (config_dir / "imsa.yaml").write_text("name: IMSA\n")
@@ -49,7 +55,9 @@ def test_reload_skips_when_nothing_changed(tmp_path):
     config_dir, config = _dir(tmp_path)
     previous_hash = config_bundle_hash(config_dir)
 
-    result = check_and_reload_config(config_dir, make_state(), previous_hash, config, UID_DOMAIN, NOW)
+    result = check_and_reload_config(
+        config_dir, make_state(), previous_hash, config, UID_DOMAIN, NOW
+    )
 
     assert result.reloaded is False
     assert result.error is None
@@ -59,7 +67,9 @@ def test_reload_skips_when_nothing_changed(tmp_path):
 def test_reload_succeeds_and_rebuilds(tmp_path):
     config_dir, config = _dir(tmp_path)
 
-    result = check_and_reload_config(config_dir, make_state(), None, config, UID_DOMAIN, NOW)
+    result = check_and_reload_config(
+        config_dir, make_state(), None, config, UID_DOMAIN, NOW
+    )
 
     assert result.reloaded is True
     assert result.error is None
@@ -69,12 +79,16 @@ def test_reload_succeeds_and_rebuilds(tmp_path):
 
 def test_reload_picks_up_a_hand_edited_event(tmp_path):
     config_dir, config = _dir(tmp_path)
-    text = (config_dir / "wec.yaml").read_text().replace(
-        "name: 6 Hours of Imola", "name: 6 Hours of Imola (edited)"
+    text = (
+        (config_dir / "wec.yaml")
+        .read_text()
+        .replace("name: 6 Hours of Imola", "name: 6 Hours of Imola (edited)")
     )
     (config_dir / "wec.yaml").write_text(text)
 
-    result = check_and_reload_config(config_dir, make_state(), None, config, UID_DOMAIN, NOW)
+    result = check_and_reload_config(
+        config_dir, make_state(), None, config, UID_DOMAIN, NOW
+    )
 
     assert result.reloaded is True
     assert result.published["wec"][0].summary == "6 Hours of Imola (edited)"
@@ -84,7 +98,9 @@ def test_reload_picks_up_a_new_series_file(tmp_path):
     config_dir, config = _dir(tmp_path)
     (config_dir / "imsa.yaml").write_text("name: IMSA\n")
 
-    result = check_and_reload_config(config_dir, make_state(), None, config, UID_DOMAIN, NOW)
+    result = check_and_reload_config(
+        config_dir, make_state(), None, config, UID_DOMAIN, NOW
+    )
 
     assert result.reloaded is True
     assert "imsa" in result.config.series
@@ -94,7 +110,9 @@ def test_reload_is_rejected_on_invalid_yaml(tmp_path):
     config_dir, config = _dir(tmp_path)
     (config_dir / "wec.yaml").write_text("not: valid: yaml: [[[")
 
-    result = check_and_reload_config(config_dir, make_state(), None, config, UID_DOMAIN, NOW)
+    result = check_and_reload_config(
+        config_dir, make_state(), None, config, UID_DOMAIN, NOW
+    )
 
     assert result.reloaded is False
     assert result.error is not None
@@ -104,9 +122,13 @@ def test_reload_is_rejected_on_invalid_yaml(tmp_path):
 
 def test_reload_is_rejected_on_schema_validation_failure(tmp_path):
     config_dir, config = _dir(tmp_path)
-    (config_dir / "wec.yaml").write_text("league_id: not_a_number\nname: WEC\nmax_round: 20\n")
+    (config_dir / "wec.yaml").write_text(
+        "league_id: not_a_number\nname: WEC\nmax_round: 20\n"
+    )
 
-    result = check_and_reload_config(config_dir, make_state(), None, config, UID_DOMAIN, NOW)
+    result = check_and_reload_config(
+        config_dir, make_state(), None, config, UID_DOMAIN, NOW
+    )
 
     assert result.reloaded is False
     assert result.error is not None
@@ -120,7 +142,9 @@ def test_reload_is_rejected_when_an_event_is_invalid(tmp_path):
         "league_id: 4413\nname: WEC\nmax_round: 20\nevents:\n- uid: broken\n  summary: Nope\n"
     )
 
-    result = check_and_reload_config(config_dir, make_state(), None, config, UID_DOMAIN, NOW)
+    result = check_and_reload_config(
+        config_dir, make_state(), None, config, UID_DOMAIN, NOW
+    )
 
     assert result.reloaded is False
     assert result.error is not None

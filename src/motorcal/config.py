@@ -9,6 +9,7 @@ Nothing in the app writes these files: they are maintained by hand and by the
 scheduled agent that reads the official timetables. So this module only loads
 them, and comments in them survive.
 """
+
 from __future__ import annotations
 
 import re
@@ -17,7 +18,13 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, ConfigDict, ValidationError, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 from motorcal.models import EventStatus, SessionType, session_uid
 
@@ -78,7 +85,9 @@ def parse_duration(value: str) -> int:
     """Parse a duration string like '1h' or '45m' into whole seconds."""
     match = _DURATION_RE.match(value)
     if not match:
-        raise ConfigError(f"Invalid duration string: {value!r} (expected e.g. '1h', '45m')")
+        raise ConfigError(
+            f"Invalid duration string: {value!r} (expected e.g. '1h', '45m')"
+        )
     amount, unit = match.groups()
     return int(amount) * (3600 if unit == "h" else 60)
 
@@ -89,7 +98,9 @@ def parse_alarm_offset(value: str) -> int:
     '0' means an alert exactly at event start.
     """
     if not _ALARM_OFFSET_RE.match(value):
-        raise ConfigError(f"Invalid alarm offset: {value!r} (expected e.g. '-1d', '-30m', '0')")
+        raise ConfigError(
+            f"Invalid alarm offset: {value!r} (expected e.g. '-1d', '-30m', '0')"
+        )
     if value[0] == "0":
         return 0
     amount, unit = int(value[1:-1]), value[-1]
@@ -212,7 +223,7 @@ class SessionConfig(StrictModel):
         if value is None:
             return value
         try:
-            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            parsed = datetime.fromisoformat(value)
         except ValueError as exc:
             raise ValueError("start must be an ISO 8601 timestamp") from exc
         if parsed.tzinfo is None or parsed.utcoffset() is None:
@@ -250,12 +261,13 @@ class SessionConfig(StrictModel):
         return value
 
     @model_validator(mode="after")
-    def validate_timing(self) -> "SessionConfig":
+    def validate_timing(self) -> SessionConfig:
         if (self.start is None) == (self.date is None):
             raise ValueError("A session must set exactly one of start or date")
         if self.tbc and self.start is not None:
             raise ValueError("A session with a confirmed start cannot also be tbc")
         return self
+
 
 class EventConfig(StrictModel):
     """One race event -- a weekend -- and its list of sessions.
@@ -273,16 +285,19 @@ class EventConfig(StrictModel):
     sessions: list[SessionConfig] = []
 
     @model_validator(mode="after")
-    def validate_has_sessions(self) -> "EventConfig":
+    def validate_has_sessions(self) -> EventConfig:
         if not self.sessions:
             raise ValueError(f"Event {self.name!r} has no sessions")
         return self
+
 
 class SeriesConfig(StrictModel):
     """One data/<series>.yaml. The series key is the filename stem."""
 
     name: str
-    schedule_url: str | None = None  # the official timetable this series is kept in step with
+    schedule_url: str | None = (
+        None  # the official timetable this series is kept in step with
+    )
     durations: dict[str, str] | None = None
     alerts: dict[str, list[str]] | None = None
     events: list[EventConfig] = []
@@ -294,15 +309,19 @@ class SeriesConfig(StrictModel):
 
     @field_validator("alerts")
     @classmethod
-    def validate_alerts(cls, value: dict[str, list[str]] | None) -> dict[str, list[str]] | None:
+    def validate_alerts(
+        cls, value: dict[str, list[str]] | None
+    ) -> dict[str, list[str]] | None:
         return _validate_alerts_dict(value) if value is not None else None
 
     @model_validator(mode="after")
-    def validate_unique_session_keys(self) -> "SeriesConfig":
+    def validate_unique_session_keys(self) -> SeriesConfig:
         seen: set[str] = set()
         for _, session in self.iter_sessions():
             if session.uid in seen:
-                raise ValueError(f"Duplicate session uid in this series: {session.uid!r}")
+                raise ValueError(
+                    f"Duplicate session uid in this series: {session.uid!r}"
+                )
             seen.add(session.uid)
         return self
 
@@ -319,6 +338,7 @@ class Config(StrictModel):
 
     globals: GlobalConfig
     series: dict[str, SeriesConfig]
+
 
 _SERIES_KEY_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 
@@ -343,7 +363,10 @@ def load_config(config_dir: Path, *, uid_domain: str) -> Config:
             "environment variable instead"
         )
     try:
-        globals_ = GlobalConfig.model_validate({**raw_globals, "uid_domain": uid_domain})
+        globals_ = GlobalConfig.model_validate({
+            **raw_globals,
+            "uid_domain": uid_domain,
+        })
     except ValidationError as exc:
         raise ConfigError(f"Invalid configuration in {global_path}: {exc}") from exc
 
@@ -351,7 +374,11 @@ def load_config(config_dir: Path, *, uid_domain: str) -> Config:
     for path in sorted(config_dir.glob("*.yaml")):
         # state.yaml (and its dated backups, see docs/operations.md) share this
         # directory but aren't series data -- skip them like the global file.
-        if path.name == GLOBAL_FILENAME or path.name.startswith(".") or path.name.startswith("state"):
+        if (
+            path.name == GLOBAL_FILENAME
+            or path.name.startswith(".")
+            or path.name.startswith("state")
+        ):
             continue
         key = path.stem
         if key == COMBINED_SERIES_KEY:
@@ -371,7 +398,9 @@ def load_config(config_dir: Path, *, uid_domain: str) -> Config:
             raise ConfigError(f"Invalid series configuration in {path}: {exc}") from exc
 
     if not series:
-        raise ConfigError(f"No series files found in {config_dir} (expected e.g. f1.yaml)")
+        raise ConfigError(
+            f"No series files found in {config_dir} (expected e.g. f1.yaml)"
+        )
 
     # SeriesConfig only enforces uniqueness within its own file, but a UID is global:
     # the version ledger is keyed by it, so two sessions sharing one would overwrite

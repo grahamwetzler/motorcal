@@ -1,22 +1,35 @@
 """Building one published event from one session of one configured race event."""
-from datetime import datetime, timezone
 
-from tests.conftest import UID_DOMAIN, make_event, make_globals, make_series, make_session
+from datetime import UTC, datetime
 
 from motorcal.config import EventConfig
 from motorcal.merge import build_published_event
 from motorcal.models import EventStatus, SessionType
 from motorcal.state import VersionState
+from tests.conftest import (
+    UID_DOMAIN,
+    make_event,
+    make_globals,
+    make_series,
+    make_session,
+)
 
-NOW = datetime(2026, 1, 1, 12, tzinfo=timezone.utc)
+NOW = datetime(2026, 1, 1, 12, tzinfo=UTC)
 
 
-def _build(event, *, series="wec", series_config=None, globals_=None, previous=None, now=NOW):
+def _build(
+    event, *, series="wec", series_config=None, globals_=None, previous=None, now=NOW
+):
     """Build the first (usually only) session of `event`."""
     return build_published_event(
-        event, event.sessions[0], series=series, series_config=series_config or make_series(),
-        globals_=globals_ or make_globals(alerts={"race": ["-1d", "-30m"], "qualifying": ["-15m"]}),
-        previous=previous, now=now,
+        event,
+        event.sessions[0],
+        series=series,
+        series_config=series_config or make_series(),
+        globals_=globals_
+        or make_globals(alerts={"race": ["-1d", "-30m"], "qualifying": ["-15m"]}),
+        previous=previous,
+        now=now,
     )
 
 
@@ -24,19 +37,23 @@ def test_confirmed_time_produces_a_timed_event():
     built = _build(make_event("r", start="2026-04-19T13:00:00+00:00"))
 
     assert built.time_confirmed is True
-    assert built.start == datetime(2026, 4, 19, 13, tzinfo=timezone.utc)
+    assert built.start == datetime(2026, 4, 19, 13, tzinfo=UTC)
     assert built.all_day_date is None
 
 
 def test_the_summary_is_the_event_name_and_the_session_label():
-    event = make_event("q", label="Qualifying", type="qualifying",
-                       start="2026-04-18T13:00:00+00:00")
+    event = make_event(
+        "q", label="Qualifying", type="qualifying", start="2026-04-18T13:00:00+00:00"
+    )
 
     assert _build(event).summary == "6 Hours of Imola Qualifying"
 
 
 def test_a_session_with_no_label_publishes_just_the_event_name():
-    assert _build(make_event("t", name="Pre-season testing")).summary == "Pre-season testing"
+    assert (
+        _build(make_event("t", name="Pre-season testing")).summary
+        == "Pre-season testing"
+    )
 
 
 def test_a_tbc_session_is_all_day_marked_tbc_and_has_no_alarms():
@@ -97,23 +114,31 @@ def test_testing_sessions_never_get_alarms():
 
 
 def test_duration_falls_back_from_session_to_series_to_global():
-    event = make_event("p1", label="Practice 1", type="practice",
-                       start="2026-04-18T09:00:00+00:00")
+    event = make_event(
+        "p1", label="Practice 1", type="practice", start="2026-04-18T09:00:00+00:00"
+    )
     globals_ = make_globals(durations={"practice": "1h"})
 
     assert _build(event, globals_=globals_).duration_seconds == 3600
 
     series_config = make_series(durations={"practice": "90m"})
-    assert _build(event, globals_=globals_, series_config=series_config).duration_seconds == 5400
+    assert (
+        _build(event, globals_=globals_, series_config=series_config).duration_seconds
+        == 5400
+    )
 
     event.sessions[0].duration = "2h"
-    assert _build(event, globals_=globals_, series_config=series_config).duration_seconds == 7200
+    assert (
+        _build(event, globals_=globals_, series_config=series_config).duration_seconds
+        == 7200
+    )
 
 
 def test_warmup_resolves_its_own_duration_and_alarms():
     """The session type IMSA and IndyCar run that TheSportsDB never carried."""
-    event = make_event("wu", label="Warm-Up", type="warmup",
-                       start="2026-03-21T12:00:00+00:00")
+    event = make_event(
+        "wu", label="Warm-Up", type="warmup", start="2026-03-21T12:00:00+00:00"
+    )
     globals_ = make_globals(durations={"warmup": "20m"}, alerts={"warmup": ["-15m"]})
 
     built = _build(event, globals_=globals_)
@@ -124,8 +149,12 @@ def test_warmup_resolves_its_own_duration_and_alarms():
 
 
 def test_the_events_location_reaches_every_session_it_holds():
-    event = make_event("r", location="Imola, Italy", start="2026-04-19T13:00:00+00:00",
-                       note="official timetable")
+    event = make_event(
+        "r",
+        location="Imola, Italy",
+        start="2026-04-19T13:00:00+00:00",
+        note="official timetable",
+    )
 
     built = _build(event)
 
@@ -138,29 +167,37 @@ def test_the_round_is_named_in_the_description():
 
 
 def test_a_configured_status_is_honoured():
-    assert _build(make_event("mine", status="TENTATIVE")).status == EventStatus.TENTATIVE
+    assert (
+        _build(make_event("mine", status="TENTATIVE")).status == EventStatus.TENTATIVE
+    )
 
 
 def test_a_cancelled_session_stays_cancelled_regardless_of_the_ledger():
     """Status is a field the data directory owns outright -- nothing infers it."""
     previous = VersionState(
-        fingerprint="x", sequence=1, dtstamp=NOW.isoformat(),
+        fingerprint="x",
+        sequence=1,
+        dtstamp=NOW.isoformat(),
         last_modified=NOW.isoformat(),
     )
 
     assert _build(make_event("mine"), previous=previous).status == EventStatus.CONFIRMED
-    assert _build(make_event("mine", status="CANCELLED")).status == EventStatus.CANCELLED
+    assert (
+        _build(make_event("mine", status="CANCELLED")).status == EventStatus.CANCELLED
+    )
 
 
 def test_an_unchanged_session_keeps_its_sequence_and_dtstamp():
     event = make_event("r", start="2026-04-19T13:00:00+00:00")
     first = _build(event)
     previous = VersionState(
-        fingerprint=first.fingerprint, sequence=first.sequence,
-        dtstamp=first.dtstamp.isoformat(), last_modified=first.last_modified.isoformat(),
+        fingerprint=first.fingerprint,
+        sequence=first.sequence,
+        dtstamp=first.dtstamp.isoformat(),
+        last_modified=first.last_modified.isoformat(),
     )
 
-    second = _build(event, previous=previous, now=datetime(2026, 6, 1, tzinfo=timezone.utc))
+    second = _build(event, previous=previous, now=datetime(2026, 6, 1, tzinfo=UTC))
 
     assert second.sequence == first.sequence
     assert second.dtstamp == first.dtstamp
@@ -170,12 +207,14 @@ def test_a_changed_session_advances_sequence_and_dtstamp():
     event = make_event("r", start="2026-04-19T13:00:00+00:00")
     first = _build(event)
     previous = VersionState(
-        fingerprint=first.fingerprint, sequence=first.sequence,
-        dtstamp=first.dtstamp.isoformat(), last_modified=first.last_modified.isoformat(),
+        fingerprint=first.fingerprint,
+        sequence=first.sequence,
+        dtstamp=first.dtstamp.isoformat(),
+        last_modified=first.last_modified.isoformat(),
     )
     event.name = "Renamed"
 
-    later = datetime(2026, 6, 1, tzinfo=timezone.utc)
+    later = datetime(2026, 6, 1, tzinfo=UTC)
     second = _build(event, previous=previous, now=later)
 
     assert second.sequence > first.sequence
@@ -187,12 +226,16 @@ def test_renaming_a_series_advances_every_session_it_holds():
     original_series = make_series(name="WEC")
     first = _build(event, series_config=original_series)
     previous = VersionState(
-        fingerprint=first.fingerprint, sequence=first.sequence,
-        dtstamp=first.dtstamp.isoformat(), last_modified=first.last_modified.isoformat(),
+        fingerprint=first.fingerprint,
+        sequence=first.sequence,
+        dtstamp=first.dtstamp.isoformat(),
+        last_modified=first.last_modified.isoformat(),
     )
 
-    later = datetime(2026, 6, 1, tzinfo=timezone.utc)
-    renamed = _build(event, series_config=make_series(name="FIA WEC"), previous=previous, now=later)
+    later = datetime(2026, 6, 1, tzinfo=UTC)
+    renamed = _build(
+        event, series_config=make_series(name="FIA WEC"), previous=previous, now=later
+    )
 
     assert renamed.sequence > first.sequence
     assert renamed.dtstamp == later
@@ -203,21 +246,35 @@ def test_renaming_the_event_changes_every_session_it_holds():
     event = EventConfig(
         name="6 Hours of Emilia",
         sessions=[
-            make_session("q", label="Qualifying", type="qualifying",
-                         start="2026-04-18T13:00:00+00:00"),
-            make_session("extra", label="Warm-Up", type="warmup",
-                         start="2026-04-19T09:00:00+00:00"),
+            make_session(
+                "q",
+                label="Qualifying",
+                type="qualifying",
+                start="2026-04-18T13:00:00+00:00",
+            ),
+            make_session(
+                "extra",
+                label="Warm-Up",
+                type="warmup",
+                start="2026-04-19T09:00:00+00:00",
+            ),
         ],
     )
 
     built = [
         build_published_event(
-            event, session, series="wec", series_config=make_series(),
-            globals_=make_globals(), previous=None, now=NOW,
+            event,
+            session,
+            series="wec",
+            series_config=make_series(),
+            globals_=make_globals(),
+            previous=None,
+            now=NOW,
         )
         for session in event.sessions
     ]
 
     assert [b.summary for b in built] == [
-        "6 Hours of Emilia Qualifying", "6 Hours of Emilia Warm-Up",
+        "6 Hours of Emilia Qualifying",
+        "6 Hours of Emilia Warm-Up",
     ]

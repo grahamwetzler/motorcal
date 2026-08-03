@@ -1,4 +1,5 @@
 """Deterministic ICS generation from built PublishedEvents."""
+
 from __future__ import annotations
 
 import hashlib

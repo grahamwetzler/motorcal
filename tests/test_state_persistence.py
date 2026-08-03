@@ -1,14 +1,15 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 import yaml
-from tests.conftest import UID_DOMAIN, make_config, make_event, make_series, make_state
+from pydantic import ValidationError
 
 from motorcal import state as state_module
 from motorcal.merge import rebuild_publication
 from motorcal.state import State, VersionState
+from tests.conftest import UID_DOMAIN, make_config, make_event, make_series, make_state
 
-NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
+NOW = datetime(2026, 1, 1, tzinfo=UTC)
 
 
 def test_load_returns_an_empty_state_when_the_file_is_missing(tmp_path):
@@ -63,20 +64,28 @@ def test_load_rejects_a_structurally_invalid_state_file(tmp_path):
     path = tmp_path / "state.yaml"
     path.write_text("versions:\n  u1:\n    fingerprint: fp\n")  # missing required keys
 
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         state_module.load(path)
 
 
 def test_sequence_and_dtstamp_survive_a_save_load_cycle(tmp_path):
     """The whole reason the ledger is persisted: a restart must not re-notify clients."""
     path = tmp_path / "state.yaml"
-    config = make_config(series={"wec": make_series(events=[make_event("wec-2026-imola-race", start="2026-04-19T13:00:00+00:00")])})
+    config = make_config(
+        series={
+            "wec": make_series(
+                events=[
+                    make_event("wec-2026-imola-race", start="2026-04-19T13:00:00+00:00")
+                ]
+            )
+        }
+    )
     state = make_state()
     first = rebuild_publication(config, state, now=NOW)
     state_module.save(path, state)
 
     reloaded = state_module.load(path)
-    second = rebuild_publication(config, reloaded, now=datetime(2026, 6, 1, tzinfo=timezone.utc))
+    second = rebuild_publication(config, reloaded, now=datetime(2026, 6, 1, tzinfo=UTC))
 
     assert second["wec"][0].sequence == first["wec"][0].sequence
     assert second["wec"][0].dtstamp == first["wec"][0].dtstamp
@@ -86,7 +95,15 @@ def test_sequence_and_dtstamp_survive_a_save_load_cycle(tmp_path):
 def test_a_failed_rebuild_never_reaches_disk(tmp_path):
     """Copy-on-write: the caller discards the working copy, so the file is untouched."""
     path = tmp_path / "state.yaml"
-    config = make_config(series={"wec": make_series(events=[make_event("wec-2026-imola-race", start="2026-04-19T13:00:00+00:00")])})
+    config = make_config(
+        series={
+            "wec": make_series(
+                events=[
+                    make_event("wec-2026-imola-race", start="2026-04-19T13:00:00+00:00")
+                ]
+            )
+        }
+    )
     live = make_state()
     rebuild_publication(config, live, now=NOW)
     state_module.save(path, live)
@@ -111,7 +128,7 @@ def test_an_all_day_event_keeps_its_version_across_a_reload(tmp_path):
     state_module.save(path, state)
 
     second = rebuild_publication(
-        config, state_module.load(path), now=datetime(2026, 6, 1, tzinfo=timezone.utc)
+        config, state_module.load(path), now=datetime(2026, 6, 1, tzinfo=UTC)
     )
 
     assert second["wec"][0].sequence == first["wec"][0].sequence

@@ -1,6 +1,5 @@
 import pytest
 import yaml
-from tests.conftest import UID_DOMAIN, make_config, make_event, make_series, write_config_dir
 
 from motorcal.config import (
     ConfigError,
@@ -10,6 +9,13 @@ from motorcal.config import (
     parse_alarm_offset,
     parse_duration,
 )
+from tests.conftest import (
+    UID_DOMAIN,
+    make_config,
+    make_event,
+    make_series,
+    write_config_dir,
+)
 
 EXAMPLE_DIR = "data"
 
@@ -17,7 +23,9 @@ EXAMPLE_DIR = "data"
 def _dir(tmp_path):
     return write_config_dir(
         tmp_path,
-        make_config(series={"wec": make_series(events=[make_event("wec-2026-imola-race")])}),
+        make_config(
+            series={"wec": make_series(events=[make_event("wec-2026-imola-race")])}
+        ),
     )
 
 
@@ -213,7 +221,9 @@ def test_a_session_needs_exactly_one_of_start_or_date():
     with pytest.raises(ValueError, match="exactly one of start or date"):
         SessionConfig(uid="mine", type="race")
     with pytest.raises(ValueError, match="exactly one of start or date"):
-        SessionConfig(uid="mine", type="race", start="2026-01-01T00:00:00Z", date="2026-01-01")
+        SessionConfig(
+            uid="mine", type="race", start="2026-01-01T00:00:00Z", date="2026-01-01"
+        )
 
 
 def test_a_session_with_a_confirmed_start_cannot_be_tbc():

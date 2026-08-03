@@ -1,8 +1,7 @@
-from datetime import datetime, timezone
-
-from tests.conftest import make_session
+from datetime import UTC, datetime
 
 from motorcal.models import EventStatus, PublishedEvent, SessionType, session_uid
+from tests.conftest import make_session
 
 
 def test_session_uid_format():
@@ -13,7 +12,7 @@ def test_session_uid_format():
 
 
 def test_published_event_construction():
-    now = datetime(2026, 7, 29, 12, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 7, 29, 12, 0, tzinfo=UTC)
     pub = PublishedEvent(
         uid="local-wec-2026-imola-race@racing.example.com",
         series="wec",

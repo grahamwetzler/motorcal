@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from motorcal.ics import build_vevent
 
@@ -9,11 +9,11 @@ def test_confirmed_timed_event_with_duration_and_alarm():
         summary="6 Hours of Imola",
         series_name="WEC",
         status="CONFIRMED",
-        start=datetime(2026, 4, 19, 13, 0, tzinfo=timezone.utc),
+        start=datetime(2026, 4, 19, 13, 0, tzinfo=UTC),
         all_day_date=None,
         duration_seconds=6 * 3600,
-        dtstamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
-        last_modified=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        dtstamp=datetime(2026, 1, 1, tzinfo=UTC),
+        last_modified=datetime(2026, 1, 1, tzinfo=UTC),
         sequence=1,
         description="Round: 1\nNote: from the official timetable",
         location="Imola, Italy",
@@ -41,8 +41,8 @@ def test_all_day_event_has_no_dtend_and_no_alarms():
         start=None,
         all_day_date="2026-05-01",
         duration_seconds=None,
-        dtstamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
-        last_modified=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        dtstamp=datetime(2026, 1, 1, tzinfo=UTC),
+        last_modified=datetime(2026, 1, 1, tzinfo=UTC),
         sequence=1,
         description="Time not yet confirmed by the source (TBC).",
         location=None,
@@ -62,11 +62,11 @@ def test_timed_event_with_no_known_duration_has_no_dtend():
         summary="Hyperpole Qualifying",
         series_name="IMSA",
         status="CONFIRMED",
-        start=datetime(2026, 6, 10, 16, 45, tzinfo=timezone.utc),
+        start=datetime(2026, 6, 10, 16, 45, tzinfo=UTC),
         all_day_date=None,
         duration_seconds=None,
-        dtstamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
-        last_modified=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        dtstamp=datetime(2026, 1, 1, tzinfo=UTC),
+        last_modified=datetime(2026, 1, 1, tzinfo=UTC),
         sequence=1,
         description="d",
         location=None,
@@ -85,11 +85,11 @@ def test_tentative_status_prefixes_postponed_on_summary_and_alarm():
         summary="Some Race",
         series_name="IMSA",
         status="TENTATIVE",
-        start=datetime(2026, 6, 10, 16, 45, tzinfo=timezone.utc),
+        start=datetime(2026, 6, 10, 16, 45, tzinfo=UTC),
         all_day_date=None,
         duration_seconds=None,
-        dtstamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
-        last_modified=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        dtstamp=datetime(2026, 1, 1, tzinfo=UTC),
+        last_modified=datetime(2026, 1, 1, tzinfo=UTC),
         sequence=2,
         description="d",
         location=None,
@@ -99,7 +99,9 @@ def test_tentative_status_prefixes_postponed_on_summary_and_alarm():
 
     assert b"STATUS:TENTATIVE" in ics_bytes
     assert b"SUMMARY:[Postponed] IMSA: Some Race" in ics_bytes
-    assert b"DESCRIPTION:[Postponed] IMSA: Some Race" in ics_bytes  # the VALARM's own description
+    assert (
+        b"DESCRIPTION:[Postponed] IMSA: Some Race" in ics_bytes
+    )  # the VALARM's own description
 
 
 def test_cancelled_status_has_no_special_prefix():
@@ -108,11 +110,11 @@ def test_cancelled_status_has_no_special_prefix():
         summary="Cancelled Race",
         series_name="IMSA",
         status="CANCELLED",
-        start=datetime(2026, 6, 10, 16, 45, tzinfo=timezone.utc),
+        start=datetime(2026, 6, 10, 16, 45, tzinfo=UTC),
         all_day_date=None,
         duration_seconds=None,
-        dtstamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
-        last_modified=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        dtstamp=datetime(2026, 1, 1, tzinfo=UTC),
+        last_modified=datetime(2026, 1, 1, tzinfo=UTC),
         sequence=2,
         description="d",
         location=None,
@@ -126,24 +128,40 @@ def test_cancelled_status_has_no_special_prefix():
 
 def test_location_omitted_when_none():
     event = build_vevent(
-        uid="u6@x.example.com", summary="S", series_name="IMSA", status="CONFIRMED",
-        start=datetime(2026, 6, 10, 16, 45, tzinfo=timezone.utc), all_day_date=None,
-        duration_seconds=None, dtstamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
-        last_modified=datetime(2026, 1, 1, tzinfo=timezone.utc), sequence=1,
-        description="d", location=None, alarms=[],
+        uid="u6@x.example.com",
+        summary="S",
+        series_name="IMSA",
+        status="CONFIRMED",
+        start=datetime(2026, 6, 10, 16, 45, tzinfo=UTC),
+        all_day_date=None,
+        duration_seconds=None,
+        dtstamp=datetime(2026, 1, 1, tzinfo=UTC),
+        last_modified=datetime(2026, 1, 1, tzinfo=UTC),
+        sequence=1,
+        description="d",
+        location=None,
+        alarms=[],
     )
     ics_bytes = event.to_ical()
     assert b"LOCATION" not in ics_bytes
 
 
 def test_rendering_the_same_input_twice_is_byte_identical():
-    kwargs = dict(
-        uid="u7@x.example.com", summary="S", series_name="IMSA", status="CONFIRMED",
-        start=datetime(2026, 6, 10, 16, 45, tzinfo=timezone.utc), all_day_date=None,
-        duration_seconds=3600, dtstamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
-        last_modified=datetime(2026, 1, 1, tzinfo=timezone.utc), sequence=1,
-        description="d", location="L", alarms=["-1d", "-30m"],
-    )
+    kwargs = {
+        "uid": "u7@x.example.com",
+        "summary": "S",
+        "series_name": "IMSA",
+        "status": "CONFIRMED",
+        "start": datetime(2026, 6, 10, 16, 45, tzinfo=UTC),
+        "all_day_date": None,
+        "duration_seconds": 3600,
+        "dtstamp": datetime(2026, 1, 1, tzinfo=UTC),
+        "last_modified": datetime(2026, 1, 1, tzinfo=UTC),
+        "sequence": 1,
+        "description": "d",
+        "location": "L",
+        "alarms": ["-1d", "-30m"],
+    }
     b1 = build_vevent(**kwargs).to_ical()
     b2 = build_vevent(**kwargs).to_ical()
     assert b1 == b2
