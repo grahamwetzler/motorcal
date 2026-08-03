@@ -8,17 +8,17 @@ the data to break out of the <script> block it is embedded in.
 """
 import json
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-from tests.conftest import make_config, make_event, make_series
 
 import motorcal.web
 from motorcal.models import EventStatus, PublishedEvent, SessionType
 from motorcal.web import Publication, _example_events, create_app
+from tests.conftest import make_config, make_event, make_series
 
-NOW = datetime(2026, 4, 1, 9, tzinfo=timezone.utc)
+NOW = datetime(2026, 4, 1, 9, tzinfo=UTC)
 CONFIG = make_config(series={"wec": make_series()})
 
 

@@ -1,7 +1,11 @@
-from tests.conftest import make_globals, make_series
-
-from motorcal.merge import compute_fingerprint, next_sequence, resolve_alarms, resolve_duration
+from motorcal.merge import (
+    compute_fingerprint,
+    next_sequence,
+    resolve_alarms,
+    resolve_duration,
+)
 from motorcal.models import SessionType
+from tests.conftest import make_globals, make_series
 
 
 def test_compute_fingerprint_is_deterministic_for_identical_inputs():

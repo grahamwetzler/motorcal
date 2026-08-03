@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, replace
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import unquote_plus
 
@@ -169,7 +169,7 @@ def create_app(config: Config) -> FastAPI:
             for key, series_config in publication.config.series.items()
         ]
         upcoming = _example_events(
-            publication.config, publication.published, datetime.now(timezone.utc)
+            publication.config, publication.published, datetime.now(UTC)
         )
         page = _INDEX_HTML.replace("__SERIES_JSON__", _inline_json(series)).replace(
             "__UPCOMING_JSON__", _inline_json(upcoming)
@@ -218,7 +218,7 @@ def _starts_at(event: PublishedEvent) -> datetime:
     """Where the session sits in time. An all-day session sits at midnight UTC."""
     if event.start is not None:
         return event.start
-    return datetime.fromisoformat(event.all_day_date).replace(tzinfo=timezone.utc)
+    return datetime.fromisoformat(event.all_day_date).replace(tzinfo=UTC)
 
 
 def _is_upcoming(event: PublishedEvent, now: datetime) -> bool:

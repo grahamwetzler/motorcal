@@ -1,16 +1,16 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from fastapi.testclient import TestClient
-from tests.conftest import make_config, make_series
 
 from motorcal.models import EventStatus, PublishedEvent, SessionType
 from motorcal.web import Publication, create_app
+from tests.conftest import make_config, make_series
 
 CONFIG = make_config(series={"wec": make_series(), "f1": make_series(name="F1")})
 ICS = b"BEGIN:VCALENDAR\r\nSUMMARY:6 Hours of Imola\r\nEND:VCALENDAR\r\n"
 
-NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
+NOW = datetime(2026, 1, 1, tzinfo=UTC)
 
 
 def _client(feed=b"", published=None):
@@ -24,7 +24,7 @@ def _client(feed=b"", published=None):
 def _event(uid, session_type):
     return PublishedEvent(
         uid=uid, series="wec", session_type=session_type, summary=uid,
-        start=datetime(2026, 4, 19, 13, tzinfo=timezone.utc), all_day_date=None,
+        start=datetime(2026, 4, 19, 13, tzinfo=UTC), all_day_date=None,
         time_confirmed=True, duration_seconds=3600, location=None, description="D",
         status=EventStatus.CONFIRMED, sequence=1, dtstamp=NOW, last_modified=NOW,
         fingerprint="fp",

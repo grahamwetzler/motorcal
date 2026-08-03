@@ -1,8 +1,13 @@
-from tests.conftest import UID_DOMAIN, make_config, make_event, make_series, write_config_dir
-
 from motorcal import state as state_module
 from motorcal.cli import main
 from motorcal.state import State
+from tests.conftest import (
+    UID_DOMAIN,
+    make_config,
+    make_event,
+    make_series,
+    write_config_dir,
+)
 
 
 def _config_dir(tmp_path):

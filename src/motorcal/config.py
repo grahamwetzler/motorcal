@@ -17,7 +17,13 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, ConfigDict, ValidationError, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 from motorcal.models import EventStatus, SessionType, session_uid
 
@@ -212,7 +218,7 @@ class SessionConfig(StrictModel):
         if value is None:
             return value
         try:
-            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            parsed = datetime.fromisoformat(value)
         except ValueError as exc:
             raise ValueError("start must be an ISO 8601 timestamp") from exc
         if parsed.tzinfo is None or parsed.utcoffset() is None:
@@ -250,7 +256,7 @@ class SessionConfig(StrictModel):
         return value
 
     @model_validator(mode="after")
-    def validate_timing(self) -> "SessionConfig":
+    def validate_timing(self) -> SessionConfig:
         if (self.start is None) == (self.date is None):
             raise ValueError("A session must set exactly one of start or date")
         if self.tbc and self.start is not None:
@@ -273,7 +279,7 @@ class EventConfig(StrictModel):
     sessions: list[SessionConfig] = []
 
     @model_validator(mode="after")
-    def validate_has_sessions(self) -> "EventConfig":
+    def validate_has_sessions(self) -> EventConfig:
         if not self.sessions:
             raise ValueError(f"Event {self.name!r} has no sessions")
         return self
@@ -298,7 +304,7 @@ class SeriesConfig(StrictModel):
         return _validate_alerts_dict(value) if value is not None else None
 
     @model_validator(mode="after")
-    def validate_unique_session_keys(self) -> "SeriesConfig":
+    def validate_unique_session_keys(self) -> SeriesConfig:
         seen: set[str] = set()
         for _, session in self.iter_sessions():
             if session.uid in seen:

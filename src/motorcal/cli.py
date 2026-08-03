@@ -5,16 +5,20 @@ import argparse
 import logging
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import uvicorn
 
 from motorcal import state as state_module
-from motorcal.config import Config, ConfigError, load_config
+from motorcal.config import ConfigError, load_config
 from motorcal.ics import render_combined_bytes
 from motorcal.merge import rebuild_publication
-from motorcal.refresh import build_scheduler, check_and_reload_config, config_bundle_hash
+from motorcal.refresh import (
+    build_scheduler,
+    check_and_reload_config,
+    config_bundle_hash,
+)
 from motorcal.web import Publication, create_app
 
 _logger = logging.getLogger("motorcal.serve")
@@ -53,7 +57,7 @@ def _cmd_serve(args: argparse.Namespace) -> int:
         )
         return 1
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     published = rebuild_publication(config, state, now=now)
     state_module.save(state_path, state)
 
@@ -70,7 +74,7 @@ def _cmd_serve(args: argparse.Namespace) -> int:
     app.state.config_dir = config_dir
 
     def reload_job():
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         working_state = app.state.data.model_copy(deep=True)
         result = check_and_reload_config(
             config_dir, working_state, app.state.bundle_hash,

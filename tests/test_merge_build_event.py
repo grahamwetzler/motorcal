@@ -1,14 +1,19 @@
 """Building one published event from one session of one configured race event."""
-from datetime import datetime, timezone
-
-from tests.conftest import UID_DOMAIN, make_event, make_globals, make_series, make_session
+from datetime import UTC, datetime
 
 from motorcal.config import EventConfig
 from motorcal.merge import build_published_event
 from motorcal.models import EventStatus, SessionType
 from motorcal.state import VersionState
+from tests.conftest import (
+    UID_DOMAIN,
+    make_event,
+    make_globals,
+    make_series,
+    make_session,
+)
 
-NOW = datetime(2026, 1, 1, 12, tzinfo=timezone.utc)
+NOW = datetime(2026, 1, 1, 12, tzinfo=UTC)
 
 
 def _build(event, *, series="wec", series_config=None, globals_=None, previous=None, now=NOW):
@@ -24,7 +29,7 @@ def test_confirmed_time_produces_a_timed_event():
     built = _build(make_event("r", start="2026-04-19T13:00:00+00:00"))
 
     assert built.time_confirmed is True
-    assert built.start == datetime(2026, 4, 19, 13, tzinfo=timezone.utc)
+    assert built.start == datetime(2026, 4, 19, 13, tzinfo=UTC)
     assert built.all_day_date is None
 
 
@@ -160,7 +165,7 @@ def test_an_unchanged_session_keeps_its_sequence_and_dtstamp():
         dtstamp=first.dtstamp.isoformat(), last_modified=first.last_modified.isoformat(),
     )
 
-    second = _build(event, previous=previous, now=datetime(2026, 6, 1, tzinfo=timezone.utc))
+    second = _build(event, previous=previous, now=datetime(2026, 6, 1, tzinfo=UTC))
 
     assert second.sequence == first.sequence
     assert second.dtstamp == first.dtstamp
@@ -175,7 +180,7 @@ def test_a_changed_session_advances_sequence_and_dtstamp():
     )
     event.name = "Renamed"
 
-    later = datetime(2026, 6, 1, tzinfo=timezone.utc)
+    later = datetime(2026, 6, 1, tzinfo=UTC)
     second = _build(event, previous=previous, now=later)
 
     assert second.sequence > first.sequence
@@ -191,7 +196,7 @@ def test_renaming_a_series_advances_every_session_it_holds():
         dtstamp=first.dtstamp.isoformat(), last_modified=first.last_modified.isoformat(),
     )
 
-    later = datetime(2026, 6, 1, tzinfo=timezone.utc)
+    later = datetime(2026, 6, 1, tzinfo=UTC)
     renamed = _build(event, series_config=make_series(name="FIA WEC"), previous=previous, now=later)
 
     assert renamed.sequence > first.sequence

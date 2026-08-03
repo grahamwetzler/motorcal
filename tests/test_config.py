@@ -1,6 +1,5 @@
 import pytest
 import yaml
-from tests.conftest import UID_DOMAIN, make_config, make_event, make_series, write_config_dir
 
 from motorcal.config import (
     ConfigError,
@@ -9,6 +8,13 @@ from motorcal.config import (
     load_config,
     parse_alarm_offset,
     parse_duration,
+)
+from tests.conftest import (
+    UID_DOMAIN,
+    make_config,
+    make_event,
+    make_series,
+    write_config_dir,
 )
 
 EXAMPLE_DIR = "data"

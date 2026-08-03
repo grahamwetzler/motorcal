@@ -1,17 +1,16 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
+from motorcal.refresh import check_and_reload_config, config_bundle_hash
 from tests.conftest import (
     UID_DOMAIN,
     make_config,
-    make_series,
     make_event,
+    make_series,
     make_state,
     write_config_dir,
 )
 
-from motorcal.refresh import check_and_reload_config, config_bundle_hash
-
-NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
+NOW = datetime(2026, 1, 1, tzinfo=UTC)
 
 
 def _dir(tmp_path, **kwargs):
@@ -37,7 +36,7 @@ def test_bundle_hash_is_stable_for_unchanged_content(tmp_path):
 
 
 def test_bundle_hash_notices_a_new_series_file(tmp_path):
-    config_dir, config = _dir(tmp_path)
+    config_dir, _ = _dir(tmp_path)
     before = config_bundle_hash(config_dir)
 
     (config_dir / "imsa.yaml").write_text("name: IMSA\n")

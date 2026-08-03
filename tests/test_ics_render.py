@@ -1,16 +1,16 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from tests.conftest import make_config, make_series
 from motorcal.ics import compute_content_hash, render_combined_bytes
 from motorcal.models import EventStatus, PublishedEvent, SessionType
+from tests.conftest import make_config, make_series
 
-NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
+NOW = datetime(2026, 1, 1, tzinfo=UTC)
 
 
 def _published(uid, series="wec", summary="S"):
     return PublishedEvent(
         uid=uid, series=series, session_type=SessionType.RACE, summary=summary,
-        start=datetime(2026, 4, 19, 13, tzinfo=timezone.utc), all_day_date=None,
+        start=datetime(2026, 4, 19, 13, tzinfo=UTC), all_day_date=None,
         time_confirmed=True, duration_seconds=3600, location="L", description="D",
         status=EventStatus.CONFIRMED, sequence=1, dtstamp=NOW, last_modified=NOW,
         fingerprint="fp", alarms=["-1d"],

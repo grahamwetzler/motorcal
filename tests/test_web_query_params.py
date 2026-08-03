@@ -3,17 +3,17 @@
 Every parameter is checked twice over: that it does what it says, and that a
 malformed or misplaced one is a 400 rather than something quietly ignored.
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from fastapi.testclient import TestClient
-from tests.conftest import make_config, make_series
 
 from motorcal.ics import render_combined_bytes
 from motorcal.models import EventStatus, PublishedEvent, SessionType
 from motorcal.web import Publication, create_app
+from tests.conftest import make_config, make_series
 
-NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
+NOW = datetime(2026, 1, 1, tzinfo=UTC)
 CONFIG = make_config(
     series={"wec": make_series(), "f1": make_series(name="F1")}
 )
@@ -23,7 +23,7 @@ PREBUILT = b"BEGIN:VCALENDAR\r\nSUMMARY:prebuilt\r\nEND:VCALENDAR\r\n"
 def _event(uid, session_type=SessionType.RACE, *, series="wec", alarms=None, confirmed=True):
     return PublishedEvent(
         uid=uid, series=series, session_type=session_type, summary=uid,
-        start=datetime(2026, 4, 19, 13, tzinfo=timezone.utc) if confirmed else None,
+        start=datetime(2026, 4, 19, 13, tzinfo=UTC) if confirmed else None,
         all_day_date=None if confirmed else "2026-04-19", time_confirmed=confirmed,
         duration_seconds=3600, location=None, description="D",
         status=EventStatus.CONFIRMED, sequence=1, dtstamp=NOW, last_modified=NOW,

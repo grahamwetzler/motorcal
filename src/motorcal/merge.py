@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from motorcal.config import (
     Config,
@@ -125,7 +125,7 @@ def _event_effective_end(
     """The last instant this event is 'happening', for retention/cancellation decisions."""
     if start is not None:
         return start + timedelta(seconds=duration_seconds) if duration_seconds else start
-    day = datetime.fromisoformat(all_day_date).replace(tzinfo=timezone.utc)
+    day = datetime.fromisoformat(all_day_date).replace(tzinfo=UTC)
     return day + timedelta(days=1)
 
 
@@ -153,7 +153,7 @@ def build_published_event(
         summary += globals_.unknown_time.summary_suffix
 
     if time_confirmed:
-        start: datetime | None = datetime.fromisoformat(session.start.replace("Z", "+00:00"))
+        start: datetime | None = datetime.fromisoformat(session.start)
         all_day_date: str | None = None
         duration_seconds = resolve_duration(
             session_type, own_duration=session.duration,

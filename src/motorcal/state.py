@@ -15,6 +15,7 @@ import tempfile
 from pathlib import Path
 
 import yaml
+from pydantic import Field
 
 from motorcal.config import StrictModel
 
@@ -30,7 +31,7 @@ class VersionState(StrictModel):
 
 class State(StrictModel):
     uid_domain: str | None = None
-    versions: dict[str, VersionState] = {}
+    versions: dict[str, VersionState] = Field(default_factory=dict)
 
 
 def load(path: Path) -> State:

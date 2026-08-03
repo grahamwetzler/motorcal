@@ -1,11 +1,10 @@
-from datetime import datetime, timezone
-
-from tests.conftest import UID_DOMAIN, make_config, make_event, make_series, make_state
+from datetime import UTC, datetime
 
 from motorcal.merge import rebuild_publication
 from motorcal.state import VersionState
+from tests.conftest import UID_DOMAIN, make_config, make_event, make_series, make_state
 
-NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
+NOW = datetime(2026, 1, 1, tzinfo=UTC)
 
 
 def _config(wec_events=None, imsa_events=None, **kwargs):
@@ -68,7 +67,7 @@ def test_rebuild_is_idempotent_for_unchanged_input():
     state = make_state()
     first = rebuild_publication(config, state, now=NOW)
 
-    second = rebuild_publication(config, state, now=datetime(2026, 6, 1, tzinfo=timezone.utc))
+    second = rebuild_publication(config, state, now=datetime(2026, 6, 1, tzinfo=UTC))
 
     assert second["wec"][0].sequence == first["wec"][0].sequence
     assert second["wec"][0].dtstamp == first["wec"][0].dtstamp
@@ -81,7 +80,7 @@ def test_a_long_past_session_drops_out_of_the_feed_and_the_ledger():
 
     # >180 days (historical_days) after the event
     published = rebuild_publication(
-        config, state, now=datetime(2026, 8, 1, tzinfo=timezone.utc)
+        config, state, now=datetime(2026, 8, 1, tzinfo=UTC)
     )
 
     assert published["wec"] == []
@@ -95,11 +94,11 @@ def test_a_long_cancelled_event_is_pruned_on_the_shorter_window():
         make_event("r1", start="2026-01-01T13:00:00+00:00", status="CANCELLED")
     ])
     state = make_state()
-    rebuild_publication(config, state, now=datetime(2025, 12, 1, tzinfo=timezone.utc))
+    rebuild_publication(config, state, now=datetime(2025, 12, 1, tzinfo=UTC))
 
     # >90 days (cancelled_after_event_days), but < the 180-day historical window
     published = rebuild_publication(
-        config, state, now=datetime(2026, 4, 15, tzinfo=timezone.utc)
+        config, state, now=datetime(2026, 4, 15, tzinfo=UTC)
     )
 
     assert published["wec"] == []
@@ -121,7 +120,7 @@ def test_pruning_one_series_leaves_another_untouched():
     state = make_state()
     rebuild_publication(config, state, now=NOW)
 
-    published = rebuild_publication(config, state, now=datetime(2026, 8, 1, tzinfo=timezone.utc))
+    published = rebuild_publication(config, state, now=datetime(2026, 8, 1, tzinfo=UTC))
 
     assert published["wec"] == []
     assert len(published["imsa"]) == 1

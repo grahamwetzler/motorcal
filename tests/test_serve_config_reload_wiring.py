@@ -7,9 +7,9 @@ always arrive together, never as two separate reassignments a request could land
 between.
 """
 from fastapi.testclient import TestClient
-from tests.conftest import make_config, make_series
 
 from motorcal.web import Publication, create_app
+from tests.conftest import make_config, make_series
 
 WEC = make_series()
 IMSA = make_series(name="IMSA")
