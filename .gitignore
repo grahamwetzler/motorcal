@@ -6,5 +6,6 @@ state/
 data/pre-series-migration/
 .env
 .worktrees/
-.claude/
+.claude/*
+!.claude/settings.json
 .DS_Store
