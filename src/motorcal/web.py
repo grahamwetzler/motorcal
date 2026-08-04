@@ -185,7 +185,8 @@ def create_app(config: Config) -> FastAPI:
             publication.config, publication.published, datetime.now(UTC)
         )
         page = (
-            _INDEX_HTML_PATH.read_text()
+            _INDEX_HTML_PATH
+            .read_text()
             .replace("__SERIES_JSON__", _inline_json(series))
             .replace("__UPCOMING_JSON__", _inline_json(upcoming))
         )
