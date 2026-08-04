@@ -435,7 +435,8 @@ function whenText(event) {
     return start.toLocaleDateString([], {weekday: "long", day: "numeric", month: "long"}) + ", time TBC";
   }
   const time = (date) => date.toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
-  const tz = start.toLocaleTimeString([], {timeZoneName: "short"}).split(" ").pop();
+  const tz = new Intl.DateTimeFormat([], {timeZoneName: "short"}).formatToParts(start)
+    .find(part => part.type === "timeZoneName").value;
   const day = start.toLocaleDateString([], {weekday: "long", day: "numeric", month: "long"});
   if (!event.duration) return `${day}, ${time(start)} ${tz}`;
   return `${day}, ${time(start)} – ${time(new Date(start.getTime() + event.duration * 1000))} ${tz}`;
