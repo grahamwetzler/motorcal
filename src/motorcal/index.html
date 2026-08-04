@@ -12,6 +12,9 @@
 <meta property="og:description" content="Build a motorsports calendar that follows the racing series and sessions you care about.">
 <meta property="og:url" content="https://motorcal.wetzler.dev/">
 <meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Racing+Sans+One&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f4f5f7; --panel: #ffffff; --fg: #16191d; --muted: #626d79; --line: #e2e6eb;
@@ -42,7 +45,7 @@
   }
   .github-link:hover, .github-link:focus-visible { color: var(--fg); }
   .github-link svg { width: 1.6rem; height: 1.6rem; }
-  h1 { font-size: 1.6rem; margin: 0 0 .3rem; letter-spacing: -.02em; }
+  h1 { font-family: "Racing Sans One", ui-sans-serif, system-ui, sans-serif; font-size: 2.3rem; margin: 0 0 .3rem; letter-spacing: .02em; }
   h1 b { color: var(--accent); font-weight: 800; }
   header p { margin: 0; color: var(--muted); }
   .cols { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.5rem; align-items: start; }
@@ -116,6 +119,9 @@
   button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   button:disabled, a.btn[aria-disabled=true] { opacity: .4; pointer-events: none; }
   .foot { color: var(--muted); font-size: .8rem; margin: .9rem 0 0; }
+  .site-footer { color: var(--muted); font-size: .8rem; text-align: center; margin-top: 2.5rem; }
+  .site-footer p { margin: 0 0 .3rem; }
+  .site-footer p:last-child { margin-bottom: 0; }
 
   .preview { margin-top: 1rem; }
   .preview h2 { margin-bottom: .5rem; }
@@ -146,7 +152,7 @@
       1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
   </a>
   <header>
-    <h1>motor<b>cal</b></h1>
+    <h1>Motor<b>cal</b></h1>
     <p>Choose racing series and sessions to follow, then subscribe from your calendar app.</p>
   </header>
 
@@ -165,12 +171,12 @@
       </section>
 
       <section>
-        <h2>Reminders</h2>
+        <h2>Alerts</h2>
         <p class="hint">Use the series defaults or set your own. Examples: <code>-1d</code>, <code>-1h</code>, <code>-30m</code>, or <code>0</code> at the start.</p>
         <div class="radios">
           <label class="check"><input type="radio" name="alarmMode" value="default" checked> Use series defaults</label>
-          <label class="check"><input type="radio" name="alarmMode" value="set"> Set custom reminders</label>
-          <label class="check"><input type="radio" name="alarmMode" value="silence"> No reminders</label>
+          <label class="check"><input type="radio" name="alarmMode" value="set"> Set custom alerts</label>
+          <label class="check"><input type="radio" name="alarmMode" value="silence"> No alerts</label>
         </div>
         <div id="alarmFields" hidden style="margin-top:.9rem">
           <div class="row"><span>Every session</span><input type="text" id="alarms" placeholder="-1d,-10m"></div>
@@ -180,7 +186,7 @@
 
       <section>
         <h2>Series-specific options</h2>
-        <p class="hint">Change sessions or reminders for one series.</p>
+        <p class="hint">Change sessions or alerts for one series.</p>
         <div id="perSeries"></div>
       </section>
 
@@ -213,6 +219,11 @@
       </div>
     </aside>
   </div>
+
+  <footer class="site-footer">
+    <p>© 2026 Graham Wetzler</p>
+    <p>Schedule data is compiled from third-party official timetables and remains subject to their source terms.</p>
+  </footer>
 </div>
 
 <script>
@@ -224,13 +235,13 @@ const SERIES = __SERIES_JSON__;
 const UPCOMING = __UPCOMING_JSON__;
 // Must list every SessionType -- tests/test_web_index.py asserts it.
 const TYPES = [
-  ["practice", "Practice"],
-  ["warmup", "Warm-up"],
+  ["race", "Race"],
+  ["sprint", "Sprint"],
   ["qualifying", "Qualifying"],
   ["hyperpole", "Hyperpole"],
   ["sprint_qualifying", "Sprint qualifying"],
-  ["sprint", "Sprint"],
-  ["race", "Race"],
+  ["practice", "Practice"],
+  ["warmup", "Warm-up"],
   ["testing", "Testing"],
 ];
 const OFFSET = /^0[dhm]?$|^-[1-9]\d{0,4}[dhm]$/;
@@ -317,7 +328,7 @@ function buildURL(state) {
   const query = params.map(([k, v]) => `${encode(k)}=${encode(v)}`).join("&");
   const path = "/events.ics";
   const error = empty.length ? `Pick at least one ${list(empty)}.`
-    : bad.length ? `Not a valid reminder offset in: ${bad.join(", ")}`
+    : bad.length ? `Not a valid alert offset in: ${bad.join(", ")}`
     : null;
   // `params` and `picked` are handed back so the preview can resolve an event
   // exactly the way the server will -- off the parameters actually emitted,
@@ -362,13 +373,13 @@ function sentence(state, picked) {
     ? "every session"
     : list(state.sessions.map(t => LABELS[t]));
 
-  let when = "keeping each series' own reminders";
-  if (state.alarmMode === "silence") when = "with no reminders at all";
+  let when = "keeping each series' own alerts";
+  if (state.alarmMode === "silence") when = "with no alerts at all";
   if (state.alarmMode === "set") {
     const parsed = offsets(state.alarms);
-    when = parsed === null ? "with reminders"
-      : parsed.length ? `reminding you ${remindText(parsed)}`
-      : "keeping each series' own reminders";
+    when = parsed === null ? "with alerts"
+      : parsed.length ? `alerting you ${remindText(parsed)}`
+      : "keeping each series' own alerts";
   }
   const tweaked = picked.filter(k => {
     const own = state.per[k];
@@ -421,12 +432,13 @@ function nextEvents(built) {
 function whenText(event) {
   const start = starts(event);
   if (!event.start) {
-    return start.toLocaleDateString([], {weekday: "long", day: "numeric", month: "long"}) + ", all day";
+    return start.toLocaleDateString([], {weekday: "long", day: "numeric", month: "long"}) + ", time TBC";
   }
   const time = (date) => date.toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
+  const tz = start.toLocaleTimeString([], {timeZoneName: "short"}).split(" ").pop();
   const day = start.toLocaleDateString([], {weekday: "long", day: "numeric", month: "long"});
-  if (!event.duration) return `${day}, ${time(start)}`;
-  return `${day}, ${time(start)} – ${time(new Date(start.getTime() + event.duration * 1000))}`;
+  if (!event.duration) return `${day}, ${time(start)} ${tz}`;
+  return `${day}, ${time(start)} – ${time(new Date(start.getTime() + event.duration * 1000))} ${tz}`;
 }
 
 function eventCard(series, event, prefix) {
@@ -515,7 +527,7 @@ for (const {key, name} of SERIES) {
   override.addEventListener("change", () => { sessionsWrap.hidden = !override.checked; render(); });
   body.append(make("label", {className: "check"}, override, "Use different sessions for this series"), sessionsWrap);
 
-  const {input: alarms, row} = textField("Reminders", "inherit", render);
+  const {input: alarms, row} = textField("Alerts", "inherit", render);
   body.append(row);
 
   const byType = {};
