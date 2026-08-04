@@ -51,7 +51,11 @@
   .cols { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.5rem; align-items: start; }
   @media (max-width: 900px) {
     .cols { grid-template-columns: 1fr; }
-    .wrap { padding-bottom: 14rem; }
+    /* --subscribe-h tracks the pinned card's real rendered height (set by a
+       ResizeObserver below) so a long sentence, a wrapped alert list, or a
+       browser text-zoom bump can't grow the card past this reserved space
+       and cover the footer or preview beneath it. */
+    .wrap { padding-bottom: calc(var(--subscribe-h, 14rem) + 1rem); }
     aside { position: static; }
     /* Pinned so Copy/Subscribe stay reachable while scrolling the options above. */
     .subscribe-box {
@@ -635,6 +639,14 @@ document.getElementById("copy").addEventListener("click", async (event) => {
 });
 
 render();
+
+// Keeps --subscribe-h (used by .wrap's mobile padding-bottom above) in sync
+// with the pinned card's actual height, which varies with its content and
+// with the viewer's text size -- a fixed guess would either waste space or
+// let the card grow over whatever sits beneath it.
+new ResizeObserver(([entry]) => {
+  document.documentElement.style.setProperty("--subscribe-h", `${entry.target.offsetHeight}px`);
+}).observe(document.querySelector(".subscribe-box"));
 
 // --- self-check ------------------------------------------------------------
 // The URL builder is the only real logic here; this fails loudly in the console
