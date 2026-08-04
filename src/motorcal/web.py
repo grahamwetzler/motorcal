@@ -57,9 +57,11 @@ _EMOJI_PREFIXES = {
 # aliases for the two options they used to mean.
 _EMOJI_BOOL_ALIASES = {"true": "flag", "false": "none"}
 
-# The feed-builder page served at `/`. Read once at import: it ships inside the
-# package, so it can only change with a new image.
-_INDEX_HTML = (Path(__file__).parent / "index.html").read_text()
+# The feed-builder page served at `/`. Read per-request rather than cached at
+# import: it's a static file next to this module, and re-reading it costs
+# nothing a request-scale server would notice, but it lets a dev edit it and
+# reload the browser instead of restarting the process.
+_INDEX_HTML_PATH = Path(__file__).parent / "index.html"
 
 # `alarms_race=-1h` and friends: one per session type.
 _ALARM_PARAMS = {
@@ -182,8 +184,10 @@ def create_app(config: Config) -> FastAPI:
         upcoming = _example_events(
             publication.config, publication.published, datetime.now(UTC)
         )
-        page = _INDEX_HTML.replace("__SERIES_JSON__", _inline_json(series)).replace(
-            "__UPCOMING_JSON__", _inline_json(upcoming)
+        page = (
+            _INDEX_HTML_PATH.read_text()
+            .replace("__SERIES_JSON__", _inline_json(series))
+            .replace("__UPCOMING_JSON__", _inline_json(upcoming))
         )
         # The page carries real event times, so it must revalidate like the feeds
         # do rather than sit in a browser cache until the next race has been run.

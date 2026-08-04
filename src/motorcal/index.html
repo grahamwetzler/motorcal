@@ -49,7 +49,19 @@
   h1 b { color: var(--accent); font-weight: 800; }
   header p { margin: 0; color: var(--muted); }
   .cols { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.5rem; align-items: start; }
-  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) {
+    .cols { grid-template-columns: 1fr; }
+    .wrap { padding-bottom: 14rem; }
+    aside { position: static; }
+    /* Pinned so Copy/Subscribe stay reachable while scrolling the options above. */
+    .subscribe-box {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; margin: 0;
+      border-radius: .75rem .75rem 0 0; box-shadow: 0 -4px 16px rgba(0, 0, 0, .18);
+      padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
+    }
+    .subscribe-box code#url { max-height: 4rem; }
+    .subscribe-box .foot { display: none; }
+  }
 
   section {
     background: var(--panel); border: 1px solid var(--line); border-radius: .75rem;
@@ -203,7 +215,7 @@
     </div>
 
     <aside>
-      <div class="result">
+      <div class="result subscribe-box">
         <p class="sentence" id="sentence"></p>
         <code id="url"></code>
         <div class="actions">
