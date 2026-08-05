@@ -15,7 +15,6 @@ RUN addgroup -g 1000 motorcal && adduser -D -u 1000 -G motorcal motorcal \
 WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/src /app/src
-COPY pyproject.toml ./
 COPY --chown=motorcal:motorcal data /data
 ENV PATH="/app/.venv/bin:$PATH"
 USER motorcal
