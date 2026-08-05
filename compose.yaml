@@ -13,6 +13,13 @@ services:
     container_name: app
     labels:
       - com.centurylinklabs.watchtower.enable=true
+    logging:
+      # The access log fires on every request, cache hits included -- cap it
+      # rather than trust the host's Docker daemon default (often unbounded).
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/healthz', timeout=3).status == 200 else 1)"]
       interval: 30s

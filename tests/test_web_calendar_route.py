@@ -155,6 +155,32 @@ def test_qualifying_false_excludes_qualifying_hyperpole_and_sprint_qualifying():
     assert b"UID:race" in response.content
 
 
+def test_access_log_covers_cache_hits_and_records_series_and_client(caplog):
+    caplog.set_level("INFO", logger="motorcal.access")
+    client = _client(ICS)
+
+    first = client.get(
+        "/events.ics",
+        params={"series": "wec"},
+        headers={
+            "User-Agent": "TestAgent/1",
+            "X-Forwarded-For": "203.0.113.5, 10.0.0.1",
+        },
+    )
+    client.get(
+        "/events.ics",
+        params={"series": "wec"},
+        headers={"If-None-Match": first.headers["etag"]},
+    )
+
+    messages = [record.message for record in caplog.records]
+    assert any(
+        "status=200" in m and "series='wec'" in m and "'203.0.113.5'" in m
+        for m in messages
+    )
+    assert any("status=304" in m and "series='wec'" in m for m in messages)
+
+
 def test_combined_filter_applies_across_every_series():
     published = {
         "wec": [

@@ -26,6 +26,12 @@ _logger = logging.getLogger("motorcal.serve")
 
 
 def _cmd_serve(args: argparse.Namespace) -> int:
+    # uvicorn.run() only configures its own "uvicorn.*" loggers. Without this,
+    # root has no handler and defaults to WARNING, so every motorcal.* INFO
+    # log (access log included) is silently dropped rather than reaching
+    # `docker compose logs`.
+    logging.basicConfig(level=logging.INFO)
+
     state_path = Path(args.state)
     config_dir = Path(args.config)
 

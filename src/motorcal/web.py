@@ -219,7 +219,9 @@ def create_app(config: Config) -> FastAPI:
                 calname=selection.calname,
             )
 
-        return _conditional_response(ics_bytes, request, COMBINED_SERIES_KEY)
+        return _conditional_response(
+            ics_bytes, request, COMBINED_SERIES_KEY, series=",".join(selection.series)
+        )
 
     return app
 
@@ -580,19 +582,54 @@ def _select(events: list[PublishedEvent], filters: _Filters) -> list[PublishedEv
     return selected
 
 
-def _conditional_response(ics_bytes: bytes, request: Request, label: str) -> Response:
+def _client_ip(request: Request) -> str:
+    """Best-effort caller identity for the access log.
+
+    Compose binds this port to 127.0.0.1, so only a local reverse proxy can
+    reach it directly -- an `X-Forwarded-For` here comes from that trusted
+    hop, not an arbitrary Internet client spoofing it.
+    """
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "-"
+
+
+def _conditional_response(
+    ics_bytes: bytes, request: Request, label: str, *, series: str
+) -> Response:
     """Serve the feed bytes, answering a matching If-None-Match with a 304.
 
     ETag over the exact bytes served is the only revalidation signal this feed
     needs. A Last-Modified derived from the events would lie whenever retention
     prunes one, since that changes the feed without touching any remaining
     event's timestamp.
+
+    Every hit is logged, 304s included -- a subscriber's calendar app polls
+    far more often than its feed content actually changes, so the 304s are
+    most of what a "how many people use this" count would miss.
     """
     etag = f'"{compute_content_hash(ics_bytes)}"'
     headers = {"Cache-Control": "public, no-cache", "ETag": etag}
+    client = _client_ip(request)
+    user_agent = request.headers.get("user-agent", "-")
 
     if request.headers.get("if-none-match") == etag:
+        _access_logger.info(
+            "GET /%s.ics client=%r ua=%r series=%r status=304 bytes=0",
+            label,
+            client,
+            user_agent,
+            series,
+        )
         return Response(status_code=304, headers=headers)
 
-    _access_logger.info("GET /%s.ics -> 200 (%d bytes)", label, len(ics_bytes))
+    _access_logger.info(
+        "GET /%s.ics client=%r ua=%r series=%r status=200 bytes=%d",
+        label,
+        client,
+        user_agent,
+        series,
+        len(ics_bytes),
+    )
     return Response(content=ics_bytes, media_type="text/calendar", headers=headers)
