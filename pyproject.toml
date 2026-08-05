@@ -5,7 +5,7 @@ description = "Motorsports ICS calendar publisher"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115",
-    "uvicorn[standard]>=0.32",
+    "uvicorn>=0.32",
     "pydantic>=2.9",
     "pyyaml>=6.0",
     "icalendar>=6.0",
