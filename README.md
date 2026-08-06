@@ -19,6 +19,18 @@ Open [motorcal.wetzler.dev](https://motorcal.wetzler.dev/) and tick the series
 and sessions you want. The page builds the subscription URL and previews the
 next event it contains.
 
+## The schedule
+
+[motorcal.wetzler.dev/schedule](https://motorcal.wetzler.dev/schedule) shows the
+whole season without subscribing to anything: every race weekend of every series,
+one row per session, in your own time zone. Untick a series or a session type to
+narrow it down — the filtering is in the page, so there are no parameters to get
+right and nothing to share.
+
+The same data is served as JSON at `/sessions.json`, weekend by weekend, in the
+order they run. It is read straight from the data directory, so it is the full
+season as written rather than the retention-pruned window the feeds publish.
+
 ## Feed parameters
 
 The feed takes query parameters, so one deployment can serve as many different

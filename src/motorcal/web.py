@@ -28,8 +28,15 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from starlette.datastructures import QueryParams
 
-from motorcal.config import COMBINED_SERIES_KEY, Config, ConfigError, parse_alarm_offset
+from motorcal.config import (
+    COMBINED_SERIES_KEY,
+    Config,
+    ConfigError,
+    SessionConfig,
+    parse_alarm_offset,
+)
 from motorcal.ics import build_title, compute_content_hash, render_combined_bytes
+from motorcal.merge import resolve_duration
 from motorcal.models import PublishedEvent, SessionType
 
 _access_logger = logging.getLogger("motorcal.access")
@@ -62,6 +69,11 @@ _EMOJI_BOOL_ALIASES = {"true": "flag", "false": "none"}
 # nothing a request-scale server would notice, but it lets a dev edit it and
 # reload the browser instead of restarting the process.
 _INDEX_HTML_PATH = Path(__file__).parent / "index.html"
+# The schedule page and the stylesheet both pages share, read the same way and
+# for the same reason. The schedule page needs no substitution at all -- it
+# fetches `/sessions.json` itself.
+_SCHEDULE_HTML_PATH = Path(__file__).parent / "schedule.html"
+_CSS_PATH = Path(__file__).parent / "motorcal.css"
 
 # `alarms_race=-1h` and friends: one per session type.
 _ALARM_PARAMS = {
@@ -194,6 +206,32 @@ def create_app(config: Config) -> FastAPI:
         # do rather than sit in a browser cache until the next race has been run.
         return HTMLResponse(page, headers={"Cache-Control": "public, no-cache"})
 
+    # The full-season schedule page, and the data behind it.
+    @app.get("/schedule", response_class=HTMLResponse)
+    def get_schedule(request: Request):
+        _reject_query_parameters(request)
+        return HTMLResponse(
+            _SCHEDULE_HTML_PATH.read_text(),
+            headers={"Cache-Control": "public, no-cache"},
+        )
+
+    @app.get("/sessions.json")
+    def get_sessions(request: Request):
+        _reject_query_parameters(request)
+        return JSONResponse(
+            _schedule(app.state.publication.config),
+            headers={"Cache-Control": "public, no-cache"},
+        )
+
+    @app.get("/motorcal.css")
+    def get_stylesheet(request: Request):
+        _reject_query_parameters(request)
+        return Response(
+            _CSS_PATH.read_text(),
+            media_type="text/css",
+            headers={"Cache-Control": "public, no-cache"},
+        )
+
     @app.get(f"/{COMBINED_SERIES_KEY}.ics")
     def get_combined_calendar(request: Request):
         publication = app.state.publication
@@ -296,6 +334,77 @@ def _example_events(
         }
         for event in sorted(soonest.values(), key=_starts_at)
     ]
+
+
+# -------------------------------------------------------------- schedule page
+
+
+def _sorts_at(session: SessionConfig) -> str:
+    """Where a session sits in the running order.
+
+    `start` is an ISO 8601 string with an offset and `date` is "YYYY-MM-DD", so
+    neither sorts against the other as text. Both become an aware datetime; an
+    all-day session sits at midnight UTC of its day, the same place
+    `_starts_at` puts one.
+    """
+    if session.start is not None:
+        return datetime.fromisoformat(session.start).astimezone(UTC).isoformat()
+    return datetime.fromisoformat(session.date).replace(tzinfo=UTC).isoformat()
+
+
+def _schedule(config: Config) -> dict[str, object]:
+    """The whole season, weekend by weekend, for `/sessions.json`.
+
+    Built from the config rather than from `Publication.published`: a race
+    weekend is the unit this page shows, and publishing flattens it away --
+    a `PublishedEvent` carries "{event name} {label}" as one string, with no
+    round or event URL of its own, and retention has already dropped the older
+    end of the season. `SeriesConfig.events` is the data directory as written,
+    which is what "the full schedule" means.
+    """
+    # A weekend sits where its first session does. Weekends from different
+    # series interleave, so they are ordered together rather than per series.
+    weekends = sorted(
+        (
+            (min(_sorts_at(session) for session in event.sessions), key, series, event)
+            for key, series in config.series.items()
+            for event in series.events
+        ),
+        key=lambda weekend: weekend[0],
+    )
+    events = [
+        {
+            "series": key,
+            "name": event.name,
+            "round": event.round,
+            "location": event.location,
+            "url": str(event.url) if event.url is not None else None,
+            "sessions": [
+                {
+                    "label": session.label,
+                    "type": session.type.value,
+                    "start": session.start,
+                    "date": session.date,
+                    "tbc": session.tbc,
+                    "round": session.round,
+                    "duration": resolve_duration(
+                        session.type,
+                        own_duration=session.duration,
+                        series_config=series,
+                        globals_=config.globals,
+                    ),
+                }
+                for session in sorted(event.sessions, key=_sorts_at)
+            ],
+        }
+        for _, key, series, event in weekends
+    ]
+    return {
+        "series": [
+            {"key": key, "name": series.name} for key, series in config.series.items()
+        ],
+        "events": events,
+    }
 
 
 # ------------------------------------------------------------------ query parsing

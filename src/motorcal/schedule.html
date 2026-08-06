@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motorcal — the full motorsports schedule</title>
+<meta name="description" content="Every session of every race weekend, practice through race, across every series.">
+<link rel="canonical" href="https://motorcal.wetzler.dev/schedule">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Motorcal">
+<meta property="og:title" content="Motorcal — the full motorsports schedule">
+<meta property="og:description" content="Every session of every race weekend, practice through race, across every series.">
+<meta property="og:url" content="https://motorcal.wetzler.dev/schedule">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Racing+Sans+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/motorcal.css">
+</head>
+<body>
+<div class="wrap">
+  <a class="github-link" href="https://github.com/grahamwetzler/motorcal" aria-label="View source on GitHub">
+    <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+      0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01
+      1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15
+      -.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04
+      2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54
+      1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+  </a>
+  <header>
+    <h1>Motor<b>cal</b></h1>
+    <p>Every session of every race weekend, in your own time zone.</p>
+    <p class="nav"><a href="/">← Build a calendar to subscribe to</a></p>
+  </header>
+
+  <section class="filters">
+    <h2>Series</h2>
+    <p class="hint">Untick a series to hide it.</p>
+    <div class="chips" id="series"></div>
+  </section>
+
+  <section class="filters">
+    <h2>Sessions</h2>
+    <p class="hint">Untick a session type to hide it.</p>
+    <div class="grid" id="sessions"></div>
+  </section>
+
+  <div id="schedule"></div>
+
+  <footer class="site-footer">
+    <p>© 2026 Graham Wetzler</p>
+    <p>Schedule data is compiled from third-party official timetables and remains subject to the source&rsquo;s terms.</p>
+  </footer>
+</div>
+
+<script>
+// The full season, fetched from /sessions.json rather than inlined: the same
+// data this page draws is then readable on its own.
+// Must list every SessionType -- tests/test_web_index.py asserts it.
+const TYPES = [
+  ["practice", "Practice"],
+  ["warmup", "Warm-up"],
+  ["qualifying", "Qualifying"],
+  ["hyperpole", "Hyperpole"],
+  ["sprint_qualifying", "Sprint qualifying"],
+  ["sprint", "Sprint"],
+  ["race", "Race"],
+  ["testing", "Testing"],
+];
+const LABELS = Object.fromEntries(TYPES);
+
+// Same helper, and the same rule, as index.html: everything goes in through
+// textContent, because event and series names come from the data directory.
+function make(tag, props = {}, ...kids) {
+  const node = Object.assign(document.createElement(tag), props);
+  node.append(...kids);
+  return node;
+}
+
+// --- time ------------------------------------------------------------------
+// An all-day session has no time, so it sits at local midnight of its day --
+// the day is the only thing that was announced, and showing it shifted into
+// another date by a UTC offset would be wrong.
+function starts(session) {
+  return new Date(session.start || session.date + "T00:00:00");
+}
+// When a session is over. An all-day one runs out its whole day, which is what
+// keeps a test day from greying out at midnight UTC.
+function ends(session) {
+  if (!session.start) return new Date(starts(session).getTime() + 86400000);
+  return new Date(starts(session).getTime() + (session.duration || 0) * 1000);
+}
+function isPast(event, now) {
+  return event.sessions.every((session) => ends(session) <= now);
+}
+
+const time = (date) => date.toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
+const day = (date) => date.toLocaleDateString([], {weekday: "short", day: "numeric", month: "short"});
+
+function whenText(session) {
+  const start = starts(session);
+  if (!session.start) return `${day(start)}, time TBC`;
+  const tz = new Intl.DateTimeFormat([], {timeZoneName: "short"}).formatToParts(start)
+    .find((part) => part.type === "timeZoneName").value;
+  if (!session.duration) return `${day(start)}, ${time(start)} ${tz}`;
+  return `${day(start)}, ${time(start)} – ${time(ends(session))} ${tz}`;
+}
+
+// --- filtering -------------------------------------------------------------
+// A weekend survives if its series is ticked and at least one of its sessions
+// is of a ticked type; the sessions it keeps are only those types. Returns a
+// copy so the fetched data stays whole for the next filter change.
+function filterEvents(events, series, types) {
+  const kept = [];
+  for (const event of events) {
+    if (!series.has(event.series)) continue;
+    const sessions = event.sessions.filter((session) => types.has(session.type));
+    if (sessions.length) kept.push({...event, sessions});
+  }
+  return kept;
+}
+
+// --- rendering -------------------------------------------------------------
+let DATA = {series: [], events: []};
+let NAMES = {};
+let COLOR = {};
+
+function weekendCard(event, now) {
+  const card = make("div", {className: isPast(event, now) ? "weekend past" : "weekend"});
+  card.style.setProperty("--c", COLOR[event.series]);
+
+  const round = event.round === null ? "" : ` · Round ${event.round}`;
+  card.append(make("div", {className: "series", textContent: NAMES[event.series] + round}));
+
+  const name = make("div", {className: "title"});
+  // Linked when the data has an official event page, plain text otherwise.
+  name.append(event.url
+    ? make("a", {href: event.url, textContent: event.name, rel: "noopener"})
+    : event.name);
+  card.append(name);
+  if (event.location) card.append(make("div", {className: "where", textContent: event.location}));
+
+  const list = make("dl", {className: "sessions"});
+  for (const session of event.sessions) {
+    list.append(
+      make("dt", {textContent: session.label || LABELS[session.type]}),
+      make("dd", {textContent: whenText(session)}),
+    );
+  }
+  card.append(list);
+  return card;
+}
+
+function monthOf(event) {
+  return starts(event.sessions[0]).toLocaleDateString([], {month: "long", year: "numeric"});
+}
+
+function render(scrollToNext = false) {
+  const box = document.getElementById("schedule");
+  box.textContent = "";
+  const series = new Set(DATA.series.filter((s) => seriesBoxes[s.key].querySelector("input").checked)
+    .map((s) => s.key));
+  const types = new Set(TYPES.filter(([t]) => sessionBoxes[t].querySelector("input").checked)
+    .map(([t]) => t));
+
+  if (!series.size || !types.size) {
+    box.append(make("div", {className: "event none",
+      textContent: "Pick at least one series and one session type."}));
+    return;
+  }
+
+  const now = new Date();
+  const events = filterEvents(DATA.events, series, types);
+  if (!events.length) {
+    box.append(make("div", {className: "event none", textContent: "Nothing matches these filters."}));
+    return;
+  }
+
+  let month = null;
+  let firstUpcoming = null;
+  for (const event of events) {
+    const heading = monthOf(event);
+    if (heading !== month) {
+      month = heading;
+      box.append(make("div", {className: "month", textContent: heading}));
+    }
+    const card = weekendCard(event, now);
+    if (!firstUpcoming && !isPast(event, now)) firstUpcoming = card;
+    box.append(card);
+  }
+  // Only on the first render: re-scrolling on every tick would yank the page
+  // out from under whoever is using the filters.
+  if (scrollToNext && firstUpcoming) firstUpcoming.scrollIntoView({block: "center"});
+}
+
+// --- controls --------------------------------------------------------------
+const seriesBoxes = {};
+const sessionBoxes = {};
+
+function buildControls() {
+  for (const {key, name} of DATA.series) {
+    const box = make("input", {type: "checkbox", checked: true});
+    box.addEventListener("change", () => render());
+    seriesBoxes[key] = make("label", {className: "chip"}, box, name);
+    seriesBoxes[key].style.setProperty("--c", COLOR[key]);
+    document.getElementById("series").append(seriesBoxes[key]);
+  }
+  for (const [type, label] of TYPES) {
+    const box = make("input", {type: "checkbox", checked: true});
+    box.addEventListener("change", () => render());
+    sessionBoxes[type] = make("label", {className: "check"}, box, label);
+    document.getElementById("sessions").append(sessionBoxes[type]);
+  }
+}
+
+fetch("/sessions.json").then((response) => {
+  if (!response.ok) throw new Error(`/sessions.json returned ${response.status}`);
+  return response.json();
+}).then((data) => {
+  DATA = data;
+  NAMES = Object.fromEntries(DATA.series.map((s) => [s.key, s.name]));
+  // One color per series, fixed order -- the same --series-1.. palette and the
+  // same assignment index.html uses, so a series is one color across both pages.
+  COLOR = Object.fromEntries(DATA.series.map((s, i) => [s.key, `var(--series-${i % 8 + 1})`]));
+  buildControls();
+  render(true);
+}).catch((error) => {
+  console.error(error);
+  document.getElementById("schedule").append(make("div", {className: "event none",
+    textContent: "Couldn't load the schedule. Try reloading the page."}));
+});
+
+// --- self-check ------------------------------------------------------------
+// Filtering and the past/upcoming split are the only real logic here; this
+// fails loudly in the console if either starts lying.
+(function selfCheck() {
+  const session = (over) => ({label: "", type: "race", start: null, date: null,
+    tbc: false, round: null, duration: 3600, ...over});
+  const race = session({start: "2026-03-01T12:00:00+00:00"});
+  const practice = session({type: "practice", start: "2026-02-28T12:00:00+00:00"});
+  const testing = session({type: "testing", start: null, date: "2026-02-01", duration: null});
+  const events = [
+    {series: "a", name: "A", round: 1, location: null, url: null, sessions: [practice, race]},
+    {series: "b", name: "B", round: null, location: null, url: null, sessions: [testing]},
+  ];
+  const all = new Set(TYPES.map(([t]) => t));
+  let ok = true;
+  const check = (got, want, what) => {
+    if (JSON.stringify(got) !== JSON.stringify(want)) {
+      ok = false; console.error(`self-check: ${what}\n  got  ${JSON.stringify(got)}\n  want ${JSON.stringify(want)}`);
+    }
+  };
+
+  check(filterEvents(events, new Set(["a"]), all).map((e) => e.name), ["A"],
+    "an unticked series drops its weekends");
+  check(filterEvents(events, new Set(["a", "b"]), new Set(["race"])).map((e) => e.name), ["A"],
+    "a weekend with no session of a ticked type drops out entirely");
+  check(filterEvents(events, new Set(["a"]), new Set(["race"]))[0].sessions.map((s) => s.type),
+    ["race"], "a kept weekend shows only the ticked session types");
+  check(events[0].sessions.length, 2, "filtering must not mutate the fetched data");
+
+  // A weekend is past only once its last session has finished, and an all-day
+  // session runs out its whole day rather than ending at midnight.
+  check(isPast(events[0], new Date("2026-03-01T12:30:00Z")), false, "mid-race is not past");
+  check(isPast(events[0], new Date("2026-03-01T13:30:00Z")), true, "after the last session is past");
+  // Relative to the session's own local midnight -- an all-day session has no
+  // offset of its own, so a fixed UTC instant here would only pass in one zone.
+  const midnight = starts(testing).getTime();
+  check(isPast(events[1], new Date(midnight + 23 * 3600000)), false, "an all-day session lasts its day");
+  check(isPast(events[1], new Date(midnight + 25 * 3600000)), true, "and is past the day after");
+
+  console.log(ok ? "self-check ok" : "self-check FAILED");
+})();
+</script>
+</body>
+</html>
