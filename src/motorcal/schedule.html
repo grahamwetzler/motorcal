@@ -140,9 +140,11 @@ function weekendCard(event) {
   card.append(make("div", {className: "series", textContent: NAMES[event.series] + round}));
 
   const name = make("div", {className: "title"});
-  // Linked when the data has an official event page, plain text otherwise.
+  // Linked when the data has an official event page, plain text otherwise. It
+  // leaves the site, and this is a list to browse, so it opens alongside.
   name.append(event.url
-    ? make("a", {href: event.url, textContent: event.name, rel: "noopener"})
+    ? make("a", {href: event.url, textContent: event.name,
+        target: "_blank", rel: "noopener"})
     : event.name);
   card.append(name);
   if (event.location) card.append(make("div", {className: "where", textContent: event.location}));

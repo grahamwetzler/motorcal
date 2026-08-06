@@ -157,8 +157,14 @@
   .weekend .series { font-size: .74rem; font-weight: 700; letter-spacing: .04em;
     text-transform: uppercase; color: var(--muted); margin-bottom: .2rem; }
   .weekend .title { font-weight: 650; line-height: 1.35; }
-  .weekend .title a { color: inherit; text-decoration: none; }
-  .weekend .title a:hover { text-decoration: underline; }
+  /* Only some events have an official page. Underlined rather than recolored:
+     enough to tell which ones are a link without turning half the list a
+     different color from the other half. */
+  .weekend .title a {
+    color: inherit; text-decoration: underline; text-underline-offset: .18em;
+    text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  .weekend .title a:hover { text-decoration-color: var(--accent); }
   .weekend .where { color: var(--muted); font-size: .84rem; margin-top: .15rem; }
   /* A weekend runs over several days, one heading each. */
   .weekend .date { font-size: .8rem; font-weight: 700; margin: .6rem 0 .1rem; }
