@@ -23,9 +23,11 @@ next event it contains.
 
 [motorcal.wetzler.dev/schedule](https://motorcal.wetzler.dev/schedule) shows the
 whole season without subscribing to anything: every race weekend of every series,
-day by day, one row per session, in your own time zone. What is next is at the
-top — the weekends already run are folded away behind a single line. Untick a
-series to narrow it down; the filtering is in the page, so there are no
+day by day, one row per session. Times are in your own zone to start with, and
+the dropdown switches them to any other — which regroups the days too, since a
+race can be Sunday where it runs and Saturday where you are. What is next is at
+the top; the weekends already run are folded away behind a single line. Untick a
+series to narrow it down. The filtering is in the page, so there are no
 parameters to get right.
 
 The same data is served as JSON at `/sessions.json`, weekend by weekend, in the
