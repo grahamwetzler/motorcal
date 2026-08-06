@@ -428,10 +428,39 @@ events:
         type: race
         start: '2026-09-26T11:00:00+00:00'
         status: CONFIRMED
+  - name: Bahrain Grand Prix
+    url: https://www.formula1.com/en/racing/2026/bahrain
+    location: Sepang International Circuit, Malaysia
+    round: 16
+    sessions:
+      - uid: f1-2026-bahrain-grand-prix-practice-1
+        label: Practice 1
+        type: practice
+        start: '2026-10-02T04:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-bahrain-grand-prix-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-10-02T08:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-bahrain-grand-prix-practice-3
+        label: Practice 3
+        type: practice
+        start: '2026-10-03T04:30:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-bahrain-grand-prix-qualifying
+        label: Qualifying
+        type: qualifying
+        start: '2026-10-03T08:00:00+00:00'
+        status: CONFIRMED
+      - uid: f1-2026-bahrain-grand-prix-race
+        type: race
+        start: '2026-10-04T07:00:00+00:00'
+        status: CONFIRMED
   - name: Singapore Grand Prix
     url: https://www.formula1.com/en/racing/2026/singapore
     location: Marina Bay Street Circuit, Singapore
-    round: 16
+    round: 17
     sessions:
       - uid: f1-2026-singapore-grand-prix-practice-1
         label: Practice 1
@@ -460,7 +489,7 @@ events:
   - name: United States Grand Prix
     url: https://www.formula1.com/en/racing/2026/united-states
     location: Circuit of the Americas, United States
-    round: 17
+    round: 18
     sessions:
       - uid: f1-2026-united-states-grand-prix-practice-1
         label: Practice 1
@@ -489,7 +518,7 @@ events:
   - name: Mexico City Grand Prix
     url: https://www.formula1.com/en/racing/2026/mexico
     location: "Autódromo Hermanos Rodríguez, Mexico"
-    round: 18
+    round: 19
     sessions:
       - uid: f1-2026-mexico-city-grand-prix-practice-1
         label: Practice 1
@@ -518,7 +547,7 @@ events:
   - name: "São Paulo Grand Prix"
     url: https://www.formula1.com/en/racing/2026/brazil
     location: Interlagos Circuit, Brazil
-    round: 19
+    round: 20
     sessions:
       - uid: f1-2026-s-o-paulo-grand-prix-practice-1
         label: Practice 1
@@ -547,7 +576,7 @@ events:
   - name: Las Vegas Grand Prix
     url: https://www.formula1.com/en/racing/2026/las-vegas
     location: Las Vegas Strip Circuit, United States
-    round: 20
+    round: 21
     sessions:
       - uid: f1-2026-las-vegas-grand-prix-practice-1
         label: Practice 1
@@ -576,7 +605,7 @@ events:
   - name: Qatar Grand Prix
     url: https://www.formula1.com/en/racing/2026/qatar
     location: Lusail International Circuit, Qatar
-    round: 21
+    round: 22
     sessions:
       - uid: f1-2026-qatar-grand-prix-practice-1
         label: Practice 1
@@ -605,7 +634,7 @@ events:
   - name: Abu Dhabi Grand Prix
     url: https://www.formula1.com/en/racing/2026/united-arab-emirates
     location: Yas Marina Circuit, United Arab Emirates
-    round: 22
+    round: 23
     sessions:
       - uid: f1-2026-abu-dhabi-grand-prix-practice-1
         label: Practice 1
