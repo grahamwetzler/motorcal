@@ -154,18 +154,24 @@
     border: 1px solid var(--line); border-left: 4px solid var(--c); border-radius: .5rem;
     background: var(--panel); padding: .75rem .9rem; margin-bottom: .6rem;
   }
-  /* Dimmed, not hidden: a weekend that has run is still part of the season. */
-  .weekend.past { opacity: .55; }
   .weekend .series { font-size: .74rem; font-weight: 700; letter-spacing: .04em;
     text-transform: uppercase; color: var(--muted); margin-bottom: .2rem; }
   .weekend .title { font-weight: 650; line-height: 1.35; }
   .weekend .title a { color: inherit; text-decoration: none; }
   .weekend .title a:hover { text-decoration: underline; }
   .weekend .where { color: var(--muted); font-size: .84rem; margin-top: .15rem; }
-  .weekend .sessions { margin-top: .55rem; display: grid; grid-template-columns: auto 1fr; gap: .2rem .9rem; }
+  /* A weekend runs over several days, one heading each. */
+  .weekend .date { font-size: .8rem; font-weight: 700; margin: .6rem 0 .1rem; }
+  .weekend .sessions { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: .1rem .9rem; }
   .weekend .sessions dt { color: var(--muted); font-size: .84rem; }
   .weekend .sessions dd { margin: 0; font-size: .87rem; }
   @media (max-width: 30rem) {
     .weekend .sessions { grid-template-columns: 1fr; gap: 0; }
     .weekend .sessions dt { margin-top: .35rem; }
   }
+  /* The weekends already run, folded away. Its own border rather than the
+     shared `details` top rule, which is there to separate stacked ones. */
+  details.past { border: 0; margin-bottom: .6rem; }
+  details.past > summary { color: var(--muted); }
+  details.past .details-body { padding-bottom: 0; }
+  details.past .month:first-child { margin-top: .3rem; }

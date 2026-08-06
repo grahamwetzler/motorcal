@@ -39,12 +39,6 @@
     <div class="chips" id="series"></div>
   </section>
 
-  <section class="filters">
-    <h2>Sessions</h2>
-    <p class="hint">Untick a session type to hide it.</p>
-    <div class="grid" id="sessions"></div>
-  </section>
-
   <div id="schedule"></div>
 
   <footer class="site-footer">
@@ -56,7 +50,9 @@
 <script>
 // The full season, fetched from /sessions.json rather than inlined: the same
 // data this page draws is then readable on its own.
-// Must list every SessionType -- tests/test_web_index.py asserts it.
+// The label a session falls back to when the data gives it none -- a race is
+// just the event name in the feed, but it still needs a name in a list of
+// sessions. Must list every SessionType -- tests/test_web_index.py asserts it.
 const TYPES = [
   ["practice", "Practice"],
   ["warmup", "Warm-up"],
@@ -97,27 +93,38 @@ function isPast(event, now) {
 const time = (date) => date.toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
 const day = (date) => date.toLocaleDateString([], {weekday: "short", day: "numeric", month: "short"});
 
-function whenText(session) {
+// The day carries the date, so a session only has to say the clock time.
+function timeText(session) {
+  if (!session.start) return "Time TBC";
   const start = starts(session);
-  if (!session.start) return `${day(start)}, time TBC`;
-  const tz = new Intl.DateTimeFormat([], {timeZoneName: "short"}).formatToParts(start)
-    .find((part) => part.type === "timeZoneName").value;
-  if (!session.duration) return `${day(start)}, ${time(start)} ${tz}`;
-  return `${day(start)}, ${time(start)} – ${time(ends(session))} ${tz}`;
+  if (!session.duration) return time(start);
+  return `${time(start)} – ${time(ends(session))}`;
 }
 
-// --- filtering -------------------------------------------------------------
-// A weekend survives if its series is ticked and at least one of its sessions
-// is of a ticked type; the sessions it keeps are only those types. Returns a
-// copy so the fetched data stays whole for the next filter change.
-function filterEvents(events, series, types) {
-  const kept = [];
-  for (const event of events) {
-    if (!series.has(event.series)) continue;
-    const sessions = event.sessions.filter((session) => types.has(session.type));
-    if (sessions.length) kept.push({...event, sessions});
+// --- days ------------------------------------------------------------------
+// A weekend runs over several days, and reading it a day at a time is how a
+// timetable is published. Sessions arrive in running order, so a day is a run
+// of neighbours -- no sorting or bucketing needed.
+function daysOf(event) {
+  const days = [];
+  for (const session of event.sessions) {
+    const date = starts(session);
+    const key = date.toDateString();
+    const last = days[days.length - 1];
+    if (last && last.key === key) last.sessions.push(session);
+    else days.push({key, date, sessions: [session]});
   }
-  return kept;
+  return days;
+}
+
+// The zone belongs on the day rather than on every session: one label instead
+// of one per row. Taken from the day's first session that has a time, since an
+// all-day one has no offset to read it from.
+function zoneOf(sessions) {
+  const timed = sessions.find((session) => session.start);
+  if (!timed) return "";
+  return new Intl.DateTimeFormat([], {timeZoneName: "short"})
+    .formatToParts(starts(timed)).find((part) => part.type === "timeZoneName").value;
 }
 
 // --- rendering -------------------------------------------------------------
@@ -125,8 +132,8 @@ let DATA = {series: [], events: []};
 let NAMES = {};
 let COLOR = {};
 
-function weekendCard(event, now) {
-  const card = make("div", {className: isPast(event, now) ? "weekend past" : "weekend"});
+function weekendCard(event) {
+  const card = make("div", {className: "weekend"});
   card.style.setProperty("--c", COLOR[event.series]);
 
   const round = event.round === null ? "" : ` · Round ${event.round}`;
@@ -140,14 +147,18 @@ function weekendCard(event, now) {
   card.append(name);
   if (event.location) card.append(make("div", {className: "where", textContent: event.location}));
 
-  const list = make("dl", {className: "sessions"});
-  for (const session of event.sessions) {
-    list.append(
-      make("dt", {textContent: session.label || LABELS[session.type]}),
-      make("dd", {textContent: whenText(session)}),
-    );
+  for (const {date, sessions} of daysOf(event)) {
+    const zone = zoneOf(sessions);
+    card.append(make("div", {className: "date", textContent: day(date) + (zone ? ` · ${zone}` : "")}));
+    const list = make("dl", {className: "sessions"});
+    for (const session of sessions) {
+      list.append(
+        make("dt", {textContent: session.label || LABELS[session.type]}),
+        make("dd", {textContent: timeText(session)}),
+      );
+    }
+    card.append(list);
   }
-  card.append(list);
   return card;
 }
 
@@ -155,61 +166,62 @@ function monthOf(event) {
   return starts(event.sessions[0]).toLocaleDateString([], {month: "long", year: "numeric"});
 }
 
-function render(scrollToNext = false) {
-  const box = document.getElementById("schedule");
-  box.textContent = "";
-  const series = new Set(DATA.series.filter((s) => seriesBoxes[s.key].querySelector("input").checked)
-    .map((s) => s.key));
-  const types = new Set(TYPES.filter(([t]) => sessionBoxes[t].querySelector("input").checked)
-    .map(([t]) => t));
-
-  if (!series.size || !types.size) {
-    box.append(make("div", {className: "event none",
-      textContent: "Pick at least one series and one session type."}));
-    return;
-  }
-
-  const now = new Date();
-  const events = filterEvents(DATA.events, series, types);
-  if (!events.length) {
-    box.append(make("div", {className: "event none", textContent: "Nothing matches these filters."}));
-    return;
-  }
-
+// Weekends under a month heading each time the month changes.
+function appendMonths(box, events) {
   let month = null;
-  let firstUpcoming = null;
   for (const event of events) {
     const heading = monthOf(event);
     if (heading !== month) {
       month = heading;
       box.append(make("div", {className: "month", textContent: heading}));
     }
-    const card = weekendCard(event, now);
-    if (!firstUpcoming && !isPast(event, now)) firstUpcoming = card;
-    box.append(card);
+    box.append(weekendCard(event));
   }
-  // Only on the first render: re-scrolling on every tick would yank the page
-  // out from under whoever is using the filters.
-  if (scrollToNext && firstUpcoming) firstUpcoming.scrollIntoView({block: "center"});
+}
+
+function render() {
+  const box = document.getElementById("schedule");
+  box.textContent = "";
+  const series = new Set(DATA.series.filter((s) => seriesBoxes[s.key].querySelector("input").checked)
+    .map((s) => s.key));
+
+  if (!series.size) {
+    box.append(make("div", {className: "event none", textContent: "Pick at least one series."}));
+    return;
+  }
+
+  const now = new Date();
+  const events = DATA.events.filter((event) => series.has(event.series));
+  const past = events.filter((event) => isPast(event, now));
+  const upcoming = events.filter((event) => !isPast(event, now));
+
+  // What has already run is folded away rather than dropped: the season is
+  // still the season, but nobody opening this page is looking for last month.
+  // Closed, so what is next sits at the top of the page without a scroll.
+  if (past.length) {
+    const body = make("div", {className: "details-body"});
+    appendMonths(body, past);
+    box.append(make("details", {className: "past"},
+      make("summary", {}, `${past.length} weekend${past.length === 1 ? "" : "s"} already run`),
+      body));
+  }
+  appendMonths(box, upcoming);
+  if (!upcoming.length) {
+    box.append(make("div", {className: "event none",
+      textContent: "Nothing left this season for these series."}));
+  }
 }
 
 // --- controls --------------------------------------------------------------
 const seriesBoxes = {};
-const sessionBoxes = {};
 
 function buildControls() {
   for (const {key, name} of DATA.series) {
     const box = make("input", {type: "checkbox", checked: true});
-    box.addEventListener("change", () => render());
+    box.addEventListener("change", render);
     seriesBoxes[key] = make("label", {className: "chip"}, box, name);
     seriesBoxes[key].style.setProperty("--c", COLOR[key]);
     document.getElementById("series").append(seriesBoxes[key]);
-  }
-  for (const [type, label] of TYPES) {
-    const box = make("input", {type: "checkbox", checked: true});
-    box.addEventListener("change", () => render());
-    sessionBoxes[type] = make("label", {className: "check"}, box, label);
-    document.getElementById("sessions").append(sessionBoxes[type]);
   }
 }
 
@@ -223,7 +235,7 @@ fetch("/sessions.json").then((response) => {
   // same assignment index.html uses, so a series is one color across both pages.
   COLOR = Object.fromEntries(DATA.series.map((s, i) => [s.key, `var(--series-${i % 8 + 1})`]));
   buildControls();
-  render(true);
+  render();
 }).catch((error) => {
   console.error(error);
   document.getElementById("schedule").append(make("div", {className: "event none",
@@ -231,19 +243,26 @@ fetch("/sessions.json").then((response) => {
 });
 
 // --- self-check ------------------------------------------------------------
-// Filtering and the past/upcoming split are the only real logic here; this
-// fails loudly in the console if either starts lying.
+// Grouping a weekend into days and the past/upcoming split are the only real
+// logic here; this fails loudly in the console if either starts lying.
 (function selfCheck() {
   const session = (over) => ({label: "", type: "race", start: null, date: null,
     tbc: false, round: null, duration: 3600, ...over});
-  const race = session({start: "2026-03-01T12:00:00+00:00"});
-  const practice = session({type: "practice", start: "2026-02-28T12:00:00+00:00"});
-  const testing = session({type: "testing", start: null, date: "2026-02-01", duration: null});
+  // Two sessions on one local day, then the race on the next.
+  const noon = new Date("2026-03-01T12:00:00").toISOString();
+  const later = new Date("2026-03-01T15:00:00").toISOString();
+  const race = session({start: new Date("2026-03-02T12:00:00").toISOString()});
   const events = [
-    {series: "a", name: "A", round: 1, location: null, url: null, sessions: [practice, race]},
-    {series: "b", name: "B", round: null, location: null, url: null, sessions: [testing]},
+    {series: "a", name: "A", round: 1, location: null, url: null, sessions: [
+      session({type: "practice", start: noon}),
+      session({type: "qualifying", start: later}),
+      race,
+    ]},
+    {series: "b", name: "B", round: null, location: null, url: null, sessions: [
+      session({type: "testing", start: null, date: "2026-02-01", duration: null}),
+    ]},
   ];
-  const all = new Set(TYPES.map(([t]) => t));
+  const testing = events[1].sessions[0];
   let ok = true;
   const check = (got, want, what) => {
     if (JSON.stringify(got) !== JSON.stringify(want)) {
@@ -251,18 +270,19 @@ fetch("/sessions.json").then((response) => {
     }
   };
 
-  check(filterEvents(events, new Set(["a"]), all).map((e) => e.name), ["A"],
-    "an unticked series drops its weekends");
-  check(filterEvents(events, new Set(["a", "b"]), new Set(["race"])).map((e) => e.name), ["A"],
-    "a weekend with no session of a ticked type drops out entirely");
-  check(filterEvents(events, new Set(["a"]), new Set(["race"]))[0].sessions.map((s) => s.type),
-    ["race"], "a kept weekend shows only the ticked session types");
-  check(events[0].sessions.length, 2, "filtering must not mutate the fetched data");
+  // Sessions arrive in running order, so a day is a run of neighbours.
+  check(daysOf(events[0]).map((d) => d.sessions.length), [2, 1],
+    "sessions group into the day they run on");
+  check(daysOf(events[1]).length, 1, "an all-day session is a day of its own");
+  check(timeText(testing), "Time TBC", "a session with no time says so");
+  check(zoneOf(events[1].sessions), "", "a day of all-day sessions has no zone to show");
+  check(zoneOf(events[0].sessions) !== "", true, "a day with a time shows its zone");
 
   // A weekend is past only once its last session has finished, and an all-day
   // session runs out its whole day rather than ending at midnight.
-  check(isPast(events[0], new Date("2026-03-01T12:30:00Z")), false, "mid-race is not past");
-  check(isPast(events[0], new Date("2026-03-01T13:30:00Z")), true, "after the last session is past");
+  const green = starts(race).getTime();
+  check(isPast(events[0], new Date(green + 30 * 60000)), false, "mid-race is not past");
+  check(isPast(events[0], new Date(green + 90 * 60000)), true, "after the last session is past");
   // Relative to the session's own local midnight -- an all-day session has no
   // offset of its own, so a fixed UTC instant here would only pass in one zone.
   const midnight = starts(testing).getTime();
