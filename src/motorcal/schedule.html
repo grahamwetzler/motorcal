@@ -99,7 +99,11 @@ const day = (date) => date.toLocaleDateString([], {weekday: "short", day: "numer
 const weekday = (date) => date.toLocaleDateString([], {weekday: "short"});
 
 function timeText(session) {
-  if (!session.start) return "Time TBC";
+  // Two different things arrive without a start, and only `tbc` tells them
+  // apart: a time the timetable has not announced yet, and a session that is
+  // deliberately all-day, like a test day. build_published_event draws the same
+  // line for the feed's title, and calling a test day "TBC" would contradict it.
+  if (!session.start) return session.tbc ? "Time TBC" : "All day";
   const start = starts(session);
   if (!session.duration) return time(start);
   const end = ends(session);
@@ -320,7 +324,10 @@ fetch("/sessions.json").then((response) => {
   check(daysOf(events[0]).map((d) => d.sessions.length), [2, 1],
     "sessions group into the day they run on");
   check(daysOf(events[1]).length, 1, "an all-day session is a day of its own");
-  check(timeText(testing), "Time TBC", "a session with no time says so");
+  // Both arrive with no start; only `tbc` says which is which.
+  check(timeText(testing), "All day", "a deliberately all-day session is not called TBC");
+  check(timeText({...testing, tbc: true}), "Time TBC",
+    "an unannounced time is");
 
   // A withdrawn session must not read as an ordinary one. The row is the only
   // place that says so, so it is checked here rather than left to the eye.
