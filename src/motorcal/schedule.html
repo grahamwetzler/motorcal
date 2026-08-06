@@ -93,12 +93,19 @@ function isPast(event, now) {
 const time = (date) => date.toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
 const day = (date) => date.toLocaleDateString([], {weekday: "short", day: "numeric", month: "short"});
 
-// The day carries the date, so a session only has to say the clock time.
+// The day heading carries the date, so a session only has to say the clock
+// time -- unless it runs past midnight, where the end needs its own weekday or
+// Le Mans reads "9:00 AM - 9:00 AM". A session is filed under the day it starts,
+// so only the end can land on another day.
+const weekday = (date) => date.toLocaleDateString([], {weekday: "short"});
+
 function timeText(session) {
   if (!session.start) return "Time TBC";
   const start = starts(session);
   if (!session.duration) return time(start);
-  return `${time(start)} – ${time(ends(session))}`;
+  const end = ends(session);
+  const over = end.toDateString() !== start.toDateString() ? ` ${weekday(end)}` : "";
+  return `${time(start)} – ${time(end)}${over}`;
 }
 
 // --- days ------------------------------------------------------------------
@@ -277,6 +284,17 @@ fetch("/sessions.json").then((response) => {
     "sessions group into the day they run on");
   check(daysOf(events[1]).length, 1, "an all-day session is a day of its own");
   check(timeText(testing), "Time TBC", "a session with no time says so");
+
+  // A session that runs past midnight is still filed under the day it starts,
+  // so the end is the only half that can need a weekday of its own.
+  const overnight = session({start: new Date("2026-03-01T14:00:00").toISOString(),
+    duration: 24 * 3600});
+  check(daysOf({sessions: [overnight]}).length, 1, "a 24-hour race is one day, not two");
+  check(timeText(overnight).endsWith(` ${weekday(ends(overnight))}`), true,
+    "an end on another day names that day");
+  const sameDay = events[0].sessions[0];
+  check(timeText(sameDay), `${time(starts(sameDay))} – ${time(ends(sameDay))}`,
+    "a session finishing the same day says only the clock times");
   check(zoneOf(events[1].sessions), "", "a day of all-day sessions has no zone to show");
   check(zoneOf(events[0].sessions) !== "", true, "a day with a time shows its zone");
 
