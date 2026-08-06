@@ -113,6 +113,19 @@ function timeText(session) {
   return `${time(start)} – ${time(end)}${over}`;
 }
 
+// How long it runs, said outright rather than left to be worked out from two
+// clock times -- "6h" is what makes an endurance race an endurance race.
+// Only for a session that has both a start and a resolved duration: nothing
+// about an all-day or TBC session has a length to state.
+function durationText(session) {
+  if (!session.start || !session.duration) return "";
+  const minutes = Math.round(session.duration / 60);
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (!hours) return `${rest}m`;
+  return rest ? `${hours}h ${rest}m` : `${hours}h`;
+}
+
 // --- days ------------------------------------------------------------------
 // A weekend runs over several days, and reading it a day at a time is how a
 // timetable is published. Sessions arrive in running order, so a day is a run
@@ -165,6 +178,8 @@ function sessionRow(session) {
   const mark = marked(session);
   const struck = mark === "CANCELLED" ? "struck" : "";
   const dd = make("dd", {}, make("span", {className: struck, textContent: timeText(session)}));
+  const length = durationText(session);
+  if (length) dd.append(make("span", {className: `length ${struck}`, textContent: length}));
   if (mark) dd.append(make("span", {className: `mark ${mark.toLowerCase()}`, textContent: MARKS[mark]}));
   return [
     make("dt", {className: struck, textContent: session.label || LABELS[session.type]}),
@@ -328,6 +343,14 @@ fetch("/sessions.json").then((response) => {
   check(timeText(testing), "All day", "a deliberately all-day session is not called TBC");
   check(timeText({...testing, tbc: true}), "Time TBC",
     "an unannounced time is");
+
+  // Hours and minutes both, either alone, and nothing at all for a session with
+  // no length to state.
+  check(durationText(session({start: noon, duration: 5400})), "1h 30m", "hours and minutes");
+  check(durationText(session({start: noon, duration: 6 * 3600})), "6h", "a whole number of hours");
+  check(durationText(session({start: noon, duration: 2700})), "45m", "under an hour");
+  check(durationText(testing), "", "an all-day session states no length");
+  check(durationText(session({start: noon, duration: null})), "", "nor does one with no duration");
 
   // A withdrawn session must not read as an ordinary one. The row is the only
   // place that says so, so it is checked here rather than left to the eye.

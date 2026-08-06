@@ -179,6 +179,9 @@
   .weekend .sessions { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: .1rem .9rem; }
   .weekend .sessions dt { color: var(--muted); font-size: .84rem; }
   .weekend .sessions dd { margin: 0; font-size: .87rem; }
+  /* Alongside the clock times, in --muted: it is the same fact said a second
+     way, so it sits behind the times rather than beside them. */
+  .weekend .sessions .length { margin-left: .5rem; color: var(--muted); font-size: .8rem; }
   /* A session that is not going ahead as listed: struck through when it is
      cancelled outright, and marked either way so the reason is stated rather
      than left to the styling. */
