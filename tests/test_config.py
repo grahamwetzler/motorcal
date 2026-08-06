@@ -279,6 +279,47 @@ def test_duplicate_session_keys_within_a_series_are_rejected(tmp_path):
         load_config(config_dir, uid_domain=UID_DOMAIN)
 
 
+def test_a_timed_session_with_no_duration_anywhere_is_rejected(tmp_path):
+    """Otherwise it publishes as a zero-length event -- how sprint qualifying shipped."""
+    config_dir = write_config_dir(
+        tmp_path,
+        make_config(
+            series={
+                "wec": make_series(
+                    events=[
+                        make_event(
+                            "wec-2026-imola-race", start="2026-04-19T13:00:00+00:00"
+                        )
+                    ]
+                )
+            }
+        ),
+    )
+
+    with pytest.raises(ConfigError, match="has no duration"):
+        load_config(config_dir, uid_domain=UID_DOMAIN)
+
+
+def test_a_global_default_duration_satisfies_a_timed_session(tmp_path):
+    config_dir = write_config_dir(
+        tmp_path,
+        make_config(
+            durations={"race": "6h"},
+            series={
+                "wec": make_series(
+                    events=[
+                        make_event(
+                            "wec-2026-imola-race", start="2026-04-19T13:00:00+00:00"
+                        )
+                    ]
+                )
+            },
+        ),
+    )
+
+    assert load_config(config_dir, uid_domain=UID_DOMAIN).series["wec"].events
+
+
 def test_duplicate_session_uids_across_two_series_are_rejected(tmp_path):
     """A UID keys the version ledger and identifies the event in /events.ics, so it has
     to be unique across the whole directory, not just within one series file."""

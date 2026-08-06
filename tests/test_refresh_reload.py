@@ -17,9 +17,10 @@ def _dir(tmp_path, **kwargs):
     config = make_config(
         series={
             "wec": make_series(
+                durations={"race": "6h"},
                 events=[
                     make_event("wec-2026-imola-race", start="2026-04-19T13:00:00+00:00")
-                ]
+                ],
             )
         },
         **kwargs,
