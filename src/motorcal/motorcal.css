@@ -1,0 +1,204 @@
+  :root {
+    --bg: #f4f5f7; --panel: #ffffff; --fg: #16191d; --muted: #626d79; --line: #e2e6eb;
+    --accent: #0b5fff; --field: #ffffff; --soft: #f0f3f7; --mono-bg: #0e1116; --mono-fg: #d8e0ea;
+    /* Text red: dark enough to read on --panel, unlike the #e5484d used below
+       as a border, which is a shape rather than something to be read. */
+    --danger: #c62a2f;
+    /* One color per series, fixed order -- see the dataviz skill's reference palette. */
+    --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+    --series-5: #e87ba4; --series-6: #008300; --series-7: #4a3aa7; --series-8: #e34948;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1013; --panel: #16191d; --fg: #e9edf1; --muted: #8e9aa6; --line: #262b31;
+      --accent: #5b8cff; --field: #1c2026; --soft: #1c2026; --mono-bg: #05070a; --mono-fg: #cfd9e4;
+      --danger: #ff8b8f;
+      --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+      --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }  /* display:grid would otherwise win */
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 68rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; position: relative; }
+  header { margin-bottom: 2rem; }
+  .github-link {
+    position: absolute; top: 2.5rem; right: 1.25rem; color: var(--muted);
+    line-height: 0;
+  }
+  .github-link:hover, .github-link:focus-visible { color: var(--fg); }
+  .github-link svg { width: 1.6rem; height: 1.6rem; }
+  h1 { font-family: "Racing Sans One", ui-sans-serif, system-ui, sans-serif; font-size: 2.3rem; margin: 0 0 .3rem; letter-spacing: .02em; }
+  h1 b { color: var(--accent); font-weight: 800; }
+  header p { margin: 0; color: var(--muted); }
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.5rem; align-items: start; }
+  @media (max-width: 900px) {
+    .cols { grid-template-columns: 1fr; }
+    /* --subscribe-h tracks the pinned card's real rendered height (set by a
+       ResizeObserver below) so a long sentence, a wrapped alert list, or a
+       browser text-zoom bump can't grow the card past this reserved space
+       and cover the footer or preview beneath it. */
+    .wrap { padding-bottom: calc(var(--subscribe-h, 14rem) + 1rem); }
+    aside { position: static; }
+    /* Pinned so Copy/Subscribe stay reachable while scrolling the options above. */
+    .subscribe-box {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; margin: 0;
+      border-radius: .75rem .75rem 0 0; box-shadow: 0 -4px 16px rgba(0, 0, 0, .18);
+      padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
+    }
+    .subscribe-box code#url { max-height: 4rem; }
+    .subscribe-box .foot { display: none; }
+  }
+
+  section {
+    background: var(--panel); border: 1px solid var(--line); border-radius: .75rem;
+    padding: 1.1rem 1.25rem 1.25rem; margin-bottom: 1rem;
+  }
+  h2 { font-size: .78rem; text-transform: uppercase; letter-spacing: .09em; color: var(--muted);
+       margin: 0 0 .15rem; font-weight: 700; }
+  .hint { color: var(--muted); font-size: .86rem; margin: 0 0 .9rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: .15rem .8rem; }
+  label.check { display: flex; align-items: center; gap: .55rem; padding: .32rem 0; cursor: pointer; font-size: .95rem; }
+  input[type=checkbox], input[type=radio] { accent-color: var(--accent); width: 1rem; height: 1rem; margin: 0; }
+  input[type=text] {
+    background: var(--field); color: var(--fg); border: 1px solid var(--line); border-radius: .45rem;
+    padding: .42rem .6rem; font: inherit; font-size: .88rem; width: 100%;
+  }
+  input[type=text]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  input.bad { border-color: #e5484d; background: color-mix(in srgb, #e5484d 8%, var(--field)); }
+  .row { display: grid; grid-template-columns: 9.5rem 1fr; gap: .6rem; align-items: center; margin-bottom: .45rem; }
+  .row > span { color: var(--muted); font-size: .87rem; }
+  .radios { display: flex; flex-wrap: wrap; gap: 1rem; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .chip {
+    --c: var(--accent);
+    display: inline-flex; align-items: center; gap: .45rem; cursor: pointer; user-select: none;
+    border: 1px solid var(--line); background: var(--soft); border-radius: 999px;
+    padding: .45rem .95rem; font-size: .95rem; font-weight: 600; transition: .12s;
+  }
+  .chip input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .chip::before { content: "＋"; font-size: .85em; opacity: .55; }
+  /* A tint, not a solid fill: the label stays in --fg at every hue rather than
+     needing its own white-on-color contrast check per series. */
+  .chip:has(input:checked) {
+    background: color-mix(in srgb, var(--c) 20%, var(--panel));
+    border-color: var(--c); color: var(--fg);
+  }
+  .chip:has(input:checked)::before { content: "✓"; opacity: 1; color: var(--c); }
+  .chip:has(input:focus-visible) { outline: 2px solid var(--c); outline-offset: 2px; }
+
+  details { border-top: 1px solid var(--line); }
+  details > summary {
+    cursor: pointer; padding: .6rem 0; font-size: .9rem; font-weight: 600; list-style: none;
+    display: flex; align-items: center; gap: .5rem;
+  }
+  details > summary::before { content: "▸"; color: var(--muted); font-size: .8rem; transition: transform .12s; }
+  details[open] > summary::before { transform: rotate(90deg); }
+  details > summary::-webkit-details-marker { display: none; }
+  .details-body { padding: 0 0 .9rem .95rem; border-left: 2px solid var(--line); margin: 0 0 .3rem .25rem; }
+  .tag { font-size: .72rem; color: var(--accent); font-weight: 700; }
+
+  aside { position: sticky; top: 1.5rem; }
+  .result { background: var(--panel); border: 1px solid var(--line); border-radius: .75rem; padding: 1.25rem; }
+  .sentence { font-size: 1.02rem; line-height: 1.5; margin: 0 0 1rem; }
+  .sentence em { font-style: normal; font-weight: 650; color: var(--accent); }
+  code#url {
+    display: block; background: var(--mono-bg); color: var(--mono-fg); border-radius: .5rem;
+    padding: .7rem .8rem; font: .78rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+    word-break: break-all; max-height: 11rem; overflow: auto; margin-bottom: .85rem;
+  }
+  code#url.bad { color: #ff8b8f; }
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+  button, a.btn {
+    font: inherit; font-size: .9rem; font-weight: 650; padding: .55rem .8rem; border-radius: .5rem;
+    border: 1px solid var(--line); background: var(--soft); color: var(--fg);
+    cursor: pointer; text-decoration: none; text-align: center;
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button:disabled, a.btn[aria-disabled=true] { opacity: .4; pointer-events: none; }
+  .foot { color: var(--muted); font-size: .8rem; margin: .9rem 0 0; }
+  .site-footer { color: var(--muted); font-size: .8rem; text-align: center; margin-top: 2.5rem; }
+  .site-footer p { margin: 0 0 .3rem; }
+  .site-footer p:last-child { margin-bottom: 0; }
+
+  .preview { margin-top: 1rem; }
+  .preview h2 { margin-bottom: .5rem; }
+  #next { display: flex; flex-direction: column; gap: .6rem; }
+  .event {
+    --c: var(--accent);
+    border: 1px solid var(--line); border-left: 4px solid var(--c); border-radius: .5rem;
+    background: var(--panel); padding: .75rem .9rem;
+  }
+  /* The left border already carries the series color; the label itself stays
+     in --muted like any other text so it doesn't need its own per-hue contrast check. */
+  .event .series { font-size: .74rem; font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: .2rem; }
+  .event .title { font-weight: 650; line-height: 1.35; }
+  .event .when { font-size: .87rem; margin-top: .2rem; }
+  .event .where, .event .alarm { color: var(--muted); font-size: .84rem; margin-top: .15rem; }
+  .event.none { border-left-color: var(--line); color: var(--muted); font-size: .88rem; }
+
+  /* --- the schedule page --------------------------------------------------- */
+  header .tz { font-size: .86rem; margin-top: .2rem; }
+  /* Linked on the schedule page, plain text on the builder -- and it looks the
+     same either way. */
+  h1 a { color: inherit; text-decoration: none; }
+  header .nav { margin-top: .35rem; font-size: .9rem; }
+  header .nav a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  header .nav a:hover { text-decoration: underline; }
+  .month {
+    font-size: .78rem; text-transform: uppercase; letter-spacing: .09em; color: var(--muted);
+    font-weight: 700; margin: 1.6rem 0 .55rem;
+  }
+  .month:first-child { margin-top: .5rem; }
+  #schedule { display: flex; flex-direction: column; }
+  /* Same card shape as the builder's preview .event, one per race weekend. */
+  .weekend {
+    --c: var(--accent);
+    border: 1px solid var(--line); border-left: 4px solid var(--c); border-radius: .5rem;
+    background: var(--panel); padding: .75rem .9rem; margin-bottom: .6rem;
+  }
+  .weekend .series { font-size: .74rem; font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: .2rem; }
+  .weekend .title { font-weight: 650; line-height: 1.35; }
+  /* Only some events have an official page. Underlined rather than recolored:
+     enough to tell which ones are a link without turning half the list a
+     different color from the other half. */
+  .weekend .title a {
+    color: inherit; text-decoration: underline; text-underline-offset: .18em;
+    text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  .weekend .title a:hover { text-decoration-color: var(--accent); }
+  .weekend .where { color: var(--muted); font-size: .84rem; margin-top: .15rem; }
+  /* A weekend runs over several days, one heading each. */
+  .weekend .date { font-size: .8rem; font-weight: 700; margin: .6rem 0 .1rem; }
+  .weekend .sessions { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: .1rem .9rem; }
+  .weekend .sessions dt { color: var(--muted); font-size: .84rem; }
+  .weekend .sessions dd { margin: 0; font-size: .87rem; }
+  /* Alongside the clock times, in --muted: it is the same fact said a second
+     way, so it sits behind the times rather than beside them. */
+  .weekend .sessions .length { margin-left: .5rem; color: var(--muted); font-size: .8rem; }
+  /* A session that is not going ahead as listed: struck through when it is
+     cancelled outright, and marked either way so the reason is stated rather
+     than left to the styling. */
+  .weekend .sessions .struck { text-decoration: line-through; }
+  .weekend .sessions .mark {
+    margin-left: .5rem; font-size: .72rem; font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase;
+  }
+  .weekend .sessions .cancelled { color: var(--danger); }
+  .weekend .sessions .postponed { color: var(--muted); }
+  @media (max-width: 30rem) {
+    .weekend .sessions { grid-template-columns: 1fr; gap: 0; }
+    .weekend .sessions dt { margin-top: .35rem; }
+  }
+  /* The weekends already run, folded away. Its own border rather than the
+     shared `details` top rule, which is there to separate stacked ones. */
+  details.past { border: 0; margin-bottom: .6rem; }
+  details.past > summary { color: var(--muted); }
+  details.past .details-body { padding-bottom: 0; }
+  details.past .month:first-child { margin-top: .3rem; }

@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motorcal — the full motorsports schedule</title>
+<meta name="description" content="Every session of every race weekend, practice through race, across every series.">
+<link rel="canonical" href="https://motorcal.wetzler.dev/schedule">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Motorcal">
+<meta property="og:title" content="Motorcal — the full motorsports schedule">
+<meta property="og:description" content="Every session of every race weekend, practice through race, across every series.">
+<meta property="og:url" content="https://motorcal.wetzler.dev/schedule">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Racing+Sans+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/motorcal.css">
+</head>
+<body>
+<div class="wrap">
+  <a class="github-link" href="https://github.com/grahamwetzler/motorcal" aria-label="View source on GitHub">
+    <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+      0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01
+      1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15
+      -.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04
+      2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54
+      1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+  </a>
+  <header>
+    <!-- The wordmark is the way back to the builder, the way a site's name
+         usually is. index.html leaves its own h1 unlinked -- there it would
+         only point at the page you are already on. -->
+    <h1><a href="/">Motor<b>cal</b></a></h1>
+    <p class="tz" id="zone">All times are shown in your browser's time zone.</p>
+  </header>
+
+  <section class="filters">
+    <h2>Series</h2>
+    <div class="chips" id="series"></div>
+  </section>
+
+  <div id="schedule"></div>
+
+  <footer class="site-footer">
+    <p>© 2026 Graham Wetzler</p>
+    <p>Schedule data is compiled from third-party official timetables and remains subject to the source&rsquo;s terms.</p>
+  </footer>
+</div>
+
+<script>
+// The full season, fetched from /sessions.json rather than inlined: the same
+// data this page draws is then readable on its own.
+// The label a session falls back to when the data gives it none -- a race is
+// just the event name in the feed, but it still needs a name in a list of
+// sessions. Must list every SessionType -- tests/test_web_index.py asserts it.
+const TYPES = [
+  ["practice", "Practice"],
+  ["warmup", "Warm-up"],
+  ["qualifying", "Qualifying"],
+  ["hyperpole", "Hyperpole"],
+  ["sprint_qualifying", "Sprint qualifying"],
+  ["sprint", "Sprint"],
+  ["race", "Race"],
+  ["testing", "Testing"],
+];
+const LABELS = Object.fromEntries(TYPES);
+
+// Same helper, and the same rule, as index.html: everything goes in through
+// textContent, because event and series names come from the data directory.
+function make(tag, props = {}, ...kids) {
+  const node = Object.assign(document.createElement(tag), props);
+  node.append(...kids);
+  return node;
+}
+
+// --- time ------------------------------------------------------------------
+// An all-day session has no time, so it sits at local midnight of its day --
+// the day is the only thing that was announced, and showing it shifted into
+// another date by a UTC offset would be wrong.
+function starts(session) {
+  return new Date(session.start || session.date + "T00:00:00");
+}
+// When a session is over. An all-day one runs out its whole day, which is what
+// keeps a test day from greying out at midnight UTC.
+function ends(session) {
+  if (!session.start) return new Date(starts(session).getTime() + 86400000);
+  return new Date(starts(session).getTime() + (session.duration || 0) * 1000);
+}
+function isPast(event, now) {
+  return event.sessions.every((session) => ends(session) <= now);
+}
+
+const time = (date) => date.toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
+const day = (date) => date.toLocaleDateString([], {weekday: "short", day: "numeric", month: "short"});
+
+// The day heading carries the date, so a session only has to say the clock
+// time -- unless it runs past midnight, where the end needs its own weekday or
+// Le Mans reads "9:00 AM - 9:00 AM". A session is filed under the day it starts,
+// so only the end can land on another day.
+const weekday = (date) => date.toLocaleDateString([], {weekday: "short"});
+
+function timeText(session) {
+  // Two different things arrive without a start, and only `tbc` tells them
+  // apart: a time the timetable has not announced yet, and a session that is
+  // deliberately all-day, like a test day. build_published_event draws the same
+  // line for the feed's title, and calling a test day "TBC" would contradict it.
+  if (!session.start) return session.tbc ? "Time TBC" : "All day";
+  const start = starts(session);
+  if (!session.duration) return time(start);
+  const end = ends(session);
+  const over = end.toDateString() !== start.toDateString() ? ` ${weekday(end)}` : "";
+  return `${time(start)} – ${time(end)}${over}`;
+}
+
+// How long it runs, said outright rather than left to be worked out from two
+// clock times -- "6h" is what makes an endurance race an endurance race.
+// Only for a session that has both a start and a resolved duration: nothing
+// about an all-day or TBC session has a length to state.
+function durationText(session) {
+  if (!session.start || !session.duration) return "";
+  const minutes = Math.round(session.duration / 60);
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (!hours) return `${rest}m`;
+  return rest ? `${hours}h ${rest}m` : `${hours}h`;
+}
+
+// --- days ------------------------------------------------------------------
+// A weekend runs over several days, and reading it a day at a time is how a
+// timetable is published. Sessions arrive in running order, so a day is a run
+// of neighbours -- no sorting or bucketing needed.
+function daysOf(event) {
+  const days = [];
+  for (const session of event.sessions) {
+    const date = starts(session);
+    const key = date.toDateString();
+    const last = days[days.length - 1];
+    if (last && last.key === key) last.sessions.push(session);
+    else days.push({key, date, sessions: [session]});
+  }
+  return days;
+}
+
+// --- rounds ----------------------------------------------------------------
+// How many rounds a series runs, so a weekend can say "Round 3 of 24". Counted
+// off the season rather than configured anywhere: nothing in the data states a
+// total, and the highest round anyone reaches is that total. A double-header
+// runs two rounds over one weekend and carries the second on the session, so
+// the sessions count too.
+function roundsOf(events) {
+  const totals = {};
+  for (const event of events) {
+    const highest = Math.max(event.round ?? 0, ...event.sessions.map((s) => s.round ?? 0));
+    totals[event.series] = Math.max(totals[event.series] ?? 0, highest);
+  }
+  return totals;
+}
+
+// --- rendering -------------------------------------------------------------
+let DATA = {series: [], events: []};
+let NAMES = {};
+let COLOR = {};
+let ROUNDS = {};
+
+// A session that is not going ahead as listed. "Postponed" rather than a word
+// of this page's own: build_title in ics.py already publishes TENTATIVE that
+// way, and a subscriber reading both should not meet two vocabularies.
+const MARKS = {CANCELLED: "Cancelled", POSTPONED: "Postponed"};
+const marked = (session) =>
+  session.status === "CANCELLED" ? "CANCELLED"
+  : session.status === "TENTATIVE" ? "POSTPONED" : "";
+
+// The label and the time, struck through when the session is cancelled. The
+// mark is a sibling rather than inside the struck text, because a child cannot
+// take a line-through back off itself.
+function sessionRow(session) {
+  const mark = marked(session);
+  const struck = mark === "CANCELLED" ? "struck" : "";
+  const dd = make("dd", {}, make("span", {className: struck, textContent: timeText(session)}));
+  const length = durationText(session);
+  if (length) dd.append(make("span", {className: `length ${struck}`, textContent: length}));
+  if (mark) dd.append(make("span", {className: `mark ${mark.toLowerCase()}`, textContent: MARKS[mark]}));
+  return [
+    make("dt", {className: struck, textContent: session.label || LABELS[session.type]}),
+    dd,
+  ];
+}
+
+function weekendCard(event) {
+  const card = make("div", {className: "weekend"});
+  card.style.setProperty("--c", COLOR[event.series]);
+
+  const round = event.round === null ? ""
+    : ` · Round ${event.round} of ${ROUNDS[event.series]}`;
+  card.append(make("div", {className: "series", textContent: NAMES[event.series] + round}));
+
+  const name = make("div", {className: "title"});
+  // Linked when the data has an official event page, plain text otherwise. It
+  // leaves the site, and this is a list to browse, so it opens alongside.
+  name.append(event.url
+    ? make("a", {href: event.url, textContent: event.name,
+        target: "_blank", rel: "noopener"})
+    : event.name);
+  card.append(name);
+  if (event.location) card.append(make("div", {className: "where", textContent: event.location}));
+
+  for (const {date, sessions} of daysOf(event)) {
+    card.append(make("div", {className: "date", textContent: day(date)}));
+    const list = make("dl", {className: "sessions"});
+    for (const session of sessions) list.append(...sessionRow(session));
+    card.append(list);
+  }
+  return card;
+}
+
+function monthOf(event) {
+  return starts(event.sessions[0]).toLocaleDateString([], {month: "long", year: "numeric"});
+}
+
+// Weekends under a month heading each time the month changes.
+function appendMonths(box, events) {
+  let month = null;
+  for (const event of events) {
+    const heading = monthOf(event);
+    if (heading !== month) {
+      month = heading;
+      box.append(make("div", {className: "month", textContent: heading}));
+    }
+    box.append(weekendCard(event));
+  }
+}
+
+function render() {
+  const box = document.getElementById("schedule");
+  box.textContent = "";
+  const series = new Set(DATA.series.filter((s) => seriesBoxes[s.key].querySelector("input").checked)
+    .map((s) => s.key));
+
+  if (!series.size) {
+    box.append(make("div", {className: "event none", textContent: "Pick at least one series."}));
+    return;
+  }
+
+  const now = new Date();
+  const events = DATA.events.filter((event) => series.has(event.series));
+  const past = events.filter((event) => isPast(event, now));
+  const upcoming = events.filter((event) => !isPast(event, now));
+
+  // What has already run is folded away rather than dropped: the season is
+  // still the season, but nobody opening this page is looking for last month.
+  // Closed, so what is next sits at the top of the page without a scroll.
+  if (past.length) {
+    const body = make("div", {className: "details-body"});
+    appendMonths(body, past);
+    box.append(make("details", {className: "past"},
+      make("summary", {}, "Past events"),
+      body));
+  }
+  appendMonths(box, upcoming);
+  if (!upcoming.length) {
+    box.append(make("div", {className: "event none",
+      textContent: "Nothing left this season for these series."}));
+  }
+}
+
+// --- controls --------------------------------------------------------------
+const seriesBoxes = {};
+
+function buildControls() {
+  for (const {key, name} of DATA.series) {
+    const box = make("input", {type: "checkbox", checked: true});
+    box.addEventListener("change", render);
+    seriesBoxes[key] = make("label", {className: "chip"}, box, name);
+    seriesBoxes[key].style.setProperty("--c", COLOR[key]);
+    document.getElementById("series").append(seriesBoxes[key]);
+  }
+}
+
+// Said once, at the top, instead of on every day heading. The zone is named
+// rather than left as "your browser's": it is the one thing a reader might want
+// to check, and nothing else on the page states it any more. The markup already
+// carries the fallback wording for a browser that will not resolve a zone.
+const ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+if (ZONE) {
+  document.getElementById("zone").textContent =
+    `All times are shown in your browser's time zone (${ZONE}).`;
+}
+
+fetch("/sessions.json").then((response) => {
+  if (!response.ok) throw new Error(`/sessions.json returned ${response.status}`);
+  return response.json();
+}).then((data) => {
+  DATA = data;
+  NAMES = Object.fromEntries(DATA.series.map((s) => [s.key, s.name]));
+  // One color per series, fixed order -- the same --series-1.. palette and the
+  // same assignment index.html uses, so a series is one color across both pages.
+  COLOR = Object.fromEntries(DATA.series.map((s, i) => [s.key, `var(--series-${i % 8 + 1})`]));
+  // Off the whole season, not the filtered view -- a series runs the rounds it
+  // runs whether or not someone unticked another series.
+  ROUNDS = roundsOf(DATA.events);
+  buildControls();
+  render();
+}).catch((error) => {
+  console.error(error);
+  document.getElementById("schedule").append(make("div", {className: "event none",
+    textContent: "Couldn't load the schedule. Try reloading the page."}));
+});
+
+// --- self-check ------------------------------------------------------------
+// Grouping a weekend into days and the past/upcoming split are the only real
+// logic here; this fails loudly in the console if either starts lying.
+(function selfCheck() {
+  const session = (over) => ({label: "", type: "race", start: null, date: null,
+    tbc: false, round: null, duration: 3600, status: "CONFIRMED", ...over});
+  // Two sessions on one local day, then the race on the next.
+  const noon = new Date("2026-03-01T12:00:00").toISOString();
+  const later = new Date("2026-03-01T15:00:00").toISOString();
+  const race = session({start: new Date("2026-03-02T12:00:00").toISOString()});
+  const events = [
+    {series: "a", name: "A", round: 1, location: null, url: null, sessions: [
+      session({type: "practice", start: noon}),
+      session({type: "qualifying", start: later}),
+      race,
+    ]},
+    {series: "b", name: "B", round: null, location: null, url: null, sessions: [
+      session({type: "testing", start: null, date: "2026-02-01", duration: null}),
+    ]},
+  ];
+  const testing = events[1].sessions[0];
+  let ok = true;
+  const check = (got, want, what) => {
+    if (JSON.stringify(got) !== JSON.stringify(want)) {
+      ok = false; console.error(`self-check: ${what}\n  got  ${JSON.stringify(got)}\n  want ${JSON.stringify(want)}`);
+    }
+  };
+
+  // Sessions arrive in running order, so a day is a run of neighbours.
+  check(daysOf(events[0]).map((d) => d.sessions.length), [2, 1],
+    "sessions group into the day they run on");
+  check(daysOf(events[1]).length, 1, "an all-day session is a day of its own");
+  // Both arrive with no start; only `tbc` says which is which.
+  check(timeText(testing), "All day", "a deliberately all-day session is not called TBC");
+  check(timeText({...testing, tbc: true}), "Time TBC",
+    "an unannounced time is");
+
+  // Hours and minutes both, either alone, and nothing at all for a session with
+  // no length to state.
+  check(durationText(session({start: noon, duration: 5400})), "1h 30m", "hours and minutes");
+  check(durationText(session({start: noon, duration: 6 * 3600})), "6h", "a whole number of hours");
+  check(durationText(session({start: noon, duration: 2700})), "45m", "under an hour");
+  check(durationText(testing), "", "an all-day session states no length");
+  check(durationText(session({start: noon, duration: null})), "", "nor does one with no duration");
+
+  // A withdrawn session must not read as an ordinary one. The row is the only
+  // place that says so, so it is checked here rather than left to the eye.
+  const row = (over) => sessionRow(session(over)).map((n) => n.textContent).join("/");
+  check(row({}).includes("Cancelled"), false, "a confirmed session is not marked");
+  check(row({status: "CANCELLED"}).endsWith("Cancelled"), true, "a cancelled session says so");
+  check(row({status: "TENTATIVE"}).endsWith("Postponed"), true,
+    "a postponed session says so, in the feed's own word");
+  check(sessionRow(session({status: "CANCELLED"}))[0].className, "struck",
+    "a cancelled session is struck through");
+  check(sessionRow(session({status: "TENTATIVE"}))[0].className, "",
+    "a postponed one is not -- it is still going to happen");
+
+  // The round total is the highest anyone reaches, and a double-header's
+  // second race carries its own round on the session rather than on the event.
+  check(roundsOf([
+    {series: "a", round: 1, sessions: [session({})]},
+    {series: "a", round: 2, sessions: [session({}), session({round: 3})]},
+    {series: "b", round: null, sessions: [session({})]},
+  ]), {a: 3, b: 0}, "a season's rounds are counted off its weekends and their sessions");
+
+  // A session that runs past midnight is still filed under the day it starts,
+  // so the end is the only half that can need a weekday of its own.
+  const overnight = session({start: new Date("2026-03-01T14:00:00").toISOString(),
+    duration: 24 * 3600});
+  check(daysOf({sessions: [overnight]}).length, 1, "a 24-hour race is one day, not two");
+  check(timeText(overnight).endsWith(` ${weekday(ends(overnight))}`), true,
+    "an end on another day names that day");
+  const sameDay = events[0].sessions[0];
+  check(timeText(sameDay), `${time(starts(sameDay))} – ${time(ends(sameDay))}`,
+    "a session finishing the same day says only the clock times");
+
+  // A weekend is past only once its last session has finished, and an all-day
+  // session runs out its whole day rather than ending at midnight.
+  const green = starts(race).getTime();
+  check(isPast(events[0], new Date(green + 30 * 60000)), false, "mid-race is not past");
+  check(isPast(events[0], new Date(green + 90 * 60000)), true, "after the last session is past");
+  // Relative to the session's own local midnight -- an all-day session has no
+  // offset of its own, so a fixed UTC instant here would only pass in one zone.
+  const midnight = starts(testing).getTime();
+  check(isPast(events[1], new Date(midnight + 23 * 3600000)), false, "an all-day session lasts its day");
+  check(isPast(events[1], new Date(midnight + 25 * 3600000)), true, "and is past the day after");
+
+  console.log(ok ? "self-check ok" : "self-check FAILED");
+})();
+</script>
+</body>
+</html>
