@@ -154,6 +154,28 @@ let NAMES = {};
 let COLOR = {};
 let ROUNDS = {};
 
+// A session that is not going ahead as listed. "Postponed" rather than a word
+// of this page's own: build_title in ics.py already publishes TENTATIVE that
+// way, and a subscriber reading both should not meet two vocabularies.
+const MARKS = {CANCELLED: "Cancelled", POSTPONED: "Postponed"};
+const marked = (session) =>
+  session.status === "CANCELLED" ? "CANCELLED"
+  : session.status === "TENTATIVE" ? "POSTPONED" : "";
+
+// The label and the time, struck through when the session is cancelled. The
+// mark is a sibling rather than inside the struck text, because a child cannot
+// take a line-through back off itself.
+function sessionRow(session) {
+  const mark = marked(session);
+  const struck = mark === "CANCELLED" ? "struck" : "";
+  const dd = make("dd", {}, make("span", {className: struck, textContent: timeText(session)}));
+  if (mark) dd.append(make("span", {className: `mark ${mark.toLowerCase()}`, textContent: MARKS[mark]}));
+  return [
+    make("dt", {className: struck, textContent: session.label || LABELS[session.type]}),
+    dd,
+  ];
+}
+
 function weekendCard(event) {
   const card = make("div", {className: "weekend"});
   card.style.setProperty("--c", COLOR[event.series]);
@@ -177,12 +199,7 @@ function weekendCard(event) {
     card.append(make("div", {className: "date",
       textContent: day(date) + (zone ? ` · ${zone}` : "")}));
     const list = make("dl", {className: "sessions"});
-    for (const session of sessions) {
-      list.append(
-        make("dt", {textContent: session.label || LABELS[session.type]}),
-        make("dd", {textContent: timeText(session)}),
-      );
-    }
+    for (const session of sessions) list.append(...sessionRow(session));
     card.append(list);
   }
   return card;
@@ -276,7 +293,7 @@ fetch("/sessions.json").then((response) => {
 // logic here; this fails loudly in the console if either starts lying.
 (function selfCheck() {
   const session = (over) => ({label: "", type: "race", start: null, date: null,
-    tbc: false, round: null, duration: 3600, ...over});
+    tbc: false, round: null, duration: 3600, status: "CONFIRMED", ...over});
   // Two sessions on one local day, then the race on the next.
   const noon = new Date("2026-03-01T12:00:00").toISOString();
   const later = new Date("2026-03-01T15:00:00").toISOString();
@@ -304,6 +321,18 @@ fetch("/sessions.json").then((response) => {
     "sessions group into the day they run on");
   check(daysOf(events[1]).length, 1, "an all-day session is a day of its own");
   check(timeText(testing), "Time TBC", "a session with no time says so");
+
+  // A withdrawn session must not read as an ordinary one. The row is the only
+  // place that says so, so it is checked here rather than left to the eye.
+  const row = (over) => sessionRow(session(over)).map((n) => n.textContent).join("/");
+  check(row({}).includes("Cancelled"), false, "a confirmed session is not marked");
+  check(row({status: "CANCELLED"}).endsWith("Cancelled"), true, "a cancelled session says so");
+  check(row({status: "TENTATIVE"}).endsWith("Postponed"), true,
+    "a postponed session says so, in the feed's own word");
+  check(sessionRow(session({status: "CANCELLED"}))[0].className, "struck",
+    "a cancelled session is struck through");
+  check(sessionRow(session({status: "TENTATIVE"}))[0].className, "",
+    "a postponed one is not -- it is still going to happen");
 
   // The round total is the highest anyone reaches, and a double-header's
   // second race carries its own round on the session rather than on the event.

@@ -112,6 +112,50 @@ def test_sessions_are_in_running_order_with_durations_resolved():
     assert [session["duration"] for session in imola["sessions"]] == [1800, 6 * 3600]
 
 
+def test_a_withdrawn_session_is_served_with_its_status():
+    """The page marks these; it can only do that if the status reaches it. A
+    cancelled race dropped to CONFIRMED here would be published as an ordinary
+    upcoming session, which is worse than not listing it at all."""
+    config = make_config(
+        series={
+            "wec": make_series(
+                events=[
+                    EventConfig(
+                        name="Cancelled weekend",
+                        sessions=[
+                            make_session(
+                                "wec-off",
+                                type="race",
+                                start="2026-04-19T13:00:00+00:00",
+                                status="CANCELLED",
+                            ),
+                            make_session(
+                                "wec-moved",
+                                type="qualifying",
+                                start="2026-04-18T13:00:00+00:00",
+                                status="TENTATIVE",
+                            ),
+                        ],
+                    )
+                ]
+            )
+        }
+    )
+    body = _client(config).get("/sessions.json").json()
+
+    assert [session["status"] for session in body["events"][0]["sessions"]] == [
+        "TENTATIVE",
+        "CANCELLED",
+    ]
+    # Nothing else in the config says CONFIRMED, so the default has to survive too.
+    imola = next(
+        event
+        for event in _client(CONFIG).get("/sessions.json").json()["events"]
+        if event["name"] == "6 Hours of Imola"
+    )
+    assert {session["status"] for session in imola["sessions"]} == {"CONFIRMED"}
+
+
 def test_an_unannounced_time_keeps_its_date_and_says_so():
     body = _client(CONFIG).get("/sessions.json").json()
     events = {event["name"]: event for event in body["events"]}

@@ -387,6 +387,11 @@ def _schedule(config: Config) -> dict[str, object]:
                     "date": session.date,
                     "tbc": session.tbc,
                     "round": session.round,
+                    # A withdrawn session is still in the data and still has a
+                    # place in the running order, so it is served rather than
+                    # dropped -- but the page has to be able to say so, or it
+                    # shows a cancelled race as an ordinary upcoming one.
+                    "status": session.status,
                     "duration": resolve_duration(
                         session.type,
                         own_duration=session.duration,
