@@ -32,7 +32,7 @@
          usually is. index.html leaves its own h1 unlinked -- there it would
          only point at the page you are already on. -->
     <h1><a href="/">Motor<b>cal</b></a></h1>
-    <p>Every session of every race weekend.</p>
+    <p>Schedule</p>
     <p class="tz" id="zone">All times are shown in your browser's time zone.</p>
   </header>
 
@@ -240,7 +240,7 @@ function render() {
     const body = make("div", {className: "details-body"});
     appendMonths(body, past);
     box.append(make("details", {className: "past"},
-      make("summary", {}, `${past.length} weekend${past.length === 1 ? "" : "s"} already run`),
+      make("summary", {}, "Past events"),
       body));
   }
   appendMonths(box, upcoming);
