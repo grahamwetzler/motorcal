@@ -28,9 +28,12 @@
       1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
   </a>
   <header>
-    <h1>Motor<b>cal</b></h1>
-    <p>Every session of every race weekend, in your own time zone.</p>
-    <p class="nav"><a href="/">← Build a calendar to subscribe to</a></p>
+    <!-- The wordmark is the way back to the builder, the way a site's name
+         usually is. index.html leaves its own h1 unlinked -- there it would
+         only point at the page you are already on. -->
+    <h1><a href="/">Motor<b>cal</b></a></h1>
+    <p>Every session of every race weekend.</p>
+    <p class="tz" id="zone">All times are shown in your browser's time zone.</p>
   </header>
 
   <section class="filters">
@@ -127,16 +130,6 @@ function daysOf(event) {
   return days;
 }
 
-// The zone belongs on the day rather than on every session: one label instead
-// of one per row. Taken from the day's first session that has a time, since an
-// all-day one has no offset to read it from.
-function zoneOf(sessions) {
-  const timed = sessions.find((session) => session.start);
-  if (!timed) return "";
-  return new Intl.DateTimeFormat([], {timeZoneName: "short"})
-    .formatToParts(starts(timed)).find((part) => part.type === "timeZoneName").value;
-}
-
 // --- rounds ----------------------------------------------------------------
 // How many rounds a series runs, so a weekend can say "Round 3 of 24". Counted
 // off the season rather than configured anywhere: nothing in the data states a
@@ -199,9 +192,7 @@ function weekendCard(event) {
   if (event.location) card.append(make("div", {className: "where", textContent: event.location}));
 
   for (const {date, sessions} of daysOf(event)) {
-    const zone = zoneOf(sessions);
-    card.append(make("div", {className: "date",
-      textContent: day(date) + (zone ? ` · ${zone}` : "")}));
+    card.append(make("div", {className: "date", textContent: day(date)}));
     const list = make("dl", {className: "sessions"});
     for (const session of sessions) list.append(...sessionRow(session));
     card.append(list);
@@ -270,6 +261,16 @@ function buildControls() {
     seriesBoxes[key].style.setProperty("--c", COLOR[key]);
     document.getElementById("series").append(seriesBoxes[key]);
   }
+}
+
+// Said once, at the top, instead of on every day heading. The zone is named
+// rather than left as "your browser's": it is the one thing a reader might want
+// to check, and nothing else on the page states it any more. The markup already
+// carries the fallback wording for a browser that will not resolve a zone.
+const ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+if (ZONE) {
+  document.getElementById("zone").textContent =
+    `All times are shown in your browser's time zone (${ZONE}).`;
 }
 
 fetch("/sessions.json").then((response) => {
@@ -359,8 +360,6 @@ fetch("/sessions.json").then((response) => {
   const sameDay = events[0].sessions[0];
   check(timeText(sameDay), `${time(starts(sameDay))} – ${time(ends(sameDay))}`,
     "a session finishing the same day says only the clock times");
-  check(zoneOf(events[1].sessions), "", "a day of all-day sessions has no zone to show");
-  check(zoneOf(events[0].sessions) !== "", true, "a day with a time shows its zone");
 
   // A weekend is past only once its last session has finished, and an all-day
   // session runs out its whole day rather than ending at midnight.
