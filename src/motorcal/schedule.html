@@ -65,6 +65,9 @@ const TYPES = [
   ["testing", "Testing"],
 ];
 const LABELS = Object.fromEntries(TYPES);
+// Shared with index.html's builder page -- picking series on either page
+// remembers the same list, since both are filtering the same thing.
+const PREFS_KEY = "motorcal.prefs";
 
 // Same helper, and the same rule, as index.html: everything goes in through
 // textContent, because event and series names come from the data directory.
@@ -250,6 +253,11 @@ function render() {
   const series = new Set(DATA.series.filter((s) => seriesBoxes[s.key].querySelector("input").checked)
     .map((s) => s.key));
 
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch { saved = {}; }
+  saved.series = [...series];
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify(saved)); } catch {}
+
   if (!series.size) {
     box.append(make("div", {className: "event none", textContent: "Pick at least one series."}));
     return;
@@ -281,8 +289,11 @@ function render() {
 const seriesBoxes = {};
 
 function buildControls() {
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem(PREFS_KEY)); } catch { saved = null; }
+  const savedSeries = saved && Array.isArray(saved.series) ? saved.series : null;
   for (const {key, name} of DATA.series) {
-    const box = make("input", {type: "checkbox", checked: true});
+    const box = make("input", {type: "checkbox", checked: savedSeries ? savedSeries.includes(key) : true});
     box.addEventListener("change", render);
     seriesBoxes[key] = make("label", {className: "chip"}, box, name);
     seriesBoxes[key].style.setProperty("--c", COLOR[key]);

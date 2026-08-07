@@ -121,6 +121,10 @@
   button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   button:disabled, a.btn[aria-disabled=true] { opacity: .4; pointer-events: none; }
   .foot { color: var(--muted); font-size: .8rem; margin: .9rem 0 0; }
+  .linklike {
+    font: inherit; font-size: inherit; padding: 0; border: 0; background: none;
+    color: var(--danger); cursor: pointer; text-decoration: underline;
+  }
   .site-footer { color: var(--muted); font-size: .8rem; text-align: center; margin-top: 2.5rem; }
   .site-footer p { margin: 0 0 .3rem; }
   .site-footer p:last-child { margin-bottom: 0; }
