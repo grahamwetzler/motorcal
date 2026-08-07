@@ -210,6 +210,7 @@ events:
         status: CONFIRMED
         note: Inaugural race. Distance extended from 125 to 147 laps (250mi) on 2026-08-03; broadcast window extended accordingly, per IndyCar's official announcement.
   - name: Snap-on Milwaukee 250
+    url: https://www.indycar.com/Schedule/2026/Milwaukee-Race1
     location: Milwaukee Mile, United States
     round: 16
     sessions:
