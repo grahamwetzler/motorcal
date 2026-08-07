@@ -189,14 +189,6 @@ function sessionRow(session) {
   const mark = marked(session);
   const struck = mark === "CANCELLED" ? "struck" : "";
   const dt = make("dt", {className: struck, textContent: session.label || LABELS[session.type]});
-  // A session only carries its own `round` when it differs from the weekend's
-  // -- see config.py -- so this is exactly the double-header race that needs
-  // to say which round it is, and no others.
-  if (session.round !== null) {
-    // A leading space, not just the CSS margin: textContent, copy/paste, and
-    // assistive tech all read the two spans run together otherwise.
-    dt.append(make("span", {className: "round-tag", textContent: ` Round ${session.round}`}));
-  }
   const dd = make("dd", {}, make("span", {className: struck, textContent: timeText(session)}));
   const length = durationText(session);
   if (length) dd.append(make("span", {className: `length ${struck}`, textContent: length}));
@@ -385,11 +377,11 @@ fetch("/sessions.json").then((response) => {
   check(sessionRow(session({status: "TENTATIVE"}))[0].className, "",
     "a postponed one is not -- it is still going to happen");
 
-  // A session only carries its own round when it differs from the weekend's,
-  // so an ordinary session's row states none, and a double-header's second
-  // race states its own.
+  // A session's own round (a double-header's second race) is tracked in the
+  // data for the weekend header and the feed, but the row itself never states
+  // it -- the header's round range already says so.
   check(row({round: null}).includes("Round"), false, "an ordinary session states no round");
-  check(row({round: 17}).includes("Round 17"), true, "a session with its own round says so");
+  check(row({round: 17}).includes("Round"), false, "not even a session with its own round");
 
   // A weekend states its round(s) as a range when a double-header's second
   // race carries a different round from the rest of the weekend.
