@@ -228,5 +228,6 @@ source terms.
 
 ## More
 
-See `docs/operations.md` for backups, adding a series, changing `UID_DOMAIN`,
+See `docs/operations.md` for local development (`make dev`, `make test`, ...),
+backups, adding a series, changing `UID_DOMAIN`,
 and diagnosing a feed that looks wrong.

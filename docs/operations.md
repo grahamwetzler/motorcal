@@ -12,6 +12,13 @@
   subscribers on every rebuild. It is replaced atomically (write a sibling
   tempfile, fsync, rename).
 
+## Local development
+
+`make dev` runs the app at `:8000` against `data/` and a local
+`state/state.yaml` (gitignored), reading `UID_DOMAIN`/`PUBLIC_DOMAIN` from
+`.env`. Other targets: `make test`, `make lint`, `make fmt`, `make validate`,
+and `make check` (everything CI runs). See the `Makefile` for the full list.
+
 ## Editing events by hand
 
 Edit the series file directly and push to `main`. CI validates the directory,
