@@ -157,6 +157,17 @@ function roundsOf(events) {
   return totals;
 }
 
+// The distinct round numbers a weekend covers, sorted. Usually just the
+// event's own round; a double-header adds its second race's round on top.
+function weekendRounds(event) {
+  const rounds = new Set();
+  if (event.round !== null) rounds.add(event.round);
+  for (const session of event.sessions) {
+    if (session.round !== null) rounds.add(session.round);
+  }
+  return [...rounds].sort((a, b) => a - b);
+}
+
 // --- rendering -------------------------------------------------------------
 let DATA = {series: [], events: []};
 let NAMES = {};
@@ -177,22 +188,30 @@ const marked = (session) =>
 function sessionRow(session) {
   const mark = marked(session);
   const struck = mark === "CANCELLED" ? "struck" : "";
+  const dt = make("dt", {className: struck, textContent: session.label || LABELS[session.type]});
+  // A session only carries its own `round` when it differs from the weekend's
+  // -- see config.py -- so this is exactly the double-header race that needs
+  // to say which round it is, and no others.
+  if (session.round !== null) {
+    dt.append(make("span", {className: "round-tag", textContent: `Round ${session.round}`}));
+  }
   const dd = make("dd", {}, make("span", {className: struck, textContent: timeText(session)}));
   const length = durationText(session);
   if (length) dd.append(make("span", {className: `length ${struck}`, textContent: length}));
   if (mark) dd.append(make("span", {className: `mark ${mark.toLowerCase()}`, textContent: MARKS[mark]}));
-  return [
-    make("dt", {className: struck, textContent: session.label || LABELS[session.type]}),
-    dd,
-  ];
+  return [dt, dd];
 }
 
 function weekendCard(event) {
   const card = make("div", {className: "weekend"});
   card.style.setProperty("--c", COLOR[event.series]);
 
-  const round = event.round === null ? ""
-    : ` · Round ${event.round} of ${ROUNDS[event.series]}`;
+  const rounds = weekendRounds(event);
+  const round = rounds.length === 0 ? ""
+    : rounds.length === 1 ? ` · Round ${rounds[0]} of ${ROUNDS[event.series]}`
+    // A double-header runs two rounds over one weekend -- say both rather
+    // than silently dropping the second race's round.
+    : ` · Rounds ${rounds[0]}–${rounds[rounds.length - 1]} of ${ROUNDS[event.series]}`;
   card.append(make("div", {className: "series", textContent: NAMES[event.series] + round}));
 
   const name = make("div", {className: "title"});
@@ -363,6 +382,21 @@ fetch("/sessions.json").then((response) => {
     "a cancelled session is struck through");
   check(sessionRow(session({status: "TENTATIVE"}))[0].className, "",
     "a postponed one is not -- it is still going to happen");
+
+  // A session only carries its own round when it differs from the weekend's,
+  // so an ordinary session's row states none, and a double-header's second
+  // race states its own.
+  check(row({round: null}).includes("Round"), false, "an ordinary session states no round");
+  check(row({round: 17}).includes("Round 17"), true, "a session with its own round says so");
+
+  // A weekend states its round(s) as a range when a double-header's second
+  // race carries a different round from the rest of the weekend.
+  check(weekendRounds({round: 16, sessions: [session({}), session({round: 17})]}),
+    [16, 17], "a weekend's rounds include any session's own round");
+  check(weekendRounds({round: 1, sessions: [session({})]}), [1],
+    "an ordinary weekend has just its own round");
+  check(weekendRounds({round: null, sessions: [session({})]}), [],
+    "a weekend with no round states none");
 
   // The round total is the highest anyone reaches, and a double-header's
   // second race carries its own round on the session rather than on the event.
