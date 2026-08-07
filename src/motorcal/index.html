@@ -553,7 +553,7 @@ document.getElementById("copy").addEventListener("click", async (event) => {
 });
 
 document.getElementById("reset").addEventListener("click", () => {
-  localStorage.removeItem(PREFS_KEY);
+  try { localStorage.removeItem(PREFS_KEY); } catch {}
   for (const {key} of SERIES) seriesBoxes[key].querySelector("input").checked = true;
   for (const [type] of TYPES) sessionBoxes[type].querySelector("input").checked = true;
   document.querySelector('[name=emoji][value="none"]').checked = true;
