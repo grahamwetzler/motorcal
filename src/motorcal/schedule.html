@@ -193,7 +193,9 @@ function sessionRow(session) {
   // -- see config.py -- so this is exactly the double-header race that needs
   // to say which round it is, and no others.
   if (session.round !== null) {
-    dt.append(make("span", {className: "round-tag", textContent: `Round ${session.round}`}));
+    // A leading space, not just the CSS margin: textContent, copy/paste, and
+    // assistive tech all read the two spans run together otherwise.
+    dt.append(make("span", {className: "round-tag", textContent: ` Round ${session.round}`}));
   }
   const dd = make("dd", {}, make("span", {className: struck, textContent: timeText(session)}));
   const length = durationText(session);
