@@ -234,7 +234,7 @@ function sessionRow(session) {
   // cells with nothing to say what the time belongs to.
   const label = make("th", {scope: "row", className: struck}, labelText);
   const time = make("td", {className: `time ${struck}`.trim(), textContent: timeText(session)});
-  const length = make("td", {className: "length", textContent: durationText(session)});
+  const length = make("td", {className: `length ${struck}`.trim(), textContent: durationText(session)});
   const markCell = make("td", {className: `mark ${mark.toLowerCase()}`.trim(),
     textContent: mark ? MARKS[mark] : ""});
   return make("tr", {}, label, time, length, markCell);
@@ -285,15 +285,16 @@ function weekendCard(event) {
     make("th", {scope: "col", className: "sr-only", textContent: "Time"}),
     make("th", {scope: "col", className: "sr-only", textContent: "Duration"}),
     make("th", {scope: "col", className: "sr-only", textContent: "Status"}))));
-  const body = make("tbody", {});
   for (const {date, sessions} of daysOf(event)) {
-    // scope="rowgroup" rather than a plain cell: it makes the day the header
-    // for every session row under it, the same way the label headers a row.
+    // A tbody per date, not one shared tbody: scope="rowgroup" only pairs a
+    // heading with the rest of its own row group, so two dates sharing a
+    // tbody would let a screen reader associate either's sessions with both.
+    const body = make("tbody", {});
     body.append(make("tr", {className: "date"},
       make("th", {scope: "rowgroup", colSpan: 4, textContent: day(date)})));
     for (const session of sessions) body.append(sessionRow(session));
+    table.append(body);
   }
-  table.append(body);
   card.append(table);
   return card;
 }
@@ -456,6 +457,8 @@ fetch("/sessions.json").then((response) => {
     "a cancelled session is struck through");
   check(sessionRow(session({status: "TENTATIVE"})).firstChild.className, "",
     "a postponed one is not -- it is still going to happen");
+  check(sessionRow(session({status: "CANCELLED", duration: 3600})).children[2].className, "length struck",
+    "its duration is struck through too, not left looking active");
 
   // A screen reader pairs a row's cells with whatever labels the row -- only
   // a th does that, a td is just another unrelated cell.
@@ -468,6 +471,11 @@ fetch("/sessions.json").then((response) => {
   const dateCell = weekendCard(events[0]).querySelector(".date th");
   check(dateCell && dateCell.scope, "rowgroup",
     "a day heading is a row-group header for the sessions under it");
+  // A rowgroup only reaches the rows in its own tbody -- one shared tbody
+  // for both days would let a screen reader pair day one's heading with
+  // day two's sessions as well.
+  check(weekendCard(events[0]).querySelectorAll("table.sessions > tbody").length, 2,
+    "each day of a weekend gets its own row group, not one shared for the whole table");
 
   // A session's own round (a double-header's second race) is tracked in the
   // data for the weekend header and the feed, but the row itself never states
