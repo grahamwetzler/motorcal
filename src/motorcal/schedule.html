@@ -240,6 +240,10 @@ function sessionRow(session) {
   return make("tr", {}, label, time, length, markCell);
 }
 
+// Every weekend's table needs its own id to hang aria-labelledby off of --
+// a shared one would just make every weekend "announce" the same title.
+let weekendCount = 0;
+
 function weekendCard(event) {
   const card = make("div", {className: "weekend"});
   card.style.setProperty("--c", COLOR[event.series]);
@@ -262,7 +266,8 @@ function weekendCard(event) {
   }
   card.append(seriesLine);
 
-  const name = make("div", {className: "title"});
+  const titleId = `weekend-title-${weekendCount++}`;
+  const name = make("div", {className: "title", id: titleId});
   // Linked when the data has an official event page, plain text otherwise. It
   // leaves the site, and this is a list to browse, so it opens alongside.
   name.append(event.url
@@ -275,8 +280,13 @@ function weekendCard(event) {
   // One table for the whole weekend, not one per day: a table only sizes its
   // columns to line up within itself, so splitting one per day let Friday's
   // times land at a different x than Saturday's the moment the two days'
-  // longest labels differed.
+  // longest labels differed. Named after the event title -- otherwise a
+  // screen reader's table list shows a page full of identical unnamed
+  // four-column tables with nothing to tell them apart. setAttribute, not a
+  // make() prop: "aria-labelledby" isn't a plain IDL property make()'s
+  // Object.assign can set, so it would land as an inert expando instead.
   const table = make("table", {className: "sessions"});
+  table.setAttribute("aria-labelledby", titleId);
   // Column headers for a screen reader, kept off-screen -- the time and
   // duration columns read fine on sight from their position alone, but
   // without a name a screen reader has nothing to pair with the row header.
@@ -476,6 +486,15 @@ fetch("/sessions.json").then((response) => {
   // day two's sessions as well.
   check(weekendCard(events[0]).querySelectorAll("table.sessions > tbody").length, 2,
     "each day of a weekend gets its own row group, not one shared for the whole table");
+  // Otherwise a screen reader's table list shows every weekend as the same
+  // unnamed four-column table, with nothing to tell them apart.
+  {
+    const card = weekendCard(events[0]);
+    const table = card.querySelector("table.sessions");
+    const labelId = table.getAttribute("aria-labelledby");
+    check(!!labelId && card.querySelector(`#${labelId}`)?.textContent, "A",
+      "a weekend's table is named after its event title");
+  }
 
   // A session's own round (a double-header's second race) is tracked in the
   // data for the weekend header and the feed, but the row itself never states
