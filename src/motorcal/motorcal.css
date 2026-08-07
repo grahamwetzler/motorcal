@@ -168,6 +168,15 @@
   }
   .weekend .series { font-size: .74rem; font-weight: 700; letter-spacing: .04em;
     text-transform: uppercase; color: var(--muted); margin-bottom: .2rem; }
+  /* The two weekends that bookend a series' season, called out the same way a
+     cancelled session is: a small uppercase badge rather than a color, which
+     is already spoken for by the series stripe. */
+  .weekend .milestone {
+    margin-left: .5rem; padding: .05rem .4rem; border-radius: .25rem;
+    font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .weekend .milestone.opener { color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+  .weekend .milestone.finale { color: var(--danger); background: color-mix(in srgb, var(--danger) 16%, transparent); }
   .weekend .title { font-weight: 650; line-height: 1.35; }
   /* Only some events have an official page. Underlined rather than recolored:
      enough to tell which ones are a link without turning half the list a

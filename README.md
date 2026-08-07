@@ -200,6 +200,7 @@ rejected and logged, and the previous configuration stays active.
 | Variable | Description |
 | --- | --- |
 | `UID_DOMAIN` | Domain baked into every event's stable ICS UID. Pick it once — changing it later republishes and duplicates every event for subscribers (see `docs/operations.md`, "Changing UID_DOMAIN"). |
+| `PUBLIC_DOMAIN` | Optional. Host named in the builder and schedule pages' canonical/og:url tags. Defaults to `UID_DOMAIN`; set it separately only if the site is served from a different domain than its UIDs are namespaced under. |
 
 Validate config changes before restarting:
 
