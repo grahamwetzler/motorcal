@@ -377,12 +377,55 @@ events:
         duration: 360m
         status: CONFIRMED
   # 2027 calendar announced 2026-06-12: https://www.fiawec.com/en/news/fia-wec-reveals-nine-round-2027-calendar-as-series-expands/13598
-  # Only the round dates and venues have been confirmed so far -- no session schedule yet.
+  # Round dates and per-day session names are posted on each round's page; exact times are still TBC.
+  # Le Mans has no dedicated page yet, so only its race date is known.
   - name: Qatar 1812km
     url: https://www.fiawec.com/en/race/qatar-1812km-2027
     location: Lusail International Circuit, Qatar
     round: 1
     sessions:
+      - uid: wec-2027-qatar-1812km-free-practice-1
+        label: Free Practice 1
+        type: practice
+        date: '2027-03-25'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-qatar-1812km-free-practice-2
+        label: Free Practice 2
+        type: practice
+        date: '2027-03-25'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-qatar-1812km-free-practice-3
+        label: Free Practice 3
+        type: practice
+        date: '2027-03-26'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-qatar-1812km-qualifying-lmgt3
+        label: Qualifying - LMGT3
+        type: qualifying
+        date: '2027-03-26'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-qatar-1812km-hyperpole-lmgt3
+        label: Hyperpole - LMGT3
+        type: hyperpole
+        date: '2027-03-26'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-qatar-1812km-qualifying-hypercar
+        label: Qualifying - Hypercar
+        type: qualifying
+        date: '2027-03-26'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-qatar-1812km-hyperpole-hypercar
+        label: Hyperpole - Hypercar
+        type: hyperpole
+        date: '2027-03-26'
+        tbc: true
+        status: CONFIRMED
       - uid: wec-2027-qatar-1812km-race
         type: race
         date: '2027-03-27'
@@ -395,6 +438,48 @@ events:
     location: Imola Circuit, Italy
     round: 2
     sessions:
+      - uid: wec-2027-6-hours-of-imola-free-practice-1
+        label: Free Practice 1
+        type: practice
+        date: '2027-04-09'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-imola-free-practice-2
+        label: Free Practice 2
+        type: practice
+        date: '2027-04-09'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-imola-free-practice-3
+        label: Free Practice 3
+        type: practice
+        date: '2027-04-10'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-imola-qualifying-lmgt3
+        label: Qualifying - LMGT3
+        type: qualifying
+        date: '2027-04-10'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-imola-hyperpole-lmgt3
+        label: Hyperpole - LMGT3
+        type: hyperpole
+        date: '2027-04-10'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-imola-qualifying-hypercar
+        label: Qualifying - Hypercar
+        type: qualifying
+        date: '2027-04-10'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-imola-hyperpole-hypercar
+        label: Hyperpole - Hypercar
+        type: hyperpole
+        date: '2027-04-10'
+        tbc: true
+        status: CONFIRMED
       - uid: wec-2027-6-hours-of-imola-race
         type: race
         date: '2027-04-11'
@@ -406,6 +491,48 @@ events:
     location: Silverstone Circuit, United Kingdom
     round: 3
     sessions:
+      - uid: wec-2027-6-hours-of-silverstone-free-practice-1
+        label: Free Practice 1
+        type: practice
+        date: '2027-04-23'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-silverstone-free-practice-2
+        label: Free Practice 2
+        type: practice
+        date: '2027-04-23'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-silverstone-free-practice-3
+        label: Free Practice 3
+        type: practice
+        date: '2027-04-24'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-silverstone-qualifying-lmgt3
+        label: Qualifying - LMGT3
+        type: qualifying
+        date: '2027-04-24'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-silverstone-hyperpole-lmgt3
+        label: Hyperpole - LMGT3
+        type: hyperpole
+        date: '2027-04-24'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-silverstone-qualifying-hypercar
+        label: Qualifying - Hypercar
+        type: qualifying
+        date: '2027-04-24'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-silverstone-hyperpole-hypercar
+        label: Hyperpole - Hypercar
+        type: hyperpole
+        date: '2027-04-24'
+        tbc: true
+        status: CONFIRMED
       - uid: wec-2027-6-hours-of-silverstone-race
         type: race
         date: '2027-04-25'
@@ -417,6 +544,48 @@ events:
     location: Circuit de Spa-Francorchamps, Belgium
     round: 4
     sessions:
+      - uid: wec-2027-6-hours-of-spa-francorchamps-free-practice-1
+        label: Free Practice 1
+        type: practice
+        date: '2027-05-13'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-spa-francorchamps-free-practice-2
+        label: Free Practice 2
+        type: practice
+        date: '2027-05-13'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-spa-francorchamps-free-practice-3
+        label: Free Practice 3
+        type: practice
+        date: '2027-05-14'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-spa-francorchamps-qualifying-lmgt3
+        label: Qualifying - LMGT3
+        type: qualifying
+        date: '2027-05-14'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-spa-francorchamps-hyperpole-lmgt3
+        label: Hyperpole - LMGT3
+        type: hyperpole
+        date: '2027-05-14'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-spa-francorchamps-qualifying-hypercar
+        label: Qualifying - Hypercar
+        type: qualifying
+        date: '2027-05-14'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-spa-francorchamps-hyperpole-hypercar
+        label: Hyperpole - Hypercar
+        type: hyperpole
+        date: '2027-05-14'
+        tbc: true
+        status: CONFIRMED
       - uid: wec-2027-6-hours-of-spa-francorchamps-race
         type: race
         date: '2027-05-15'
@@ -439,6 +608,48 @@ events:
     location: Interlagos Circuit, Brazil
     round: 6
     sessions:
+      - uid: wec-2027-6-hours-of-s-o-paulo-free-practice-1
+        label: Free Practice 1
+        type: practice
+        date: '2027-07-09'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-s-o-paulo-free-practice-2
+        label: Free Practice 2
+        type: practice
+        date: '2027-07-09'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-s-o-paulo-free-practice-3
+        label: Free Practice 3
+        type: practice
+        date: '2027-07-10'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-s-o-paulo-qualifying-lmgt3
+        label: Qualifying - LMGT3
+        type: qualifying
+        date: '2027-07-10'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-s-o-paulo-hyperpole-lmgt3
+        label: Hyperpole - LMGT3
+        type: hyperpole
+        date: '2027-07-10'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-s-o-paulo-qualifying-hypercar
+        label: Qualifying - Hypercar
+        type: qualifying
+        date: '2027-07-10'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-s-o-paulo-hyperpole-hypercar
+        label: Hyperpole - Hypercar
+        type: hyperpole
+        date: '2027-07-10'
+        tbc: true
+        status: CONFIRMED
       - uid: wec-2027-6-hours-of-s-o-paulo-race
         type: race
         date: '2027-07-11'
@@ -450,6 +661,48 @@ events:
     location: Circuit of the Americas, United States
     round: 7
     sessions:
+      - uid: wec-2027-lone-star-le-mans-free-practice-1
+        label: Free Practice 1
+        type: practice
+        date: '2027-09-10'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-lone-star-le-mans-free-practice-2
+        label: Free Practice 2
+        type: practice
+        date: '2027-09-10'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-lone-star-le-mans-free-practice-3
+        label: Free Practice 3
+        type: practice
+        date: '2027-09-11'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-lone-star-le-mans-qualifying-lmgt3
+        label: Qualifying - LMGT3
+        type: qualifying
+        date: '2027-09-11'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-lone-star-le-mans-hyperpole-lmgt3
+        label: Hyperpole - LMGT3
+        type: hyperpole
+        date: '2027-09-11'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-lone-star-le-mans-qualifying-hypercar
+        label: Qualifying - Hypercar
+        type: qualifying
+        date: '2027-09-11'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-lone-star-le-mans-hyperpole-hypercar
+        label: Hyperpole - Hypercar
+        type: hyperpole
+        date: '2027-09-11'
+        tbc: true
+        status: CONFIRMED
       - uid: wec-2027-lone-star-le-mans-race
         type: race
         date: '2027-09-12'
@@ -461,6 +714,48 @@ events:
     location: Fuji Speedway, Japan
     round: 8
     sessions:
+      - uid: wec-2027-6-hours-of-fuji-free-practice-1
+        label: Free Practice 1
+        type: practice
+        date: '2027-09-24'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-fuji-free-practice-2
+        label: Free Practice 2
+        type: practice
+        date: '2027-09-24'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-fuji-free-practice-3
+        label: Free Practice 3
+        type: practice
+        date: '2027-09-25'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-fuji-qualifying-lmgt3
+        label: Qualifying - LMGT3
+        type: qualifying
+        date: '2027-09-25'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-fuji-hyperpole-lmgt3
+        label: Hyperpole - LMGT3
+        type: hyperpole
+        date: '2027-09-25'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-fuji-qualifying-hypercar
+        label: Qualifying - Hypercar
+        type: qualifying
+        date: '2027-09-25'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-6-hours-of-fuji-hyperpole-hypercar
+        label: Hyperpole - Hypercar
+        type: hyperpole
+        date: '2027-09-25'
+        tbc: true
+        status: CONFIRMED
       - uid: wec-2027-6-hours-of-fuji-race
         type: race
         date: '2027-09-26'
@@ -472,6 +767,48 @@ events:
     location: Bahrain International Circuit, Bahrain
     round: 9
     sessions:
+      - uid: wec-2027-8-hours-of-bahrain-free-practice-1
+        label: Free Practice 1
+        type: practice
+        date: '2027-11-04'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-8-hours-of-bahrain-free-practice-2
+        label: Free Practice 2
+        type: practice
+        date: '2027-11-04'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-8-hours-of-bahrain-free-practice-3
+        label: Free Practice 3
+        type: practice
+        date: '2027-11-05'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-8-hours-of-bahrain-qualifying-lmgt3
+        label: Qualifying - LMGT3
+        type: qualifying
+        date: '2027-11-05'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-8-hours-of-bahrain-hyperpole-lmgt3
+        label: Hyperpole - LMGT3
+        type: hyperpole
+        date: '2027-11-05'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-8-hours-of-bahrain-qualifying-hypercar
+        label: Qualifying - Hypercar
+        type: qualifying
+        date: '2027-11-05'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-8-hours-of-bahrain-hyperpole-hypercar
+        label: Hyperpole - Hypercar
+        type: hyperpole
+        date: '2027-11-05'
+        tbc: true
+        status: CONFIRMED
       - uid: wec-2027-8-hours-of-bahrain-race
         type: race
         date: '2027-11-06'
