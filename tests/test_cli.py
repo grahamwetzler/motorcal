@@ -76,8 +76,8 @@ def test_serve_refuses_to_start_when_uid_domain_has_changed(
     monkeypatch.setenv("UID_DOMAIN", UID_DOMAIN)
 
     # UID_DOMAIN (racing.example.com) differs from the domain already bound
-    # above -- this must be refused before starting the scheduler or the HTTP
-    # server (uvicorn.run would otherwise block forever).
+    # above -- this must be refused before starting the HTTP server
+    # (uvicorn.run would otherwise block forever).
     exit_code = main(["serve", "--config", str(config_dir), "--state", str(state_path)])
 
     assert exit_code == 1

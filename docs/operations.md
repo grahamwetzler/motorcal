@@ -14,8 +14,10 @@
 
 ## Editing events by hand
 
-Edit the series file directly. The next hot-reload (~30s) picks it up; a bad edit
-is rejected and logged, and the previous configuration stays active.
+Edit the series file directly and push to `main`. CI validates the directory,
+CD rebuilds and pushes the image, and watchtower recreates `app` with it (see
+"Deploys and auto-update" below). A bad edit fails `motorcal validate-config`
+in CI before it ever reaches a running container.
 
 Every field is yours — there is no provider to merge against and nothing
 overwrites what you wrote. **Comments survive**, so annotate the file freely; a
@@ -52,8 +54,7 @@ so subscribers see the whole calendar as modified once.
 
 Drop a new `data/<key>.yaml` in place with a `name:` and, so the agent knows
 where to look, a `schedule_url:`. The filename stem is the series key, selectable
-in the combined feed's URL as `?series=indycar`. The hot-reload picks it up
-without a restart.
+in the combined feed's URL as `?series=indycar`. It goes live on the next deploy.
 
 Removing a series file stops publishing that series' events. Events for a
 series that is no longer configured are simply not published — nothing is
@@ -66,10 +67,9 @@ docker compose exec app motorcal validate-config --config /data
 ```
 
 Schema-validates the whole directory exactly as the running app would, without
-touching the running service. A nonzero exit means the files are invalid. The
-hot-reload poller performs the same validation automatically and keeps the
-previous bundle active on failure (see `check_and_reload_config` in
-`src/motorcal/refresh.py`); running this by hand just catches mistakes earlier.
+touching the running service. A nonzero exit means the files are invalid. CI
+runs the same check on every push (`validate-config` in
+`.github/workflows/ci.yml`); running this by hand just catches mistakes earlier.
 
 ## Changing `UID_DOMAIN`
 
@@ -115,10 +115,8 @@ stays pinned until you switch back to `:latest`.
 
 There's no status endpoint; diagnose from container logs.
 
-- **A stale feed** means the last reload was rejected. `Config reload rejected:`
-  names the file and the validation error. The previously published calendar
-  keeps serving; nothing is silently emptied. Fix the file and the next poll
-  (~30s) picks it up.
+- **A stale feed** means the last deploy never landed. Check the Actions run for
+  the push and `docker compose logs watchtower` on the host.
 - **A missing session** is a data problem, not a runtime one: the app publishes
   exactly what `data/` holds. Check the series file, then
   `motorcal validate-config`.
