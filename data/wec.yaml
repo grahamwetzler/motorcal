@@ -271,6 +271,7 @@ events:
         tbc: true
         status: CONFIRMED
   - name: 6 Hours of Barcelona
+    url: https://www.fiawec.com/en/race/6-hours-of-barcelona-2026
     location: Circuit de Barcelona-Catalunya, Spain
     round: 7
     sessions:
@@ -323,6 +324,7 @@ events:
         duration: 360m
         status: CONFIRMED
   - name: 6 Hours of Monza
+    url: https://www.fiawec.com/en/race/6-hours-of-monza-2026
     location: Autodromo Nazionale Monza, Italy
     round: 8
     sessions:
@@ -377,6 +379,7 @@ events:
   # 2027 calendar announced 2026-06-12: https://www.fiawec.com/en/news/fia-wec-reveals-nine-round-2027-calendar-as-series-expands/13598
   # Only the round dates and venues have been confirmed so far -- no session schedule yet.
   - name: Qatar 1812km
+    url: https://www.fiawec.com/en/race/qatar-1812km-2027
     location: Lusail International Circuit, Qatar
     round: 1
     sessions:
@@ -465,6 +468,7 @@ events:
         status: CONFIRMED
         note: Round 8 of 9
   - name: 8 Hours of Bahrain
+    url: https://www.fiawec.com/en/race/bapco-energies-8-hours-of-bahrain-2027
     location: Bahrain International Circuit, Bahrain
     round: 9
     sessions:
