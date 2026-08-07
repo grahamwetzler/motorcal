@@ -19,6 +19,13 @@
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }  /* display:grid would otherwise win */
+  /* Present to a screen reader, invisible on screen -- for column headers a
+     sighted reader gets from position alone (a time just looks like a time)
+     but a screen reader needs named to pair with each row's header. */
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
   body {
     margin: 0; background: var(--bg); color: var(--fg);
     font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -187,27 +194,57 @@
   }
   .weekend .title a:hover { text-decoration-color: var(--accent); }
   .weekend .where { color: var(--muted); font-size: .84rem; margin-top: .15rem; }
-  /* A weekend runs over several days, one heading each. */
-  .weekend .date { font-size: .8rem; font-weight: 700; margin: .6rem 0 .1rem; }
-  .weekend .sessions { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: .1rem .9rem; }
-  .weekend .sessions dt { color: var(--muted); font-size: .84rem; }
-  .weekend .sessions dd { margin: 0; font-size: .87rem; }
+  /* A table rather than a label/value list -- fixed columns keep every
+     session's time, length, and status lined up straight down the whole
+     weekend, where a two-column grid only ever aligned the label, and a
+     table per day only ever aligned within that one day. Left at its content
+     width rather than stretched to the card's: full width would hand every
+     spare pixel of a wide card to the only flexible column (the label),
+     stranding the time way off to the right of it. */
+  .weekend .sessions { max-width: 100%; border-collapse: collapse; }
+  .weekend .sessions td, .weekend .sessions th { padding: .1rem 0; font-size: .87rem; }
+  /* The row/rowgroup headers are th for a screen reader's sake, not for
+     emphasis -- reset the browser's bold-and-centered default back to how
+     the label read as a plain cell. */
+  .weekend .sessions th { font-weight: inherit; text-align: left; }
+  .weekend .sessions th:first-child { color: var(--muted); font-size: .84rem; padding-right: .9rem; }
+  /* Capped rather than left to its longest label: one weekend's column is now
+     shared across every day, and a single long class-split name (Le Mans'
+     "Hyperpole Qualifying – LMP2 & LMGT3") would otherwise drag every
+     shorter label's gap out to match it. Wraps instead of widening -- on the
+     span, not the cell: a table cell in automatic layout ignores its own
+     max-width, so the cap has to sit on a normal box inside it. */
+  .weekend .sessions th:first-child .label-text { display: inline-block; max-width: 11rem; }
+  /* A weekend runs over several days, one heading each -- a full-width row
+     rather than a break between tables, so the table itself never resets. */
+  .weekend .sessions .date th { padding: .6rem 0 .1rem; font-size: .8rem; font-weight: 700; color: var(--fg); }
+  /* No explicit width on time/length/mark either -- that was only ever
+     needed to claw space back from a table forced to 100%. Unforced, every
+     column already takes just what its content needs; nowrap only stops a
+     time or duration from breaking mid-string. */
+  .weekend .sessions .time { white-space: nowrap; padding-right: .9rem; }
   /* Alongside the clock times, in --muted: it is the same fact said a second
      way, so it sits behind the times rather than beside them. */
-  .weekend .sessions .length { margin-left: .5rem; color: var(--muted); font-size: .8rem; }
+  .weekend .sessions .length { white-space: nowrap; color: var(--muted); font-size: .8rem; padding-right: .9rem; }
   /* A session that is not going ahead as listed: struck through when it is
      cancelled outright, and marked either way so the reason is stated rather
      than left to the styling. */
   .weekend .sessions .struck { text-decoration: line-through; }
   .weekend .sessions .mark {
-    margin-left: .5rem; font-size: .72rem; font-weight: 700;
+    white-space: nowrap; font-size: .72rem; font-weight: 700;
     letter-spacing: .04em; text-transform: uppercase;
   }
   .weekend .sessions .cancelled { color: var(--danger); }
   .weekend .sessions .postponed { color: var(--muted); }
   @media (max-width: 30rem) {
-    .weekend .sessions { grid-template-columns: 1fr; gap: 0; }
-    .weekend .sessions dt { margin-top: .35rem; }
+    .weekend .sessions, .weekend .sessions tbody, .weekend .sessions tr { display: block; }
+    .weekend .sessions tr { margin-top: .35rem; }
+    .weekend .sessions td, .weekend .sessions th { display: inline; padding: 0; }
+    .weekend .sessions th:first-child { display: block; padding: 0; }
+    .weekend .sessions th:first-child .label-text { max-width: none; }
+    .weekend .sessions .time::before,
+    .weekend .sessions .length::before,
+    .weekend .sessions .mark::before { content: " "; }
   }
   /* The weekends already run, folded away. Its own border rather than the
      shared `details` top rule, which is there to separate stacked ones. */
