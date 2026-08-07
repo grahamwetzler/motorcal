@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Motorcal — the full motorsports schedule</title>
 <meta name="description" content="Every session of every race weekend, practice through race, across every series.">
-<link rel="canonical" href="https://motorcal.wetzler.dev/schedule">
+<link rel="canonical" href="https://__DOMAIN__/schedule">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Motorcal">
 <meta property="og:title" content="Motorcal — the full motorsports schedule">
 <meta property="og:description" content="Every session of every race weekend, practice through race, across every series.">
-<meta property="og:url" content="https://motorcal.wetzler.dev/schedule">
+<meta property="og:url" content="https://__DOMAIN__/schedule">
 <meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -146,18 +146,48 @@ function daysOf(event) {
 }
 
 // --- rounds ----------------------------------------------------------------
-// How many rounds a series runs, so a weekend can say "Round 3 of 24". Counted
-// off the season rather than configured anywhere: nothing in the data states a
-// total, and the highest round anyone reaches is that total. A double-header
-// runs two rounds over one weekend and carries the second on the session, so
-// the sessions count too.
+// The calendar year a weekend runs in, standing in for its season. Round
+// numbers restart there -- WEC's 2027 calendar sits after its 2026 one in the
+// same data file, both numbered from 1 -- so anything counting rounds has to
+// stay within one year or it mixes two seasons into one total.
+function seasonOf(event) {
+  return starts(event.sessions[0]).getFullYear();
+}
+
+// A season's key into ROUNDS/FIRST_ROUNDS: its series and year together,
+// since round numbers alone are only unique within one season.
+function seasonKey(event) {
+  return `${event.series}:${seasonOf(event)}`;
+}
+
+// How many rounds a series' season runs, so a weekend can say "Round 3 of 24".
+// Counted off the season rather than configured anywhere: nothing in the data
+// states a total, and the highest round anyone reaches is that total. A
+// double-header runs two rounds over one weekend and carries the second on
+// the session, so the sessions count too.
 function roundsOf(events) {
   const totals = {};
   for (const event of events) {
+    const key = seasonKey(event);
     const highest = Math.max(event.round ?? 0, ...event.sessions.map((s) => s.round ?? 0));
-    totals[event.series] = Math.max(totals[event.series] ?? 0, highest);
+    totals[key] = Math.max(totals[key] ?? 0, highest);
   }
   return totals;
+}
+
+// The lowest round number a series' season runs, so its opener can be called
+// out the same way ROUNDS already marks the finale (the weekend reaching the
+// total). Off weekendRounds rather than assuming round 1 exists -- a season
+// can start partway through if its early rounds have dropped out of the data.
+function firstRoundsOf(events) {
+  const firsts = {};
+  for (const event of events) {
+    const key = seasonKey(event);
+    for (const round of weekendRounds(event)) {
+      firsts[key] = key in firsts ? Math.min(firsts[key], round) : round;
+    }
+  }
+  return firsts;
 }
 
 // The distinct round numbers a weekend covers, sorted. Usually just the
@@ -176,6 +206,7 @@ let DATA = {series: [], events: []};
 let NAMES = {};
 let COLOR = {};
 let ROUNDS = {};
+let FIRST_ROUNDS = {};
 
 // A session that is not going ahead as listed. "Postponed" rather than a word
 // of this page's own: build_title in ics.py already publishes TENTATIVE that
@@ -204,12 +235,22 @@ function weekendCard(event) {
   card.style.setProperty("--c", COLOR[event.series]);
 
   const rounds = weekendRounds(event);
+  const key = seasonKey(event);
   const round = rounds.length === 0 ? ""
-    : rounds.length === 1 ? ` · Round ${rounds[0]} of ${ROUNDS[event.series]}`
+    : rounds.length === 1 ? ` · Round ${rounds[0]} of ${ROUNDS[key]}`
     // A double-header runs two rounds over one weekend -- say both rather
     // than silently dropping the second race's round.
-    : ` · Rounds ${rounds[0]}–${rounds[rounds.length - 1]} of ${ROUNDS[event.series]}`;
-  card.append(make("div", {className: "series", textContent: NAMES[event.series] + round}));
+    : ` · Rounds ${rounds[0]}–${rounds[rounds.length - 1]} of ${ROUNDS[key]}`;
+  const seriesLine = make("div", {className: "series", textContent: NAMES[event.series] + round});
+  // The weekend carrying its season's lowest or highest round -- season
+  // opener and finale each get their own badge, so the two ends of a season
+  // stand out from the ordinary rounds between them at a glance.
+  if (rounds.includes(FIRST_ROUNDS[key])) {
+    seriesLine.append(make("span", {className: "milestone opener", textContent: "Season opener"}));
+  } else if (rounds.includes(ROUNDS[key])) {
+    seriesLine.append(make("span", {className: "milestone finale", textContent: "Season finale"}));
+  }
+  card.append(seriesLine);
 
   const name = make("div", {className: "title"});
   // Linked when the data has an official event page, plain text otherwise. It
@@ -323,6 +364,7 @@ fetch("/sessions.json").then((response) => {
   // Off the whole season, not the filtered view -- a series runs the rounds it
   // runs whether or not someone unticked another series.
   ROUNDS = roundsOf(DATA.events);
+  FIRST_ROUNDS = firstRoundsOf(DATA.events);
   buildControls();
   render();
 }).catch((error) => {
@@ -406,10 +448,33 @@ fetch("/sessions.json").then((response) => {
   // The round total is the highest anyone reaches, and a double-header's
   // second race carries its own round on the session rather than on the event.
   check(roundsOf([
-    {series: "a", round: 1, sessions: [session({})]},
-    {series: "a", round: 2, sessions: [session({}), session({round: 3})]},
-    {series: "b", round: null, sessions: [session({})]},
-  ]), {a: 3, b: 0}, "a season's rounds are counted off its weekends and their sessions");
+    {series: "a", round: 1, sessions: [session({start: "2026-03-01T00:00:00Z"})]},
+    {series: "a", round: 2, sessions: [session({start: "2026-04-01T00:00:00Z"}), session({round: 3})]},
+    {series: "b", round: null, sessions: [session({start: "2026-05-01T00:00:00Z"})]},
+  ]), {"a:2026": 3, "b:2026": 0}, "a season's rounds are counted off its weekends and their sessions");
+
+  // The opener is the lowest round anyone runs, not assumed to be 1 -- a
+  // season missing its early rounds from the data still gets one.
+  check(firstRoundsOf([
+    {series: "a", round: 5, sessions: [session({start: "2026-03-01T00:00:00Z"})]},
+    {series: "a", round: 6, sessions: [session({start: "2026-04-01T00:00:00Z"})]},
+    {series: "b", round: null, sessions: [session({start: "2026-05-01T00:00:00Z"})]},
+  ]), {"a:2026": 5}, "a season's opener is its lowest round, and a roundless series has none");
+
+  // Round numbers restart each year -- WEC's 2027 preliminary calendar is
+  // numbered from 1 again, sitting after its full 2026 season in the same
+  // data file. A season's total and its opener/finale must stay within one
+  // year, not blend two seasons into one.
+  const wecSeasons = [
+    {series: "wec", round: 1, sessions: [session({start: "2026-04-18T00:00:00Z"})]},
+    {series: "wec", round: 8, sessions: [session({start: "2026-11-06T00:00:00Z"})]},
+    {series: "wec", round: 1, sessions: [session({start: "2027-03-27T00:00:00Z"})]},
+    {series: "wec", round: 9, sessions: [session({start: "2027-11-06T00:00:00Z"})]},
+  ];
+  check(roundsOf(wecSeasons), {"wec:2026": 8, "wec:2027": 9},
+    "a season's round total does not leak into the next year's, even though round numbers restart");
+  check(firstRoundsOf(wecSeasons), {"wec:2026": 1, "wec:2027": 1},
+    "each season's opener is scoped to its own year, not the earliest round anywhere in the series");
 
   // A session that runs past midnight is still filed under the day it starts,
   // so the end is the only half that can need a weekday of its own.

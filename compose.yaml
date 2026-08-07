@@ -4,6 +4,8 @@ services:
     restart: unless-stopped
     environment:
       UID_DOMAIN: "${UID_DOMAIN:?UID_DOMAIN must be set}"
+      # Optional -- defaults to UID_DOMAIN when unset.
+      PUBLIC_DOMAIN: "${PUBLIC_DOMAIN:-}"
     ports:
       - "127.0.0.1:8000:8000"
     volumes:

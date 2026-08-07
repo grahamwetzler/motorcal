@@ -72,7 +72,11 @@ def _cmd_serve(args: argparse.Namespace) -> int:
     # reload job read. The job rebuilds against copies and swaps the whole Publication
     # at once on success, so a failed reload leaves the app exactly as it was, and a
     # request mid-swap never sees config from one generation paired with another's feeds.
-    app = create_app(config)
+    # PUBLIC_DOMAIN names the host canonical/og:url point at. Optional --
+    # defaults to uid_domain, which is right for the common case of one
+    # operator serving from the domain its UIDs are namespaced under.
+    public_domain = os.environ.get("PUBLIC_DOMAIN") or uid_domain
+    app = create_app(config, public_domain=public_domain)
     app.state.data = state
     app.state.publication = Publication(
         config=config,

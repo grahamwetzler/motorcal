@@ -147,7 +147,13 @@ class Selection:
     is_default: bool
 
 
-def create_app(config: Config) -> FastAPI:
+def create_app(config: Config, *, public_domain: str | None = None) -> FastAPI:
+    # The host named in canonical/og:url. Distinct from uid_domain -- that one
+    # is baked into ICS UIDs and has no contract to match whatever host the
+    # site is actually served from. Defaults to it anyway, since one operator
+    # running one deployment has no reason to pick a second value unless the
+    # two need to diverge.
+    public_domain = public_domain or config.globals.uid_domain
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     app.state.publication = Publication(config=config, feed=b"", published={})
 
@@ -201,6 +207,7 @@ def create_app(config: Config) -> FastAPI:
             .read_text()
             .replace("__SERIES_JSON__", _inline_json(series))
             .replace("__UPCOMING_JSON__", _inline_json(upcoming))
+            .replace("__DOMAIN__", public_domain)
         )
         # The page carries real event times, so it must revalidate like the feeds
         # do rather than sit in a browser cache until the next race has been run.
@@ -210,10 +217,8 @@ def create_app(config: Config) -> FastAPI:
     @app.get("/schedule", response_class=HTMLResponse)
     def get_schedule(request: Request):
         _reject_query_parameters(request)
-        return HTMLResponse(
-            _SCHEDULE_HTML_PATH.read_text(),
-            headers={"Cache-Control": "public, no-cache"},
-        )
+        page = _SCHEDULE_HTML_PATH.read_text().replace("__DOMAIN__", public_domain)
+        return HTMLResponse(page, headers={"Cache-Control": "public, no-cache"})
 
     @app.get("/sessions.json")
     def get_sessions(request: Request):
