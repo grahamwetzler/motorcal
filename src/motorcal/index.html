@@ -459,9 +459,9 @@ const PREFS_KEY = "motorcal.prefs";
 function savePrefs() {
   try { localStorage.setItem(PREFS_KEY, JSON.stringify(state)); } catch {}
 }
-function applyPrefs() {
-  let saved;
-  try { saved = JSON.parse(localStorage.getItem(PREFS_KEY)); } catch { saved = null; }
+// Pure DOM application, no localStorage of its own -- kept separate so the
+// self-check below can exercise it without ever touching the real prefs key.
+function applyPrefsFrom(saved) {
   if (!saved) return;
   if (saved.series) {
     for (const {key} of SERIES) seriesBoxes[key].querySelector("input").checked = saved.series.includes(key);
@@ -495,6 +495,11 @@ function applyPrefs() {
       if (val && p.byType[type]) p.byType[type].value = val;
     }
   }
+}
+function applyPrefs() {
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem(PREFS_KEY)); } catch { saved = null; }
+  applyPrefsFrom(saved);
 }
 
 function render() {
@@ -692,14 +697,17 @@ new ResizeObserver(([entry]) => {
   console.log(ok ? "self-check ok" : "self-check FAILED");
 })();
 
-// applyPrefs must round-trip through the actual controls, including a
+// applyPrefsFrom must round-trip through the actual controls, including a
 // per-series override -- not just through the plain object savePrefs writes.
+// This drives it directly with a fake object instead of going through
+// localStorage, so the real motorcal.prefs key is never touched: on a
+// production page a second tab could be writing it at the same moment, and
+// this check has no business clobbering that or the user's own settings.
 (function selfCheckPrefs() {
-  const backup = localStorage.getItem(PREFS_KEY);
   const [first] = SERIES.map(s => s.key);
-  // applyPrefs only overlays fields it finds, so restoring localStorage alone
-  // would not put a control it *did* set back the way it was -- every control
-  // this test touches has to be snapshotted and put back by hand.
+  // Every control this test is about to set has to be put back by hand
+  // afterward -- applyPrefsFrom only overlays fields it finds, it does not
+  // reset the ones a saved object omits.
   const before = {
     series: SERIES.map(s => seriesBoxes[s.key].querySelector("input").checked),
     sessions: TYPES.map(([t]) => sessionBoxes[t].querySelector("input").checked),
@@ -713,32 +721,35 @@ new ResizeObserver(([entry]) => {
     ownBoxes: per[first].types.map(([t]) => per[first].boxes[t].querySelector("input").checked),
   };
 
-  localStorage.setItem(PREFS_KEY, JSON.stringify({
-    series: [first], sessions: ["race"], emoji: "flag", name: "Test",
-    alarmMode: "set", alarms: "-1h", alarmsByType: {},
-    per: {[first]: {sessions: TYPES_FOR[first].map(t => t[0]), alarms: "-2h", byType: {}}},
-  }));
-  applyPrefs();
-  readState();
-  const ok = state.series.join() === first && state.sessions.join() === "race"
-    && state.emoji === "flag" && state.name === "Test" && state.alarmMode === "set"
-    && state.alarms === "-1h" && state.per[first].alarms === "-2h"
-    && !per[first].sessionsWrap.hidden;
+  let ok = false;
+  try {
+    applyPrefsFrom({
+      series: [first], sessions: ["race"], emoji: "flag", name: "Test",
+      alarmMode: "set", alarms: "-1h", alarmsByType: {},
+      per: {[first]: {sessions: TYPES_FOR[first].map(t => t[0]), alarms: "-2h", byType: {}}},
+    });
+    readState();
+    ok = state.series.join() === first && state.sessions.join() === "race"
+      && state.emoji === "flag" && state.name === "Test" && state.alarmMode === "set"
+      && state.alarms === "-1h" && state.per[first].alarms === "-2h"
+      && !per[first].sessionsWrap.hidden;
+  } finally {
+    // Runs even if an assertion above threw, so a failing check can't leave
+    // the page sitting on the fake "Test" preferences.
+    SERIES.forEach((s, i) => { seriesBoxes[s.key].querySelector("input").checked = before.series[i]; });
+    TYPES.forEach(([t], i) => { sessionBoxes[t].querySelector("input").checked = before.sessions[i]; });
+    document.querySelector(`[name=emoji][value="${before.emoji}"]`).checked = true;
+    document.getElementById("name").value = before.name;
+    document.querySelector(`[name=alarmMode][value="${before.alarmMode}"]`).checked = true;
+    alarmsInput.value = before.alarms;
+    per[first].override.checked = before.ownOverride;
+    per[first].sessionsWrap.hidden = before.ownHidden;
+    per[first].alarms.value = before.ownAlarms;
+    per[first].types.forEach(([t], i) => { per[first].boxes[t].querySelector("input").checked = before.ownBoxes[i]; });
+    render();
+  }
 
-  SERIES.forEach((s, i) => { seriesBoxes[s.key].querySelector("input").checked = before.series[i]; });
-  TYPES.forEach(([t], i) => { sessionBoxes[t].querySelector("input").checked = before.sessions[i]; });
-  document.querySelector(`[name=emoji][value="${before.emoji}"]`).checked = true;
-  document.getElementById("name").value = before.name;
-  document.querySelector(`[name=alarmMode][value="${before.alarmMode}"]`).checked = true;
-  alarmsInput.value = before.alarms;
-  per[first].override.checked = before.ownOverride;
-  per[first].sessionsWrap.hidden = before.ownHidden;
-  per[first].alarms.value = before.ownAlarms;
-  per[first].types.forEach(([t], i) => { per[first].boxes[t].querySelector("input").checked = before.ownBoxes[i]; });
-  if (backup === null) localStorage.removeItem(PREFS_KEY); else localStorage.setItem(PREFS_KEY, backup);
-  render();
-
-  if (!ok) console.error("self-check: applyPrefs did not restore saved preferences");
+  if (!ok) console.error("self-check: applyPrefsFrom did not restore saved preferences");
   console.log(ok ? "prefs self-check ok" : "prefs self-check FAILED");
 })();
 </script>
