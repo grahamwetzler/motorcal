@@ -374,3 +374,104 @@ events:
         tbc: true
         duration: 360m
         status: CONFIRMED
+  # 2027 calendar announced 2026-06-12: https://www.fiawec.com/en/news/fia-wec-reveals-nine-round-2027-calendar-as-series-expands/13598
+  # Only the round dates and venues have been confirmed so far -- no session schedule yet.
+  - name: Qatar 1812km
+    location: Lusail International Circuit, Qatar
+    round: 1
+    sessions:
+      - uid: wec-2027-qatar-1812km-race
+        type: race
+        date: '2027-03-27'
+        tbc: true
+        duration: 600m
+        status: CONFIRMED
+        note: Round 1 of 9
+  - name: 6 Hours of Imola
+    url: https://www.fiawec.com/en/race/6-hours-of-imola-2027
+    location: Imola Circuit, Italy
+    round: 2
+    sessions:
+      - uid: wec-2027-6-hours-of-imola-race
+        type: race
+        date: '2027-04-11'
+        tbc: true
+        status: CONFIRMED
+        note: Round 2 of 9
+  - name: 6 Hours of Silverstone
+    url: https://www.fiawec.com/en/race/6-hours-of-silverstone-2027
+    location: Silverstone Circuit, United Kingdom
+    round: 3
+    sessions:
+      - uid: wec-2027-6-hours-of-silverstone-race
+        type: race
+        date: '2027-04-25'
+        tbc: true
+        status: CONFIRMED
+        note: Round 3 of 9
+  - name: 6 Hours of Spa Francorchamps
+    url: https://www.fiawec.com/en/race/totalenergies-6-hours-of-spa-francorchamps-2027
+    location: Circuit de Spa-Francorchamps, Belgium
+    round: 4
+    sessions:
+      - uid: wec-2027-6-hours-of-spa-francorchamps-race
+        type: race
+        date: '2027-05-15'
+        tbc: true
+        status: CONFIRMED
+        note: Round 4 of 9
+  - name: 24 Hours of Le Mans
+    location: Circuit de la Sarthe, France
+    round: 5
+    sessions:
+      - uid: wec-2027-24-hours-of-le-mans-race
+        type: race
+        date: '2027-06-12'
+        tbc: true
+        duration: 1440m
+        status: CONFIRMED
+        note: Round 5 of 9
+  - name: "6 Hours of São Paulo"
+    url: https://www.fiawec.com/en/race/rolex-6-hours-of-sao-paulo-2027
+    location: Interlagos Circuit, Brazil
+    round: 6
+    sessions:
+      - uid: wec-2027-6-hours-of-s-o-paulo-race
+        type: race
+        date: '2027-07-11'
+        tbc: true
+        status: CONFIRMED
+        note: Round 6 of 9
+  - name: Lone Star Le Mans
+    url: https://www.fiawec.com/en/race/lone-star-le-mans-2027
+    location: Circuit of the Americas, United States
+    round: 7
+    sessions:
+      - uid: wec-2027-lone-star-le-mans-race
+        type: race
+        date: '2027-09-12'
+        tbc: true
+        status: CONFIRMED
+        note: Round 7 of 9
+  - name: 6 Hours of Fuji
+    url: https://www.fiawec.com/en/race/6-hours-of-fuji-2027
+    location: Fuji Speedway, Japan
+    round: 8
+    sessions:
+      - uid: wec-2027-6-hours-of-fuji-race
+        type: race
+        date: '2027-09-26'
+        tbc: true
+        status: CONFIRMED
+        note: Round 8 of 9
+  - name: 8 Hours of Bahrain
+    location: Bahrain International Circuit, Bahrain
+    round: 9
+    sessions:
+      - uid: wec-2027-8-hours-of-bahrain-race
+        type: race
+        date: '2027-11-06'
+        tbc: true
+        duration: 480m
+        status: CONFIRMED
+        note: Round 9 of 9
