@@ -378,7 +378,6 @@ events:
         status: CONFIRMED
   # 2027 calendar announced 2026-06-12: https://www.fiawec.com/en/news/fia-wec-reveals-nine-round-2027-calendar-as-series-expands/13598
   # Round dates and per-day session names are posted on each round's page; exact times are still TBC.
-  # Le Mans has no dedicated page yet, so only its race date is known.
   - name: Qatar 1812km
     url: https://www.fiawec.com/en/race/qatar-1812km-2027
     location: Lusail International Circuit, Qatar
@@ -593,9 +592,76 @@ events:
         status: CONFIRMED
         note: Round 4 of 9
   - name: 24 Hours of Le Mans
+    url: https://www.fiawec.com/en/race/24-hours-of-le-mans-2027
     location: Circuit de la Sarthe, France
     round: 5
     sessions:
+      - uid: wec-2027-24-hours-of-le-mans-free-practice-1
+        label: Free Practice 1
+        type: practice
+        date: '2027-06-06'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-24-hours-of-le-mans-free-practice-2
+        label: Free Practice 2
+        type: practice
+        date: '2027-06-06'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-24-hours-of-le-mans-free-practice-3
+        label: Free Practice 3
+        type: practice
+        date: '2027-06-09'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-24-hours-of-le-mans-qualifying-lmp2-and-lmgt3
+        label: Qualifying - LMP2 & LMGT3
+        type: qualifying
+        date: '2027-06-09'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-24-hours-of-le-mans-qualifying-hypercar
+        label: Qualifying - Hypercar
+        type: qualifying
+        date: '2027-06-09'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-24-hours-of-le-mans-hyperpole-1-lmp2-and-lmgt3
+        label: Hyperpole 1 - LMP2 & LMGT3
+        type: hyperpole
+        date: '2027-06-10'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-24-hours-of-le-mans-hyperpole-2-lmp2-and-lmgt3
+        label: Hyperpole 2 - LMP2 & LMGT3
+        type: hyperpole
+        date: '2027-06-10'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-24-hours-of-le-mans-hyperpole-1-hypercar
+        label: Hyperpole 1 - Hypercar
+        type: hyperpole
+        date: '2027-06-10'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-24-hours-of-le-mans-hyperpole-2-hypercar
+        label: Hyperpole 2 - Hypercar
+        type: hyperpole
+        date: '2027-06-10'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-24-hours-of-le-mans-free-practice-4
+        label: Free Practice 4
+        type: practice
+        date: '2027-06-10'
+        tbc: true
+        status: CONFIRMED
+      - uid: wec-2027-24-hours-of-le-mans-warm-up
+        label: Warm-up
+        type: warmup
+        date: '2027-06-12'
+        tbc: true
+        status: CONFIRMED
       - uid: wec-2027-24-hours-of-le-mans-race
         type: race
         date: '2027-06-12'
