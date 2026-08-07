@@ -5,6 +5,7 @@ defaults:
   durations:
     practice: 1h
     qualifying: 1h
+    sprint_qualifying: 45m
     sprint: 45m
     warmup: 20m
   alerts:

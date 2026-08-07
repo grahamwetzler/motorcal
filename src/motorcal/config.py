@@ -419,4 +419,19 @@ def load_config(config_dir: Path, *, uid_domain: str) -> Config:
                 )
             owner[uid] = key
 
+            # A timed session with no duration anywhere publishes as a zero-length
+            # event, which reads as a glitch in a calendar client rather than an
+            # omission. Same three tiers merge.resolve_duration walks.
+            if (
+                session.start is not None
+                and session.duration is None
+                and session.type.value not in (series_config.durations or {})
+                and session.type.value not in globals_.defaults.durations
+            ):
+                raise ConfigError(
+                    f"Session {session.uid!r} in {key}.yaml has no duration: set one on the "
+                    f"session, or add a {session.type.value!r} default to {key}.yaml or "
+                    f"{GLOBAL_FILENAME}."
+                )
+
     return Config(globals=globals_, series=series)
