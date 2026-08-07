@@ -1,7 +1,7 @@
 -include .env
 export
 
-.PHONY: dev validate test lint fmt fmt-check check schedule
+.PHONY: dev validate test lint fmt fmt-check check
 
 dev:            ## Run the app locally (data/ served at :8000)
 	uv run motorcal serve --config data --state state/state.yaml
@@ -23,6 +23,3 @@ fmt-check:      ## Check formatting without changing files
 
 check: lint fmt-check test validate  ## Everything CI runs
 	uv run pre-commit run --all-files
-
-schedule:       ## Print the local feed's events (URL=... to override)
-	uv run scripts/view_ics.py $(or $(URL),http://localhost:8000/events.ics)

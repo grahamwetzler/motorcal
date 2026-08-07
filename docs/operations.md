@@ -17,9 +17,7 @@
 `make dev` runs the app at `:8000` against `data/` and a local
 `state/state.yaml` (gitignored), reading `UID_DOMAIN`/`PUBLIC_DOMAIN` from
 `.env`. Other targets: `make test`, `make lint`, `make fmt`, `make validate`,
-`make schedule` (prints the local feed's events; `URL=...` to point it
-elsewhere), and `make check` (everything CI runs). See the `Makefile` for the
-full list.
+and `make check` (everything CI runs). See the `Makefile` for the full list.
 
 ## Editing events by hand
 
