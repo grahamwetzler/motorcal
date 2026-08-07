@@ -1,10 +1,10 @@
 """Public feed app (port 8000): one combined ICS feed, filterable by series.
 
-The refresh and reload jobs each build a fresh `Publication` and swap it onto
-`app.state.publication` in one assignment. A request reads that attribute
-exactly once at the top of the handler, so it always sees one consistent
-generation of config/feeds/published together -- never config from a rebuild
-paired with feeds from the one before it (or a series that generation removed).
+Startup builds one `Publication` and assigns it onto `app.state.publication`.
+A request reads that attribute exactly once at the top of the handler, so it
+always sees one consistent generation of config/feeds/published together --
+never config paired with feeds from a different generation, or a series that
+generation removed.
 
 A request with no query parameters is served the prebuilt bytes. Anything else
 is a `Selection`: the subscriber's own cut of the feed, filtered and re-rendered

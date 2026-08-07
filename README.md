@@ -192,8 +192,10 @@ and **comments survive**. Times are kept in step with the official timetables by
 a scheduled agent that reads them and edits the files directly; `schedule_url:`
 on each series is where it looks.
 
-A hand edit is picked up by the hot-reload within ~30 seconds. A bad one is
-rejected and logged, and the previous configuration stays active.
+A hand edit takes effect on the next deploy: push to `main` and the rebuilt
+image lands within the watchtower poll interval (see "Deploys and
+auto-update" in `docs/operations.md`). Config is validated at startup, so a
+bad edit fails the container instead of serving a broken feed.
 
 ## Deployment configuration
 
@@ -202,14 +204,13 @@ rejected and logged, and the previous configuration stays active.
 | `UID_DOMAIN` | Domain baked into every event's stable ICS UID. Pick it once — changing it later republishes and duplicates every event for subscribers (see `docs/operations.md`, "Changing UID_DOMAIN"). |
 | `PUBLIC_DOMAIN` | Optional. Host named in the builder and schedule pages' canonical/og:url tags. Defaults to `UID_DOMAIN`; set it separately only if the site is served from a different domain than its UIDs are namespaced under. |
 
-Validate config changes before restarting:
+Config is validated in CI on every push and again by `motorcal serve` at
+container startup; a bad file fails the build (or the container) instead of
+serving a broken feed. Check it by hand with:
 
 ```bash
 docker compose exec app motorcal validate-config --config /data
 ```
-
-The running app also hot-reloads on change and keeps the previous configuration
-active if validation fails.
 
 ## State
 

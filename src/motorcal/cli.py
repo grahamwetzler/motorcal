@@ -15,14 +15,7 @@ from motorcal import state as state_module
 from motorcal.config import ConfigError, load_config
 from motorcal.ics import render_combined_bytes
 from motorcal.merge import rebuild_publication
-from motorcal.refresh import (
-    build_scheduler,
-    check_and_reload_config,
-    config_bundle_hash,
-)
 from motorcal.web import Publication, create_app
-
-_logger = logging.getLogger("motorcal.serve")
 
 
 def _cmd_serve(args: argparse.Namespace) -> int:
@@ -68,51 +61,16 @@ def _cmd_serve(args: argparse.Namespace) -> int:
     published = rebuild_publication(config, state, now=now)
     state_module.save(state_path, state)
 
-    # app.state is the single source of truth for everything the HTTP layer and the
-    # reload job read. The job rebuilds against copies and swaps the whole Publication
-    # at once on success, so a failed reload leaves the app exactly as it was, and a
-    # request mid-swap never sees config from one generation paired with another's feeds.
     # PUBLIC_DOMAIN names the host canonical/og:url point at. Optional --
     # defaults to uid_domain, which is right for the common case of one
     # operator serving from the domain its UIDs are namespaced under.
     public_domain = os.environ.get("PUBLIC_DOMAIN") or uid_domain
     app = create_app(config, public_domain=public_domain)
-    app.state.data = state
     app.state.publication = Publication(
         config=config,
         published=published,
         feed=render_combined_bytes(config, published),
     )
-    app.state.bundle_hash = config_bundle_hash(config_dir)
-    app.state.config_dir = config_dir
-
-    def reload_job():
-        now = datetime.now(UTC)
-        working_state = app.state.data.model_copy(deep=True)
-        result = check_and_reload_config(
-            config_dir,
-            working_state,
-            app.state.bundle_hash,
-            app.state.publication.config,
-            uid_domain,
-            now,
-        )
-        app.state.bundle_hash = result.bundle_hash
-        if not result.reloaded:
-            if result.error is not None:
-                _logger.warning("Config reload rejected: %s", result.error)
-            return
-
-        state_module.save(state_path, working_state)
-        app.state.data = working_state
-        app.state.publication = Publication(
-            config=result.config,
-            published=result.published,
-            feed=render_combined_bytes(result.config, result.published),
-        )
-
-    scheduler = build_scheduler(reload_job)
-    scheduler.start()
 
     uvicorn.run(app, host="0.0.0.0", port=8000, server_header=False)
     return 0
@@ -143,7 +101,7 @@ def _build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command")
 
     serve_parser = subparsers.add_parser(
-        "serve", help="Run the scheduler and HTTP server (feeds on :8000)"
+        "serve", help="Run the HTTP server (feeds on :8000)"
     )
     serve_parser.add_argument(
         "--config", required=True, help="Path to the data directory"
