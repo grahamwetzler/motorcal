@@ -216,19 +216,33 @@ const marked = (session) =>
   session.status === "CANCELLED" ? "CANCELLED"
   : session.status === "TENTATIVE" ? "POSTPONED" : "";
 
-// The label and the time, struck through when the session is cancelled. The
-// mark is a sibling rather than inside the struck text, because a child cannot
-// take a line-through back off itself.
+// One row per session, as fixed table cells rather than a label/value list --
+// a table's columns line up straight down the whole card no matter how long
+// any one session's label or time text runs, where a dl's second column could
+// not. That only holds within a single table, though, so a weekend spanning
+// several days has to stay one table throughout -- see weekendCard.
 function sessionRow(session) {
   const mark = marked(session);
   const struck = mark === "CANCELLED" ? "struck" : "";
-  const dt = make("dt", {className: struck, textContent: session.label || LABELS[session.type]});
-  const dd = make("dd", {}, make("span", {className: struck, textContent: timeText(session)}));
-  const length = durationText(session);
-  if (length) dd.append(make("span", {className: `length ${struck}`, textContent: length}));
-  if (mark) dd.append(make("span", {className: `mark ${mark.toLowerCase()}`, textContent: MARKS[mark]}));
-  return [dt, dd];
+  // The cap that keeps a long class-split name (Le Mans' "Hyperpole
+  // Qualifying – LMP2 & LMGT3") from widening every other row's gap has to
+  // sit on a span, not the cell itself -- table cells in automatic layout
+  // ignore their own max-width, only a normal box's does.
+  const labelText = make("span", {className: "label-text", textContent: session.label || LABELS[session.type]});
+  // A row header, not a plain cell: it is what lets a screen reader announce
+  // "Race, 3:00 PM – 5:30 PM, 2h 30m" as one row rather than four unrelated
+  // cells with nothing to say what the time belongs to.
+  const label = make("th", {scope: "row", className: struck}, labelText);
+  const time = make("td", {className: `time ${struck}`.trim(), textContent: timeText(session)});
+  const length = make("td", {className: `length ${struck}`.trim(), textContent: durationText(session)});
+  const markCell = make("td", {className: `mark ${mark.toLowerCase()}`.trim(),
+    textContent: mark ? MARKS[mark] : ""});
+  return make("tr", {}, label, time, length, markCell);
 }
+
+// Every weekend's table needs its own id to hang aria-labelledby off of --
+// a shared one would just make every weekend "announce" the same title.
+let weekendCount = 0;
 
 function weekendCard(event) {
   const card = make("div", {className: "weekend"});
@@ -252,7 +266,8 @@ function weekendCard(event) {
   }
   card.append(seriesLine);
 
-  const name = make("div", {className: "title"});
+  const titleId = `weekend-title-${weekendCount++}`;
+  const name = make("div", {className: "title", id: titleId});
   // Linked when the data has an official event page, plain text otherwise. It
   // leaves the site, and this is a list to browse, so it opens alongside.
   name.append(event.url
@@ -262,12 +277,35 @@ function weekendCard(event) {
   card.append(name);
   if (event.location) card.append(make("div", {className: "where", textContent: event.location}));
 
+  // One table for the whole weekend, not one per day: a table only sizes its
+  // columns to line up within itself, so splitting one per day let Friday's
+  // times land at a different x than Saturday's the moment the two days'
+  // longest labels differed. Named after the event title -- otherwise a
+  // screen reader's table list shows a page full of identical unnamed
+  // four-column tables with nothing to tell them apart. setAttribute, not a
+  // make() prop: "aria-labelledby" isn't a plain IDL property make()'s
+  // Object.assign can set, so it would land as an inert expando instead.
+  const table = make("table", {className: "sessions"});
+  table.setAttribute("aria-labelledby", titleId);
+  // Column headers for a screen reader, kept off-screen -- the time and
+  // duration columns read fine on sight from their position alone, but
+  // without a name a screen reader has nothing to pair with the row header.
+  table.append(make("thead", {}, make("tr", {},
+    make("th", {scope: "col", className: "sr-only", textContent: "Session"}),
+    make("th", {scope: "col", className: "sr-only", textContent: "Time"}),
+    make("th", {scope: "col", className: "sr-only", textContent: "Duration"}),
+    make("th", {scope: "col", className: "sr-only", textContent: "Status"}))));
   for (const {date, sessions} of daysOf(event)) {
-    card.append(make("div", {className: "date", textContent: day(date)}));
-    const list = make("dl", {className: "sessions"});
-    for (const session of sessions) list.append(...sessionRow(session));
-    card.append(list);
+    // A tbody per date, not one shared tbody: scope="rowgroup" only pairs a
+    // heading with the rest of its own row group, so two dates sharing a
+    // tbody would let a screen reader associate either's sessions with both.
+    const body = make("tbody", {});
+    body.append(make("tr", {className: "date"},
+      make("th", {scope: "rowgroup", colSpan: 4, textContent: day(date)})));
+    for (const session of sessions) body.append(sessionRow(session));
+    table.append(body);
   }
+  card.append(table);
   return card;
 }
 
@@ -420,15 +458,43 @@ fetch("/sessions.json").then((response) => {
 
   // A withdrawn session must not read as an ordinary one. The row is the only
   // place that says so, so it is checked here rather than left to the eye.
-  const row = (over) => sessionRow(session(over)).map((n) => n.textContent).join("/");
+  const row = (over) => sessionRow(session(over)).textContent;
   check(row({}).includes("Cancelled"), false, "a confirmed session is not marked");
   check(row({status: "CANCELLED"}).endsWith("Cancelled"), true, "a cancelled session says so");
   check(row({status: "TENTATIVE"}).endsWith("Postponed"), true,
     "a postponed session says so, in the feed's own word");
-  check(sessionRow(session({status: "CANCELLED"}))[0].className, "struck",
+  check(sessionRow(session({status: "CANCELLED"})).firstChild.className, "struck",
     "a cancelled session is struck through");
-  check(sessionRow(session({status: "TENTATIVE"}))[0].className, "",
+  check(sessionRow(session({status: "TENTATIVE"})).firstChild.className, "",
     "a postponed one is not -- it is still going to happen");
+  check(sessionRow(session({status: "CANCELLED", duration: 3600})).children[2].className, "length struck",
+    "its duration is struck through too, not left looking active");
+
+  // A screen reader pairs a row's cells with whatever labels the row -- only
+  // a th does that, a td is just another unrelated cell.
+  check(sessionRow(session({})).firstChild.tagName, "TH",
+    "a session's label is a row header, not a plain cell");
+  check(sessionRow(session({})).firstChild.scope, "row",
+    "and it says so, so a screen reader pairs it with the row's time and duration");
+  // Same reasoning one level up: the day groups the rows under it, so it is
+  // a header too, not a caption-shaped td.
+  const dateCell = weekendCard(events[0]).querySelector(".date th");
+  check(dateCell && dateCell.scope, "rowgroup",
+    "a day heading is a row-group header for the sessions under it");
+  // A rowgroup only reaches the rows in its own tbody -- one shared tbody
+  // for both days would let a screen reader pair day one's heading with
+  // day two's sessions as well.
+  check(weekendCard(events[0]).querySelectorAll("table.sessions > tbody").length, 2,
+    "each day of a weekend gets its own row group, not one shared for the whole table");
+  // Otherwise a screen reader's table list shows every weekend as the same
+  // unnamed four-column table, with nothing to tell them apart.
+  {
+    const card = weekendCard(events[0]);
+    const table = card.querySelector("table.sessions");
+    const labelId = table.getAttribute("aria-labelledby");
+    check(!!labelId && card.querySelector(`#${labelId}`)?.textContent, "A",
+      "a weekend's table is named after its event title");
+  }
 
   // A session's own round (a double-header's second race) is tracked in the
   // data for the weekend header and the feed, but the row itself never states
