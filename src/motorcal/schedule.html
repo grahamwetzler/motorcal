@@ -132,24 +132,30 @@ function durationText(session) {
 }
 
 // --- changes ---------------------------------------------------------------
-// The changelog, folded away: someone whose calendar just moved can see what
-// changed and why without reading the repo. Entries arrive newest first, already
-// flattened from the three levels they live at in the data, each carrying the
-// scope it was found at.
+// Why a schedule moved, shown at whichever level owns the change: a session's
+// history sits under its row, a weekend's on its card, and only the ones
+// belonging to no single weekend -- a calendar published, a round dropped --
+// go in the panel at the top, which is the one place they could go.
 // A changelog date wants its year -- entries outlive the season they describe --
 // and has no use for the weekday `day()` adds.
 const changeDay = (date) =>
   date.toLocaleDateString([], {day: "numeric", month: "short", year: "numeric"});
 
-// Widest scope first, narrowing: series and season always, then the weekend, then
-// the session. A race carries no label of its own, so it falls back to its type
-// the same way a session row does.
-function changeScope(entry) {
-  const parts = [`${NAMES[entry.series]} ${entry.season}`];
-  if (entry.event) parts.push(entry.event);
-  const session = entry.session || LABELS[entry.session_type];
-  if (session) parts.push(session);
-  return parts.join(" · ");
+// Entries arrive newest first. `scopeOf` is only for the top panel, where an
+// entry has to name the series and season it is about; lower down, the thing it
+// is attached to already says so.
+function changeList(entries, scopeOf) {
+  const list = make("ul", {className: "changelog"});
+  for (const entry of entries) {
+    // The date is parsed as local midnight, so it renders as the day it was
+    // written rather than shifted a day by a UTC offset.
+    const when = changeDay(new Date(entry.date + "T00:00:00"));
+    const scope = scopeOf && scopeOf(entry);
+    list.append(make("li", {},
+      make("div", {className: "when", textContent: scope ? `${when} · ${scope}` : when}),
+      make("div", {className: "what", textContent: entry.text})));
+  }
+  return list;
 }
 
 function renderChanges(series) {
@@ -157,18 +163,10 @@ function renderChanges(series) {
   box.textContent = "";
   const entries = DATA.changes.filter((entry) => series.has(entry.series));
   if (!entries.length) return;
-  const list = make("ul", {className: "changelog"});
-  for (const entry of entries) {
-    // The date is parsed as local midnight, so it renders as the day it was
-    // written rather than shifted a day by a UTC offset.
-    list.append(make("li", {},
-      make("div", {className: "when",
-        textContent: `${changeDay(new Date(entry.date + "T00:00:00"))} · ${changeScope(entry)}`}),
-      make("div", {className: "what", textContent: entry.text})));
-  }
   box.append(make("details", {className: "changes"},
-    make("summary", {}, `Recent changes (${entries.length})`),
-    make("div", {className: "details-body"}, list)));
+    make("summary", {}, `Season changes (${entries.length})`),
+    make("div", {className: "details-body"},
+      changeList(entries, (entry) => `${NAMES[entry.series]} ${entry.season}`))));
 }
 
 // --- days ------------------------------------------------------------------
@@ -282,6 +280,18 @@ function sessionRow(session) {
   return make("tr", {}, label, time, length, markCell);
 }
 
+// A session's own history, as a row directly under it -- next to the thing that
+// moved, where someone reading the timetable meets it, rather than in a list at
+// the top of the page. Spans all four columns: it is a note on the row above,
+// not a fifth column with a heading of its own. The wrapper is what keeps the
+// note out of the table's column sizing -- see motorcal.css.
+function changeRow(session) {
+  if (!session.changes.length) return null;
+  return make("tr", {className: "change"},
+    make("td", {colSpan: 4},
+      make("div", {className: "note-wrap"}, changeList(session.changes))));
+}
+
 // Every weekend's table needs its own id to hang aria-labelledby off of --
 // a shared one would just make every weekend "announce" the same title.
 let weekendCount = 0;
@@ -318,6 +328,10 @@ function weekendCard(event) {
     : event.name);
   card.append(name);
   if (event.location) card.append(make("div", {className: "where", textContent: event.location}));
+  // The weekend's own history, above its timetable: it is about the weekend as a
+  // whole -- it moved, or a session came off the schedule and is no longer a row
+  // below to hang a note on.
+  if (event.changes.length) card.append(changeList(event.changes));
 
   // One table for the whole weekend, not one per day: a table only sizes its
   // columns to line up within itself, so splitting one per day let Friday's
@@ -344,7 +358,11 @@ function weekendCard(event) {
     const body = make("tbody", {});
     body.append(make("tr", {className: "date"},
       make("th", {scope: "rowgroup", colSpan: 4, textContent: day(date)})));
-    for (const session of sessions) body.append(sessionRow(session));
+    for (const session of sessions) {
+      body.append(sessionRow(session));
+      const note = changeRow(session);
+      if (note) body.append(note);
+    }
     table.append(body);
   }
   card.append(table);
@@ -461,18 +479,18 @@ fetch("/sessions.json").then((response) => {
 // logic here; this fails loudly in the console if either starts lying.
 (function selfCheck() {
   const session = (over) => ({label: "", type: "race", start: null, date: null,
-    tbc: false, round: null, duration: 3600, status: "CONFIRMED", ...over});
+    tbc: false, round: null, duration: 3600, status: "CONFIRMED", changes: [], ...over});
   // Two sessions on one local day, then the race on the next.
   const noon = new Date("2026-03-01T12:00:00").toISOString();
   const later = new Date("2026-03-01T15:00:00").toISOString();
   const race = session({start: new Date("2026-03-02T12:00:00").toISOString()});
   const events = [
-    {series: "a", name: "A", round: 1, location: null, url: null, sessions: [
+    {series: "a", name: "A", round: 1, location: null, url: null, changes: [], sessions: [
       session({type: "practice", start: noon}),
       session({type: "qualifying", start: later}),
       race,
     ]},
-    {series: "b", name: "B", round: null, location: null, url: null, sessions: [
+    {series: "b", name: "B", round: null, location: null, url: null, changes: [], sessions: [
       session({type: "testing", start: null, date: "2026-02-01", duration: null}),
     ]},
   ];
@@ -598,22 +616,25 @@ fetch("/sessions.json").then((response) => {
   check(timeText(sameDay), `${time(starts(sameDay))} – ${time(ends(sameDay))}`,
     "a session finishing the same day says only the clock times");
 
-  // A changelog entry says which of the three levels it came from purely by
-  // which scope fields are filled, so the wrong degradation silently mislabels
-  // whose schedule changed.
-  // changeScope names the series from the map the fetch fills in, and this check
-  // runs before that resolves -- so seed it. The real load overwrites it wholesale.
-  NAMES = {wec: "WEC"};
-  const entry = {series: "wec", season: 2027, event: null, session: null, session_type: null};
-  check(changeScope(entry), "WEC 2027", "a season entry names only its series and year");
-  check(changeScope({...entry, event: "6 Hours of Imola"}), "WEC 2027 · 6 Hours of Imola",
-    "an event entry adds its weekend");
-  check(changeScope({...entry, event: "6 Hours of Imola", session: "Qualifying",
-    session_type: "qualifying"}), "WEC 2027 · 6 Hours of Imola · Qualifying",
-    "a session entry adds its session");
-  check(changeScope({...entry, event: "6 Hours of Imola", session: "", session_type: "race"}),
-    "WEC 2027 · 6 Hours of Imola · Race",
-    "a race carries no label of its own and falls back to its type");
+  // A change is only useful where it is attached, so what is checked here is
+  // that each level renders its own and no level renders someone else's.
+  const note = [{date: "2026-01-01", text: "Moved to Saturday."}];
+  check(changeRow(session({})), null, "a session with no history gets no note row");
+  check(changeRow(session({changes: note})).firstChild.colSpan, 4,
+    "a session's note spans the table rather than posing as a fifth column");
+  check(changeRow(session({changes: note})).textContent.includes("Moved to Saturday."), true,
+    "and says what changed");
+  // Parsed as local midnight: a UTC-shifted date would render Jan 1 as the
+  // December before, filing a change under the wrong year.
+  check(changeList(note).querySelector(".when").textContent.includes("2026"), true,
+    "a change is dated the day it was written, with the year it belongs to");
+  {
+    const moved = {...events[0], changes: note};
+    check(weekendCard(moved).querySelector(".weekend > .changelog") !== null, true,
+      "a weekend's own history sits on its card");
+    check(weekendCard(events[0]).querySelector(".changelog"), null,
+      "a weekend with nothing to report shows no changelog at all");
+  }
 
   // A weekend is past only once its last session has finished, and an all-day
   // session runs out its whole day rather than ending at midnight.

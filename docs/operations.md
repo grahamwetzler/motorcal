@@ -44,7 +44,7 @@ the old copy until it expires. Rename only when you mean to.
 
 Changing something already published? Add a `changes` entry in the same commit,
 so `git log -p data/wec.yaml` shows the reason beside the edit and `/schedule`
-can show it too, in a "Recent changes" panel that is closed by default.
+can show it too.
 
 ```yaml
       - uid: wec-2027-6-hours-of-imola-qualifying
@@ -55,11 +55,18 @@ can show it too, in a "Recent changes" panel that is closed by default.
 ```
 
 Entries live on the thing they describe, at whichever of the three levels owns
-the change — a **session**, an **event** (a weekend moved or dropped, or a session
-taken off its timetable, which has nowhere to live on a session that no longer
-exists), or the **series** with a `season:` year (a calendar published or
-withdrawn). `data/CLAUDE.md` has the full rule, which the scheduled agent follows
-too.
+the change — and that is also where `/schedule` shows them:
+
+| Level | Written on | Shown |
+| --- | --- | --- |
+| **session** | the session that was retimed, renamed, or cancelled | in a row under that session |
+| **event** | a weekend moved or dropped, or a session taken off its timetable (which has nowhere to live on a session that no longer exists) | on that weekend's card |
+| **series** | a calendar published or withdrawn — anything spanning weekends, with a `season:` year | a "Season changes" panel above the schedule, closed by default |
+
+Put it at the lowest level that owns it. A session-level entry in the top panel
+would say the same thing twice, and a weekend-level one buried under a session
+row would name the wrong thing as having moved. `data/CLAUDE.md` has the full
+rule, which the scheduled agent follows too.
 
 Nothing prunes these — `/schedule` reads the directory as written, not the
 retention window the feeds publish — so drop entries from finished seasons when

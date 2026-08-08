@@ -13,22 +13,25 @@ it unset rather than using a series schedule or venue page as a fallback.
 ## Changes
 When you change a schedule that was already published, add a `changes` entry
 saying what changed and why, in the same commit as the edit. The entries are
-served at `/sessions.json` and shown in a "Recent changes" panel on `/schedule`,
-so write them for a subscriber, not for yourself: name what moved, and what
-source said so.
+served at `/sessions.json` and shown on `/schedule`, so write them for a
+subscriber, not for yourself: name what moved, and what source said so.
 
 Each entry is a `date` (today, as `YYYY-MM-DD` — when the change was made, not
 when the session runs) and a `text`.
 
-Put the entry at the **lowest level that owns the change**:
+Put the entry at the **lowest level that owns the change** — `/schedule` shows
+each level in a different place, so the level you pick is what the reader sees
+it attached to:
 
-- a session retimed, renamed, or cancelled → `changes` on that **session**
+- a session retimed, renamed, or cancelled → `changes` on that **session**,
+  shown in a row under it
 - a weekend moved, added, or dropped, or a session removed from its timetable
-  altogether → `changes` on that **event** (a deleted session takes its own
-  entries with it, so its removal has to be recorded one level up)
+  altogether → `changes` on that **event**, shown on its card (a deleted session
+  takes its own entries with it, so its removal has to be recorded one level up)
 - a calendar published or withdrawn, or anything spanning weekends → `changes`
-  on the **series**, with a `season:` year. A file can hold more than one season,
-  and the year must be one the series actually runs sessions in.
+  on the **series**, with a `season:` year, shown in the panel above the whole
+  schedule. A file can hold more than one season, and the year must be one the
+  series actually runs sessions in.
 
 Do not log the first import of a session — that is not a change. Prune entries
 from seasons that are over; nothing prunes them automatically.

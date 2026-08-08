@@ -199,6 +199,8 @@ CHANGELOG_CONFIG = make_config(
                 )
             ],
         ),
+        # A weekend with nothing to report, so the levels can be checked for
+        # borrowing each other's entries rather than only for carrying their own.
         "f1": make_series(
             name="Formula 1",
             events=[
@@ -207,7 +209,6 @@ CHANGELOG_CONFIG = make_config(
                     name="Bahrain Grand Prix",
                     type="race",
                     date="2026-10-09",
-                    changes=[{"date": "2026-09-01", "text": "Round order swapped."}],
                 )
             ],
         ),
@@ -215,51 +216,51 @@ CHANGELOG_CONFIG = make_config(
 )
 
 
-def test_the_changelog_flattens_all_three_levels_newest_first():
-    """One list, because the question the page answers is "what changed since I
-    last looked". Each entry has to carry the scope it was found at, or a moved
-    session reads as a change to nothing in particular."""
+def test_an_entry_is_served_on_the_thing_it_describes():
+    """A change is shown where the reader is already looking -- under the session
+    that moved, on the card for the weekend that moved -- so it has to arrive
+    attached to that session or that weekend, not in a list of its own."""
+    body = _client(CHANGELOG_CONFIG).get("/sessions.json").json()
+    events = {event["name"]: event for event in body["events"]}
+
+    imola = events["6 Hours of Imola"]
+    assert imola["changes"] == [{"date": "2026-08-01", "text": "Moved a week later."}]
+    assert imola["sessions"][0]["changes"] == [
+        {"date": "2026-08-07", "text": "Now an hour earlier."}
+    ]
+    # And nothing borrows anyone else's -- the weekend that changed does not
+    # hand its entry down to the session, nor a session hand its up.
+    assert events["Bahrain Grand Prix"]["changes"] == []
+    assert events["Bahrain Grand Prix"]["sessions"][0]["changes"] == []
+
+
+def test_only_season_wide_changes_go_in_the_top_panel():
+    """The panel above the schedule is for what belongs to no single weekend -- a
+    calendar published, a round dropped. Anything with a weekend to sit on sits
+    there instead, or the same change is reported twice."""
     body = _client(CHANGELOG_CONFIG).get("/sessions.json").json()
 
-    assert [
-        (entry["date"], entry["series"], entry["season"], entry["event"])
-        for entry in body["changes"]
-    ] == [
-        ("2026-09-01", "f1", 2026, "Bahrain Grand Prix"),
-        ("2026-08-07", "wec", 2027, "6 Hours of Imola"),
-        ("2026-08-01", "wec", 2027, "6 Hours of Imola"),
-        ("2026-06-12", "wec", 2027, None),
+    assert body["changes"] == [
+        {
+            "series": "wec",
+            "season": 2027,
+            "date": "2026-06-12",
+            "text": "Nine-round calendar.",
+        }
     ]
 
 
-def test_a_changelog_entry_names_only_the_scope_it_belongs_to():
-    """A season entry has no weekend and no session; an event entry has no session.
-    The page tells the three levels apart by exactly that, so the nulls are the
-    contract."""
-    body = _client(CHANGELOG_CONFIG).get("/sessions.json").json()
-    entries = {entry["date"]: entry for entry in body["changes"]}
+def test_every_level_serves_a_list_even_with_nothing_to_report():
+    """The page reads all three on every render, so they must always be there."""
+    body = _client(CONFIG).get("/sessions.json").json()
 
-    season = entries["2026-06-12"]
-    assert (season["event"], season["session"], season["session_type"]) == (
-        None,
-        None,
-        None,
+    assert body["changes"] == []
+    assert all(event["changes"] == [] for event in body["events"])
+    assert all(
+        session["changes"] == []
+        for event in body["events"]
+        for session in event["sessions"]
     )
-    event = entries["2026-08-01"]
-    assert (event["event"], event["session"], event["session_type"]) == (
-        "6 Hours of Imola",
-        None,
-        None,
-    )
-    # A race carries no label; the type is what lets the page name it anyway.
-    session = entries["2026-08-07"]
-    assert (session["session"], session["session_type"]) == ("", "race")
-    assert session["text"] == "Now an hour earlier."
-
-
-def test_a_schedule_with_no_changelog_serves_an_empty_list():
-    """The page filters this list on every render, so it must always be there."""
-    assert _client(CONFIG).get("/sessions.json").json()["changes"] == []
 
 
 def test_the_schedule_page_and_stylesheet_are_served():
