@@ -376,7 +376,8 @@ events:
         tbc: true
         duration: 360m
         status: CONFIRMED
-  # --- 2027 season ---
+  # 2027 calendar announced 2026-06-12: https://www.fiawec.com/en/news/fia-wec-reveals-nine-round-2027-calendar-as-series-expands/13598
+  # Round dates and per-day session names are posted on each round's page; exact times are still TBC.
   - name: Qatar 1812km
     url: https://www.fiawec.com/en/race/qatar-1812km-2027
     location: Lusail International Circuit, Qatar
@@ -881,11 +882,3 @@ events:
         duration: 480m
         status: CONFIRMED
         note: Round 9 of 9
-
-# Season-level history. Entries for one weekend or one session live on that
-# event or session instead -- see data/CLAUDE.md.
-changes:
-  - season: 2027
-    date: '2026-06-12'
-    text: >-
-      Nine-round 2027 calendar announced, up from eight. Round dates and per-day session names come from each round's own page; exact times are still TBC. https://www.fiawec.com/en/news/fia-wec-reveals-nine-round-2027-calendar-as-series-expands/13598

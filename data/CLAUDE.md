@@ -19,6 +19,16 @@ subscriber, not for yourself: name what moved, and what source said so.
 Each entry is a `date` (today, as `YYYY-MM-DD` — when the change was made, not
 when the session runs) and a `text`.
 
+**Only log a change when the weekend it affects is less than 90 days away.**
+Further out, a calendar is still provisional and moves repeatedly; logging it
+fills the page with churn about dates nobody can plan around yet. Beyond 90
+days, just make the edit — the commit message and `git log -p` are the record.
+Measure from today to the weekend, not to the date of the announcement.
+
+Write every `text` in simple, concise American English. One or two short
+sentences, American spelling ("program", not "programme"), no hedging and no
+throat-clearing. Say what it is now and what it was before, then the source.
+
 Put the entry at the **lowest level that owns the change** — `/schedule` folds
 each level away in a different place, so the level you pick is what the reader
 sees it attached to when they open it:
@@ -28,10 +38,15 @@ sees it attached to when they open it:
 - a weekend moved, added, or dropped, or a session removed from its timetable
   altogether → `changes` on that **event**, shown on its card (a deleted session
   takes its own entries with it, so its removal has to be recorded one level up)
-- a calendar published or withdrawn, or anything spanning weekends → `changes`
-  on the **series**, with a `season:` year, shown in the panel above the whole
-  schedule. A file can hold more than one season, and the year must be one the
-  series actually runs sessions in.
+- a round dropped from the calendar, or anything else spanning weekends →
+  `changes` on the **series**, with a `season:` year, shown in the panel above
+  the whole schedule. A file can hold more than one season, and the year must be
+  one the series actually runs sessions in.
+
+The 90-day rule applies at all three levels. It rules out most of what would
+otherwise be a series-level entry — a season's calendar is published far more
+than 90 days ahead — so that level is mainly for a weekend that got dropped
+close in, which has no card left to hang a note on.
 
 Do not log the first import of a session — that is not a change. Prune entries
 from seasons that are over; nothing prunes them automatically.

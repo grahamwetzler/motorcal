@@ -42,17 +42,21 @@ the old copy until it expires. Rename only when you mean to.
 
 ## Recording why a schedule changed
 
-Changing something already published? Add a `changes` entry in the same commit,
-so `git log -p data/wec.yaml` shows the reason beside the edit and `/schedule`
-can show it too.
+Changing something already published, within 90 days of the weekend it affects?
+Add a `changes` entry in the same commit, so `git log -p data/wec.yaml` shows the
+reason beside the edit and `/schedule` can show it too. Further out than that,
+just make the edit — a calendar that far ahead moves too often to be worth
+reporting, and the commit message is still the record.
 
 ```yaml
-      - uid: wec-2027-6-hours-of-imola-qualifying
+      - uid: wec-2026-6-hours-of-imola-qualifying
         # ...
         changes:
-          - date: '2026-08-07'
-            text: Now 13:00 (was 14:00), following the revised support programme.
+          - date: '2026-04-07'
+            text: Now 1:00 PM local, was 2:00 PM. Support race schedule changed.
 ```
+
+Write the text the way that example does: simple, concise American English.
 
 Entries live on the thing they describe, at whichever of the three levels owns
 the change — and that is also where `/schedule` shows them:
@@ -61,7 +65,7 @@ the change — and that is also where `/schedule` shows them:
 | --- | --- | --- |
 | **session** | the session that was retimed, renamed, or cancelled | a "Changed" toggle in a row under that session |
 | **event** | a weekend moved or dropped, or a session taken off its timetable (which has nowhere to live on a session that no longer exists) | a "Changed" toggle on that weekend's card |
-| **series** | a calendar published or withdrawn — anything spanning weekends, with a `season:` year | a "Season changes" panel above the schedule |
+| **series** | a round dropped from the calendar — anything spanning weekends, with a `season:` year | a "Season changes" panel above the schedule |
 
 Put it at the lowest level that owns it. A session-level entry in the top panel
 would say the same thing twice, and a weekend-level one buried under a session
