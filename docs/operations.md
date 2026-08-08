@@ -48,6 +48,11 @@ reason beside the edit and `/schedule` can show it too. Further out than that,
 just make the edit — a calendar that far ahead moves too often to be worth
 reporting, and the commit message is still the record.
 
+Cancellations and moves are the exception, and get logged at any distance: a
+round called off, or a weekend shifted to different dates or a different circuit,
+is the calendar changing shape rather than the provisional drift the window is
+there to filter out.
+
 ```yaml
       - uid: wec-2026-6-hours-of-imola-qualifying
         # ...
