@@ -57,11 +57,11 @@ can show it too.
 Entries live on the thing they describe, at whichever of the three levels owns
 the change — and that is also where `/schedule` shows them:
 
-| Level | Written on | Shown |
+| Level | Written on | Shown (all closed by default) |
 | --- | --- | --- |
-| **session** | the session that was retimed, renamed, or cancelled | in a row under that session |
-| **event** | a weekend moved or dropped, or a session taken off its timetable (which has nowhere to live on a session that no longer exists) | on that weekend's card |
-| **series** | a calendar published or withdrawn — anything spanning weekends, with a `season:` year | a "Season changes" panel above the schedule, closed by default |
+| **session** | the session that was retimed, renamed, or cancelled | a "Changed" toggle in a row under that session |
+| **event** | a weekend moved or dropped, or a session taken off its timetable (which has nowhere to live on a session that no longer exists) | a "Changed" toggle on that weekend's card |
+| **series** | a calendar published or withdrawn — anything spanning weekends, with a `season:` year | a "Season changes" panel above the schedule |
 
 Put it at the lowest level that owns it. A session-level entry in the top panel
 would say the same thing twice, and a weekend-level one buried under a session

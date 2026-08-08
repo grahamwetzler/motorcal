@@ -19,9 +19,9 @@ subscriber, not for yourself: name what moved, and what source said so.
 Each entry is a `date` (today, as `YYYY-MM-DD` — when the change was made, not
 when the session runs) and a `text`.
 
-Put the entry at the **lowest level that owns the change** — `/schedule` shows
-each level in a different place, so the level you pick is what the reader sees
-it attached to:
+Put the entry at the **lowest level that owns the change** — `/schedule` folds
+each level away in a different place, so the level you pick is what the reader
+sees it attached to when they open it:
 
 - a session retimed, renamed, or cancelled → `changes` on that **session**,
   shown in a row under it

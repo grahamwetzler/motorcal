@@ -240,8 +240,14 @@
      row under the session it is about. A left rule ties the note to what it
      annotates -- without one, a session note is just another line of the
      timetable, in a table whose every other row is a session. */
-  .weekend .changelog { margin-top: .5rem; }
-  .weekend .changelog li { border-left: 2px solid var(--line); padding-left: .6rem; }
+  /* Folded away like the season panel above, but sized to sit inside a card:
+     the page's standard summary is a heading, and here it is a footnote on a
+     weekend that mostly has nothing to report. */
+  .weekend details.changes { border: 0; margin: .35rem 0 0; }
+  .weekend details.changes > summary {
+    padding: .1rem 0; font-size: .78rem; font-weight: 600; gap: .35rem;
+  }
+  .weekend details.changes .details-body { padding: .1rem 0 .15rem .6rem; margin: 0; }
   /* A size below the session labels: the timetable is what the card is for, the
      note is the aside. Notes cite their source, so a URL long enough to outrun
      the card has to break rather than push a scrollbar out from under it. */
@@ -257,8 +263,8 @@
      zero-width box of its own: a width on the cell is only a hint the table
      overrides with the note's own content width. */
   .weekend .sessions tr.change td, .weekend .sessions tr.change .note-wrap { width: 0; }
-  .weekend .sessions tr.change .changelog {
-    margin-top: 0;
+  .weekend .sessions tr.change details.changes {
+    margin: 0;
     /* Wide enough to read, and never wider than the card it spills across. */
     width: min(34rem, calc(100vw - 6rem));
   }
@@ -278,7 +284,7 @@
     .weekend .sessions tr.change td { display: block; }
     .weekend .sessions tr.change td,
     .weekend .sessions tr.change .note-wrap,
-    .weekend .sessions tr.change .changelog { width: auto; }
+    .weekend .sessions tr.change details.changes { width: auto; }
   }
   /* The weekends already run, folded away. Its own border rather than the
      shared `details` top rule, which is there to separate stacked ones. */
