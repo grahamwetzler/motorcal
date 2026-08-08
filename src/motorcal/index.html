@@ -205,7 +205,7 @@ function buildURL(state) {
   const query = params.map(([k, v]) => `${encode(k)}=${encode(v)}`).join("&");
   const path = "/events.ics";
   const error = empty.length ? `Pick at least one ${list(empty)}.`
-    : bad.length ? `Not a valid alert offset in: ${bad.join(", ")}`
+    : bad.length ? `Not a valid alert offset for ${list(bad.map(alarmFieldLabel))}.`
     : null;
   // `params` and `picked` are handed back so the preview can resolve an event
   // exactly the way the server will -- off the parameters actually emitted,
@@ -223,6 +223,15 @@ const TYPES_FOR = Object.fromEntries(SERIES.map(s => [s.key, TYPES.filter(([t]) 
 // 8 series rather than growing the palette; nothing here has that many.
 const SERIES_COLOR = Object.fromEntries(SERIES.map((s, i) => [s.key, `var(--series-${i % 8 + 1})`]));
 const UNITS = {d: ["day", "days"], h: ["hour", "hours"], m: ["minute", "minutes"]};
+// Turns a raw alarm param key ("alarms", "alarms_race", "f1.alarms",
+// "f1.alarms_race") back into the label its field shows on screen -- the
+// error text should read like the rest of the page, not like a query string.
+function alarmFieldLabel(key) {
+  const [prefix, field] = key.includes(".") ? key.split(".") : [null, key];
+  const type = field.startsWith("alarms_") ? field.slice("alarms_".length) : null;
+  const base = type ? LABELS[type] : "every session";
+  return prefix ? `${NAMES[prefix]} — ${base}` : base;
+}
 
 function list(items) {
   if (items.length <= 1) return items[0] || "";
@@ -616,6 +625,14 @@ new ResizeObserver(([entry]) => {
   }
   if (buildURL({...base, alarmMode: "set", alarms: "1h"}).bad.length !== 1) {
     ok = false; console.error("self-check: '1h' should be rejected (offsets are negative)");
+  }
+  const badGlobal = buildURL({...base, alarmMode: "set", alarms: "1h"}).error;
+  if (badGlobal !== "Not a valid alert offset for every session.") {
+    ok = false; console.error(`self-check: alarm error text should read in plain English, not a param key\n  got  ${badGlobal}`);
+  }
+  const badPerSeries = buildURL({...base, series: [first], per: {[first]: {sessions: null, alarms: "1h", byType: {}}}}).error;
+  if (badPerSeries !== `Not a valid alert offset for ${NAMES[first]} — every session.`) {
+    ok = false; console.error(`self-check: per-series alarm error text should name the series\n  got  ${badPerSeries}`);
   }
   if (buildURL({...base, alarmMode: "set", alarms: "-8d"}).bad.length !== 1) {
     ok = false; console.error("self-check: '-8d' should be rejected (over the 7-day cap)");
