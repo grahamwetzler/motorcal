@@ -30,6 +30,10 @@
     margin: 0; background: var(--bg); color: var(--fg);
     font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   }
+  /* The browser's own highlight is a system blue that belongs to no palette,
+     and copying the feed URL is the one thing everyone here does by hand. A
+     tint keeps the text in its own color underneath. */
+  ::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); }
   .wrap { max-width: 68rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; position: relative; }
   header { margin-bottom: 2rem; }
   .github-link {
@@ -73,6 +77,7 @@
   input[type=text] {
     background: var(--field); color: var(--fg); border: 1px solid var(--line); border-radius: .45rem;
     padding: .42rem .6rem; font: inherit; font-size: .88rem; width: 100%;
+    caret-color: var(--accent);
   }
   input[type=text]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   input.bad { border-color: #e5484d; background: color-mix(in srgb, #e5484d 8%, var(--field)); }
@@ -87,15 +92,17 @@
     border: 1px solid var(--line); background: var(--soft); border-radius: 999px;
     padding: .45rem .95rem; font-size: .95rem; font-weight: 600; transition: .12s;
   }
-  .chip input { position: absolute; opacity: 0; width: 0; height: 0; }
-  .chip::before { content: "＋"; font-size: .85em; opacity: .55; }
+  /* The real checkbox, shown rather than hidden behind a drawn tick of our
+     own: it is the same control the session list uses, so ticking a series
+     and ticking a session look and behave alike, and the browser's own tick
+     stays correct at every text size and platform. */
+  .chip input { accent-color: var(--c); }
   /* A tint, not a solid fill: the label stays in --fg at every hue rather than
      needing its own white-on-color contrast check per series. */
   .chip:has(input:checked) {
     background: color-mix(in srgb, var(--c) 20%, var(--panel));
     border-color: var(--c); color: var(--fg);
   }
-  .chip:has(input:checked)::before { content: "✓"; opacity: 1; color: var(--c); }
   .chip:has(input:focus-visible) { outline: 2px solid var(--c); outline-offset: 2px; }
 
   details { border-top: 1px solid var(--line); }
@@ -103,10 +110,17 @@
     cursor: pointer; padding: .6rem 0; font-size: .9rem; font-weight: 600; list-style: none;
     display: flex; align-items: center; gap: .5rem;
   }
-  details > summary::before { content: "▸"; color: var(--muted); font-size: .8rem; transition: transform .12s; }
-  details[open] > summary::before { transform: rotate(90deg); }
+  /* Drawn from two borders rather than set as a "▸": a glyph carries whatever
+     weight and baseline the text face gives it, which is never the stroke the
+     rest of the page is drawn in. */
+  details > summary::before {
+    content: ""; flex: none; width: .4rem; height: .4rem; margin: 0 .1rem 0 .15rem;
+    border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+    color: var(--muted); transform: rotate(-45deg); transition: transform .12s;
+  }
+  details[open] > summary::before { transform: rotate(45deg); }
   details > summary::-webkit-details-marker { display: none; }
-  .details-body { padding: 0 0 .9rem .95rem; border-left: 2px solid var(--line); margin: 0 0 .3rem .25rem; }
+  .details-body { padding: 0 0 .9rem .95rem; border-left: 1px solid var(--line); margin: 0 0 .3rem .25rem; }
   .tag { font-size: .72rem; color: var(--accent); font-weight: 700; }
 
   aside { position: sticky; top: 1.5rem; }
@@ -117,6 +131,9 @@
     display: block; background: var(--mono-bg); color: var(--mono-fg); border-radius: .5rem;
     padding: .7rem .8rem; font: .78rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
     word-break: break-all; max-height: 11rem; overflow: auto; margin-bottom: .85rem;
+    /* This block is the one dark surface on a light page, so the scrollbar a
+       long URL brings with it has to be told which side of the page it is on. */
+    scrollbar-width: thin; scrollbar-color: var(--muted) var(--mono-bg);
   }
   code#url.bad { color: #ff8b8f; }
   .actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
@@ -139,19 +156,38 @@
   .preview { margin-top: 1rem; }
   .preview h2 { margin-bottom: .5rem; }
   #next { display: flex; flex-direction: column; gap: .6rem; }
-  .event {
+  /* One card, drawn once: the builder's preview and the schedule's race
+     weekends are the same object seen twice, so .weekend below only adds the
+     spacing a stacked list needs. The series hue tints the hairline rather
+     than running a stripe down one edge -- every surface on the page keeps the
+     same 1px rule, and the hue is stated where it can be read, on the swatch
+     beside the series name. */
+  .event, .weekend {
     --c: var(--accent);
-    border: 1px solid var(--line); border-left: 4px solid var(--c); border-radius: .5rem;
+    border: 1px solid color-mix(in srgb, var(--c) 30%, var(--line)); border-radius: .5rem;
     background: var(--panel); padding: .75rem .9rem;
   }
-  /* The left border already carries the series color; the label itself stays
-     in --muted like any other text so it doesn't need its own per-hue contrast check. */
-  .event .series { font-size: .74rem; font-weight: 700; letter-spacing: .04em;
-    text-transform: uppercase; color: var(--muted); margin-bottom: .2rem; }
+  /* The swatch carries the series color; the label itself stays in --muted
+     like any other text so it doesn't need its own per-hue contrast check. */
+  .event .series, .weekend .series {
+    font-size: .74rem; font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: .2rem;
+  }
+  /* Sized to the label's cap height and sitting on its baseline, so it reads
+     as the key to the filter chip of the same color rather than as an
+     ornament floating next to the text. */
+  .event .series::before, .weekend .series::before {
+    content: ""; display: inline-block; width: .55rem; height: .55rem;
+    border-radius: .15rem; background: var(--c); margin-right: .45rem;
+  }
   .event .title { font-weight: 650; line-height: 1.35; }
-  .event .when { font-size: .87rem; margin-top: .2rem; }
+  .event .when { font-size: .87rem; margin-top: .2rem; font-variant-numeric: tabular-nums; }
   .event .where, .event .alarm { color: var(--muted); font-size: .84rem; margin-top: .15rem; }
-  .event.none { border-left-color: var(--line); color: var(--muted); font-size: .88rem; }
+  /* Nothing to show is not a series result, so it drops the hue entirely --
+     set on the border and swatch directly, since the card's inline --c is
+     still the series' own and would win over a rule redefining it. */
+  .event.none { border-color: var(--line); color: var(--muted); font-size: .88rem; }
+  .event.none .series::before { background: var(--line); }
 
   /* --- the schedule page --------------------------------------------------- */
   header .tz { font-size: .86rem; margin-top: .2rem; }
@@ -167,14 +203,9 @@
   }
   .month:first-child { margin-top: .5rem; }
   #schedule { display: flex; flex-direction: column; }
-  /* Same card shape as the builder's preview .event, one per race weekend. */
-  .weekend {
-    --c: var(--accent);
-    border: 1px solid var(--line); border-left: 4px solid var(--c); border-radius: .5rem;
-    background: var(--panel); padding: .75rem .9rem; margin-bottom: .6rem;
-  }
-  .weekend .series { font-size: .74rem; font-weight: 700; letter-spacing: .04em;
-    text-transform: uppercase; color: var(--muted); margin-bottom: .2rem; }
+  /* Shape, hairline, and series swatch all come from .event above -- one per
+     race weekend, stacked, so spacing is all this adds. */
+  .weekend { margin-bottom: .6rem; }
   /* The two weekends that bookend a series' season, called out the same way a
      cancelled session is: a small uppercase badge rather than a color, which
      is already spoken for by the series stripe. */
@@ -222,10 +253,16 @@
      needed to claw space back from a table forced to 100%. Unforced, every
      column already takes just what its content needs; nowrap only stops a
      time or duration from breaking mid-string. */
-  .weekend .sessions .time { white-space: nowrap; padding-right: .9rem; }
+  /* Tabular figures: a column of clock times is only a column if the digits
+     are the same width down it -- proportional 1s make "11:00" narrower than
+     "10:00" and the colons stop lining up. */
+  .weekend .sessions .time { white-space: nowrap; padding-right: .9rem; font-variant-numeric: tabular-nums; }
   /* Alongside the clock times, in --muted: it is the same fact said a second
      way, so it sits behind the times rather than beside them. */
-  .weekend .sessions .length { white-space: nowrap; color: var(--muted); font-size: .8rem; padding-right: .9rem; }
+  .weekend .sessions .length {
+    white-space: nowrap; color: var(--muted); font-size: .8rem; padding-right: .9rem;
+    font-variant-numeric: tabular-nums;
+  }
   /* A session that is not going ahead as listed: struck through when it is
      cancelled outright, and marked either way so the reason is stated rather
      than left to the styling. */
