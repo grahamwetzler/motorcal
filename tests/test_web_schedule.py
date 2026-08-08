@@ -174,6 +174,95 @@ def test_an_unannounced_time_keeps_its_date_and_says_so():
     )
 
 
+CHANGELOG_CONFIG = make_config(
+    series={
+        "wec": make_series(
+            name="WEC",
+            durations={"race": "6h"},
+            changes=[
+                {"season": 2027, "date": "2026-06-12", "text": "Nine-round calendar."},
+            ],
+            events=[
+                EventConfig(
+                    name="6 Hours of Imola",
+                    changes=[{"date": "2026-08-01", "text": "Moved a week later."}],
+                    sessions=[
+                        make_session(
+                            "wec-race",
+                            type="race",
+                            start="2027-04-19T13:00:00+00:00",
+                            changes=[
+                                {"date": "2026-08-07", "text": "Now an hour earlier."}
+                            ],
+                        ),
+                    ],
+                )
+            ],
+        ),
+        # A weekend with nothing to report, so the levels can be checked for
+        # borrowing each other's entries rather than only for carrying their own.
+        "f1": make_series(
+            name="Formula 1",
+            events=[
+                make_event(
+                    "f1-race",
+                    name="Bahrain Grand Prix",
+                    type="race",
+                    date="2026-10-09",
+                )
+            ],
+        ),
+    }
+)
+
+
+def test_an_entry_is_served_on_the_thing_it_describes():
+    """A change is shown where the reader is already looking -- under the session
+    that moved, on the card for the weekend that moved -- so it has to arrive
+    attached to that session or that weekend, not in a list of its own."""
+    body = _client(CHANGELOG_CONFIG).get("/sessions.json").json()
+    events = {event["name"]: event for event in body["events"]}
+
+    imola = events["6 Hours of Imola"]
+    assert imola["changes"] == [{"date": "2026-08-01", "text": "Moved a week later."}]
+    assert imola["sessions"][0]["changes"] == [
+        {"date": "2026-08-07", "text": "Now an hour earlier."}
+    ]
+    # And nothing borrows anyone else's -- the weekend that changed does not
+    # hand its entry down to the session, nor a session hand its up.
+    assert events["Bahrain Grand Prix"]["changes"] == []
+    assert events["Bahrain Grand Prix"]["sessions"][0]["changes"] == []
+
+
+def test_only_season_wide_changes_go_in_the_top_panel():
+    """The panel above the schedule is for what belongs to no single weekend -- a
+    calendar published, a round dropped. Anything with a weekend to sit on sits
+    there instead, or the same change is reported twice."""
+    body = _client(CHANGELOG_CONFIG).get("/sessions.json").json()
+
+    assert body["changes"] == [
+        {
+            "series": "wec",
+            "season": 2027,
+            "date": "2026-06-12",
+            "text": "Nine-round calendar.",
+        }
+    ]
+
+
+def test_every_level_serves_a_list_even_with_nothing_to_report():
+    """The page reads all three on every render, so they must always be there."""
+    body = _client(CONFIG).get("/sessions.json").json()
+
+    assert body["changes"] == []
+    assert all(event["changes"] == [] for event in body["events"])
+    assert all(
+        session["changes"] == []
+        for event in body["events"]
+        for session in event["sessions"]
+    )
+
+
 def test_the_schedule_page_and_stylesheet_are_served():
     client = _client(CONFIG)
 

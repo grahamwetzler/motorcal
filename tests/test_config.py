@@ -2,6 +2,7 @@ import pytest
 import yaml
 
 from motorcal.config import (
+    ChangeEntry,
     ConfigError,
     EventConfig,
     SessionConfig,
@@ -243,6 +244,90 @@ def test_a_session_with_a_confirmed_start_cannot_be_tbc():
 def test_a_session_rejects_an_invalid_start_or_date(field, value):
     with pytest.raises(ValueError):
         SessionConfig(uid="mine", type="race", **{field: value})
+
+
+# ------------------------------------------------------------------- changelog
+
+
+@pytest.mark.parametrize("value", ["20260807", "2026-W32-5", "2026-8-7"])
+def test_a_date_must_be_written_as_yyyy_mm_dd(value):
+    """`date.fromisoformat` accepts all of these and the string is kept as written,
+    so nothing downstream would reject them: the page concatenates a session's date
+    into an instant (`date + "T00:00:00"`), where none of these parse, and changelog
+    entries are ordered by comparing these strings, where none sorts against a
+    canonical one. One validator guards both fields.
+
+    `2026-8-7` is the one `fromisoformat` already rejected on its own; the other two
+    it accepts, and only the round trip turns them away."""
+    with pytest.raises(ValueError, match="ISO 8601 date"):
+        SessionConfig(uid="mine", type="race", date=value)
+    with pytest.raises(ValueError, match="ISO 8601 date"):
+        ChangeEntry(date=value, text="Moved an hour later.")
+
+
+def test_a_change_entry_needs_something_to_say():
+    with pytest.raises(ValueError, match="must not be empty"):
+        ChangeEntry(date="2026-08-07", text="   ")
+
+
+def test_a_season_is_only_valid_on_a_series_level_entry():
+    """The lower two levels take their season from the weekend they sit in. A
+    `season:` there is a misplaced entry, not a detail to ignore."""
+    with pytest.raises(ValueError):
+        SessionConfig(
+            uid="mine",
+            type="race",
+            date="2026-05-01",
+            changes=[{"season": 2026, "date": "2026-08-07", "text": "Moved."}],
+        )
+
+
+def test_a_season_level_entry_must_name_a_season_the_series_runs(tmp_path):
+    """A typo'd year files the entry under a season with no weekends, where the
+    page never shows it -- indistinguishable from having written no entry."""
+    config_dir = write_config_dir(
+        tmp_path,
+        make_config(
+            series={
+                "wec": make_series(
+                    events=[make_event("wec-2026-imola-race", date="2026-05-01")],
+                    changes=[
+                        {
+                            "season": 2027,
+                            "date": "2026-08-07",
+                            "text": "Nine-round calendar announced.",
+                        }
+                    ],
+                )
+            }
+        ),
+    )
+    with pytest.raises(ConfigError, match="runs no sessions in 2027"):
+        load_config(config_dir, uid_domain=UID_DOMAIN)
+
+
+def test_a_season_level_entry_loads_when_its_year_is_one_the_series_runs(tmp_path):
+    """Two seasons in one file is the case that matters -- WEC's 2027 calendar sits
+    after its 2026 one -- so both years have to pass."""
+    config_dir = write_config_dir(
+        tmp_path,
+        make_config(
+            series={
+                "wec": make_series(
+                    events=[
+                        make_event("wec-2026-imola-race", date="2026-05-01"),
+                        make_event("wec-2027-qatar-race", date="2027-03-27"),
+                    ],
+                    changes=[
+                        {"season": 2026, "date": "2026-01-05", "text": "Calendar set."},
+                        {"season": 2027, "date": "2026-06-12", "text": "Nine rounds."},
+                    ],
+                )
+            }
+        ),
+    )
+    loaded = load_config(config_dir, uid_domain=UID_DOMAIN)
+    assert [entry.season for entry in loaded.series["wec"].changes] == [2026, 2027]
 
 
 def test_an_event_needs_at_least_one_session():

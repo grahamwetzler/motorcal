@@ -61,6 +61,25 @@ def _validate_duration_string(value: str | None) -> str | None:
     return value
 
 
+def _validate_iso_date(value: str) -> str:
+    """A calendar date, and only in `YYYY-MM-DD` form.
+
+    `date.fromisoformat` also accepts `20260807` and `2026-W32-5`, and whatever
+    form it was given is what gets stored and served. Both other forms break
+    something downstream: the schedule page builds an instant by concatenation
+    (`date + "T00:00:00"`), where neither parses as a JavaScript Date, and a
+    changelog entry is ordered by comparing these strings, where neither sorts
+    against a canonical one. Requiring the round trip keeps one shape in the data.
+    """
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError as exc:
+        raise ValueError("must be an ISO 8601 date") from exc
+    if parsed.isoformat() != value:
+        raise ValueError(f"must be an ISO 8601 date written as YYYY-MM-DD: {value!r}")
+    return value
+
+
 def _validate_alarm_list(value: list[str] | None) -> list[str] | None:
     for offset in value or []:
         try:
@@ -187,6 +206,52 @@ class GlobalConfig(StrictModel):
 # --------------------------------------------------------------------------- events
 
 
+class ChangeEntry(StrictModel):
+    """One dated note about a schedule change: what moved, and why it moved.
+
+    An entry lives on the thing it describes -- a session, an event, or a season
+    of a series -- rather than pointing at it by uid. Nothing can dangle that
+    way: delete a session and its history goes with it.
+
+    That placement is also why all three levels exist. A session dropped from the
+    timetable has nowhere to leave a note once it is gone, so its removal is an
+    event-level entry, and a dropped weekend is a season-level one.
+    """
+
+    date: str  # when the change was made, not when the session runs
+    text: str  # plain English, for a subscriber: what changed and why
+
+    @field_validator("date")
+    @classmethod
+    def validate_date(cls, value: str) -> str:
+        return _validate_iso_date(value)
+
+    @field_validator("text")
+    @classmethod
+    def validate_text(cls, value: str) -> str:
+        # An entry with nothing to say is worse than no entry: it takes a line on
+        # the page and tells a reader nothing.
+        if not value.strip():
+            raise ValueError("A change entry's text must not be empty")
+        return value
+
+
+class SeasonChangeEntry(ChangeEntry):
+    """A change to a whole season: a calendar published, a weekend added or dropped.
+
+    `season` is the calendar year, which is what a season is everywhere else here
+    (`schedule.html`'s `seasonOf`). `load_config` checks it against the years the
+    series actually runs -- a typo'd year would otherwise file the entry under a
+    season with no weekends, where the page never shows it.
+
+    A separate class rather than an optional field on `ChangeEntry` so that
+    `extra="forbid"` still rejects a stray `season:` on a session-level entry
+    instead of silently ignoring it.
+    """
+
+    season: int
+
+
 class SessionConfig(StrictModel):
     """One session of a race event: a practice, a qualifying, the race itself.
 
@@ -208,6 +273,7 @@ class SessionConfig(StrictModel):
     note: str | None = None
     alarms: list[str] | None = None  # None = fall back to series/global defaults
     round: int | None = None  # only when it differs from the event's -- see EventConfig
+    changes: list[ChangeEntry] = []  # this session's own history
 
     @field_validator("uid")
     @classmethod
@@ -234,13 +300,7 @@ class SessionConfig(StrictModel):
     @field_validator("date")
     @classmethod
     def validate_date(cls, value: str | None) -> str | None:
-        if value is None:
-            return value
-        try:
-            date.fromisoformat(value)
-        except ValueError as exc:
-            raise ValueError("date must be an ISO 8601 date") from exc
-        return value
+        return _validate_iso_date(value) if value is not None else None
 
     @field_validator("duration")
     @classmethod
@@ -285,6 +345,9 @@ class EventConfig(StrictModel):
     location: str | None = None
     round: int | None = None
     sessions: list[SessionConfig] = []
+    # The weekend's own history: it moved, it was added, or a session was taken
+    # off its timetable (which has nowhere to live on the session itself).
+    changes: list[ChangeEntry] = []
 
     @model_validator(mode="after")
     def validate_has_sessions(self) -> EventConfig:
@@ -303,6 +366,9 @@ class SeriesConfig(StrictModel):
     durations: dict[str, str] | None = None
     alerts: dict[str, list[str]] | None = None
     events: list[EventConfig] = []
+    # Season-level history, each entry naming the year it belongs to. A file can
+    # hold more than one season -- WEC's 2027 calendar sits after its 2026 one.
+    changes: list[SeasonChangeEntry] = []
 
     @field_validator("durations")
     @classmethod
@@ -410,7 +476,16 @@ def load_config(config_dir: Path, *, uid_domain: str) -> Config:
     # client is entitled to treat as the same event.
     owner: dict[str, str] = {}
     for key, series_config in series.items():
+        seasons: set[int] = set()
         for _, session in series_config.iter_sessions():
+            # The year as written, which is what a season is named after. Taking
+            # it off every session rather than off the weekend's first one is only
+            # equivalent while no weekend straddles New Year -- true of every
+            # series tracked here, and the same assumption schedule.html's
+            # calendar-year `seasonOf` already rests on. A series whose season
+            # crosses a year end needs both rules reconciled, not just this one.
+            seasons.add(int((session.start or session.date)[:4]))
+
             uid = session_uid(session, uid_domain)
             if uid in owner:
                 raise ConfigError(
@@ -432,6 +507,19 @@ def load_config(config_dir: Path, *, uid_domain: str) -> Config:
                     f"Session {session.uid!r} in {key}.yaml has no duration: set one on the "
                     f"session, or add a {session.type.value!r} default to {key}.yaml or "
                     f"{GLOBAL_FILENAME}."
+                )
+
+        # A season-level entry names the year it belongs to, and the page groups
+        # by that year. One naming a year the series runs nothing in is filed
+        # under a season with no weekends, where nobody ever reads it -- which is
+        # indistinguishable from having written no entry at all.
+        for entry in series_config.changes:
+            if entry.season not in seasons:
+                raise ConfigError(
+                    f"Change entry in {key}.yaml is for season {entry.season}, but that "
+                    f"series runs no sessions in {entry.season} (it runs "
+                    f"{sorted(seasons)}). Fix the year, or move the entry to the event "
+                    "or session it describes."
                 )
 
     return Config(globals=globals_, series=series)

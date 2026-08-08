@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -30,6 +31,7 @@ from starlette.datastructures import QueryParams
 
 from motorcal.config import (
     COMBINED_SERIES_KEY,
+    ChangeEntry,
     Config,
     ConfigError,
     SessionConfig,
@@ -384,6 +386,9 @@ def _schedule(config: Config) -> dict[str, object]:
             "round": event.round,
             "location": event.location,
             "url": str(event.url) if event.url is not None else None,
+            # The weekend's own history, shown on its card: a reader meets why it
+            # moved at the thing that moved, not in a list somewhere above.
+            "changes": _entries(event.changes),
             "sessions": [
                 {
                     "label": session.label,
@@ -403,6 +408,7 @@ def _schedule(config: Config) -> dict[str, object]:
                         series_config=series,
                         globals_=config.globals,
                     ),
+                    "changes": _entries(session.changes),
                 }
                 for session in sorted(event.sessions, key=_sorts_at)
             ],
@@ -414,7 +420,40 @@ def _schedule(config: Config) -> dict[str, object]:
             {"key": key, "name": series.name} for key, series in config.series.items()
         ],
         "events": events,
+        "changes": _season_changes(config),
     }
+
+
+def _entries(changes: Sequence[ChangeEntry]) -> list[dict[str, str]]:
+    """A thing's own changelog, newest first.
+
+    Canonical YYYY-MM-DD (enforced in config.py) is why comparing the strings is
+    enough to order these.
+
+    Retention does not reach them -- like the rest of this page they are the data
+    directory as written -- so old entries are pruned by hand (see data/CLAUDE.md).
+    """
+    return sorted(
+        ({"date": entry.date, "text": entry.text} for entry in changes),
+        key=lambda entry: entry["date"],
+        reverse=True,
+    )
+
+
+def _season_changes(config: Config) -> list[dict[str, object]]:
+    """Series-level entries only, newest first, for the panel above the schedule.
+
+    An entry about one weekend or one session rides on that weekend or session
+    instead, where the reader is already looking. What is left is the changes
+    that belong to no single weekend -- a calendar published, a round dropped --
+    which have nowhere else on the page to sit.
+    """
+    entries = [
+        {"series": key, "season": entry.season, "date": entry.date, "text": entry.text}
+        for key, series in config.series.items()
+        for entry in series.changes
+    ]
+    return sorted(entries, key=lambda entry: entry["date"], reverse=True)
 
 
 # ------------------------------------------------------------------ query parsing

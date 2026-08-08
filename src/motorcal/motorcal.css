@@ -236,6 +236,38 @@
   }
   .weekend .sessions .cancelled { color: var(--danger); }
   .weekend .sessions .postponed { color: var(--muted); }
+  /* Why something moved, said where it moved: on the weekend's card, or in a
+     row under the session it is about. A left rule ties the note to what it
+     annotates -- without one, a session note is just another line of the
+     timetable, in a table whose every other row is a session. */
+  /* Folded away like the season panel above, but sized to sit inside a card:
+     the page's standard summary is a heading, and here it is a footnote on a
+     weekend that mostly has nothing to report. */
+  .weekend details.changes { border: 0; margin: .35rem 0 0; }
+  .weekend details.changes > summary {
+    padding: .1rem 0; font-size: .78rem; font-weight: 600; gap: .35rem;
+  }
+  .weekend details.changes .details-body { padding: .1rem 0 .15rem .6rem; margin: 0; }
+  /* A size below the session labels: the timetable is what the card is for, the
+     note is the aside. Notes cite their source, so a URL long enough to outrun
+     the card has to break rather than push a scrollbar out from under it. */
+  .weekend .changelog .what { font-size: .84rem; overflow-wrap: anywhere; }
+  /* Tight above, loose below, so the note groups with the session it follows
+     rather than floating between two of them. */
+  .weekend .sessions tr.change td { padding: .1rem 0 .55rem; }
+  /* A note runs longer than any session row, and auto table layout would widen
+     the table to fit it -- dragging the label and time columns apart on the one
+     weekend that has something to report, so it alone stops lining up with the
+     rest. So the note contributes nothing to sizing and instead spills into the
+     card's empty right-hand side, which has nothing in it anyway. That needs a
+     zero-width box of its own: a width on the cell is only a hint the table
+     overrides with the note's own content width. */
+  .weekend .sessions tr.change td, .weekend .sessions tr.change .note-wrap { width: 0; }
+  .weekend .sessions tr.change details.changes {
+    margin: 0;
+    /* Wide enough to read, and never wider than the card it spills across. */
+    width: min(34rem, calc(100vw - 6rem));
+  }
   @media (max-width: 30rem) {
     .weekend .sessions, .weekend .sessions tbody, .weekend .sessions tr { display: block; }
     .weekend .sessions tr { margin-top: .35rem; }
@@ -245,6 +277,14 @@
     .weekend .sessions .time::before,
     .weekend .sessions .length::before,
     .weekend .sessions .mark::before { content: " "; }
+    /* The stacked layout turns every cell inline so a session reads as one
+       wrapped line; a note is its own block regardless, or it runs on from the
+       duration it follows. Nothing is a table row here any more, so the note has
+       no columns left to distort and can just take the width it is given. */
+    .weekend .sessions tr.change td { display: block; }
+    .weekend .sessions tr.change td,
+    .weekend .sessions tr.change .note-wrap,
+    .weekend .sessions tr.change details.changes { width: auto; }
   }
   /* The weekends already run, folded away. Its own border rather than the
      shared `details` top rule, which is there to separate stacked ones. */
@@ -252,3 +292,12 @@
   details.past > summary { color: var(--muted); }
   details.past .details-body { padding-bottom: 0; }
   details.past .month:first-child { margin-top: .3rem; }
+  /* Season-level changes, folded away above the schedule -- the ones belonging
+     to no single weekend, so there is no card to put them on. Same quiet
+     treatment as the past weekends: there to be looked up, not read past. */
+  details.changes { border: 0; margin-bottom: .2rem; }
+  details.changes > summary { color: var(--muted); }
+  .changelog { list-style: none; margin: 0; padding: 0; }
+  .changelog li + li { margin-top: .7rem; }
+  .changelog .when { font-size: .76rem; color: var(--muted); }
+  .changelog .what { font-size: .88rem; line-height: 1.45; }
