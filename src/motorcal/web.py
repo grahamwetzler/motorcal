@@ -32,6 +32,8 @@ from motorcal.config import (
     COMBINED_SERIES_KEY,
     Config,
     ConfigError,
+    EventConfig,
+    SeriesConfig,
     SessionConfig,
     parse_alarm_offset,
 )
@@ -414,7 +416,72 @@ def _schedule(config: Config) -> dict[str, object]:
             {"key": key, "name": series.name} for key, series in config.series.items()
         ],
         "events": events,
+        "changes": _changes(config, weekends),
     }
+
+
+def _changes(
+    config: Config, weekends: list[tuple[str, str, SeriesConfig, EventConfig]]
+):
+    """Every changelog entry in the data directory, newest first.
+
+    The three levels an entry can live at flatten into one list here, each entry
+    carrying the scope it was found at, because the page's question is "what
+    changed since I last looked" rather than "what has ever happened to Imola".
+    A season-level entry has no event or session; an event-level one has no
+    session.
+
+    Retention does not reach these -- like the rest of this page they are the data
+    directory as written -- so old entries are pruned by hand (see data/CLAUDE.md).
+    """
+    entries = [
+        {
+            "series": key,
+            "season": entry.season,
+            "event": None,
+            "session": None,
+            "session_type": None,
+            "date": entry.date,
+            "text": entry.text,
+        }
+        for key, series in config.series.items()
+        for entry in series.changes
+    ]
+    for sorts_at, key, _, event in weekends:
+        # The weekend's own season: the year of its first session, already
+        # resolved to UTC by the sort key it was ordered on. A lower-level entry
+        # gets it for free, so every entry can say which season it belongs to.
+        season = int(sorts_at[:4])
+        entries += [
+            {
+                "series": key,
+                "season": season,
+                "event": event.name,
+                "session": None,
+                "session_type": None,
+                "date": entry.date,
+                "text": entry.text,
+            }
+            for entry in event.changes
+        ]
+        entries += [
+            {
+                "series": key,
+                "season": season,
+                "event": event.name,
+                # A race carries no label, so the type goes too and the page
+                # names it the same way it names a session row.
+                "session": session.label,
+                "session_type": session.type.value,
+                "date": entry.date,
+                "text": entry.text,
+            }
+            for session in event.sessions
+            for entry in session.changes
+        ]
+    # Canonical YYYY-MM-DD (enforced in config.py) is why comparing the strings
+    # is enough to order these.
+    return sorted(entries, key=lambda entry: entry["date"], reverse=True)
 
 
 # ------------------------------------------------------------------ query parsing

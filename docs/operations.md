@@ -40,6 +40,31 @@ treated as deliberately all-day, which is how a test day should read.
 **Renaming a `uid:` republishes that session as a new event.** Subscribers keep
 the old copy until it expires. Rename only when you mean to.
 
+## Recording why a schedule changed
+
+Changing something already published? Add a `changes` entry in the same commit,
+so `git log -p data/wec.yaml` shows the reason beside the edit and `/schedule`
+can show it too, in a "Recent changes" panel that is closed by default.
+
+```yaml
+      - uid: wec-2027-6-hours-of-imola-qualifying
+        # ...
+        changes:
+          - date: '2026-08-07'
+            text: Now 13:00 (was 14:00), following the revised support programme.
+```
+
+Entries live on the thing they describe, at whichever of the three levels owns
+the change — a **session**, an **event** (a weekend moved or dropped, or a session
+taken off its timetable, which has nowhere to live on a session that no longer
+exists), or the **series** with a `season:` year (a calendar published or
+withdrawn). `data/CLAUDE.md` has the full rule, which the scheduled agent follows
+too.
+
+Nothing prunes these — `/schedule` reads the directory as written, not the
+retention window the feeds publish — so drop entries from finished seasons when
+you next touch the file.
+
 ## Backups
 
 ```bash

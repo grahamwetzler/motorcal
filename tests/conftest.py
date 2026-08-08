@@ -41,6 +41,7 @@ def make_series(
     durations=None,
     alerts=None,
     events=None,
+    changes=None,
 ) -> SeriesConfig:
     return SeriesConfig(
         name=name,
@@ -48,6 +49,7 @@ def make_series(
         durations=durations,
         alerts=alerts,
         events=list(events or []),
+        changes=list(changes or []),
     )
 
 

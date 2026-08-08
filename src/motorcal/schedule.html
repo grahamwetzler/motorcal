@@ -40,6 +40,8 @@
     <div class="chips" id="series"></div>
   </section>
 
+  <div id="changes"></div>
+
   <div id="schedule"></div>
 
   <footer class="site-footer">
@@ -129,6 +131,46 @@ function durationText(session) {
   return rest ? `${hours}h ${rest}m` : `${hours}h`;
 }
 
+// --- changes ---------------------------------------------------------------
+// The changelog, folded away: someone whose calendar just moved can see what
+// changed and why without reading the repo. Entries arrive newest first, already
+// flattened from the three levels they live at in the data, each carrying the
+// scope it was found at.
+// A changelog date wants its year -- entries outlive the season they describe --
+// and has no use for the weekday `day()` adds.
+const changeDay = (date) =>
+  date.toLocaleDateString([], {day: "numeric", month: "short", year: "numeric"});
+
+// Widest scope first, narrowing: series and season always, then the weekend, then
+// the session. A race carries no label of its own, so it falls back to its type
+// the same way a session row does.
+function changeScope(entry) {
+  const parts = [`${NAMES[entry.series]} ${entry.season}`];
+  if (entry.event) parts.push(entry.event);
+  const session = entry.session || LABELS[entry.session_type];
+  if (session) parts.push(session);
+  return parts.join(" · ");
+}
+
+function renderChanges(series) {
+  const box = document.getElementById("changes");
+  box.textContent = "";
+  const entries = DATA.changes.filter((entry) => series.has(entry.series));
+  if (!entries.length) return;
+  const list = make("ul", {className: "changelog"});
+  for (const entry of entries) {
+    // The date is parsed as local midnight, so it renders as the day it was
+    // written rather than shifted a day by a UTC offset.
+    list.append(make("li", {},
+      make("div", {className: "when",
+        textContent: `${changeDay(new Date(entry.date + "T00:00:00"))} · ${changeScope(entry)}`}),
+      make("div", {className: "what", textContent: entry.text})));
+  }
+  box.append(make("details", {className: "changes"},
+    make("summary", {}, `Recent changes (${entries.length})`),
+    make("div", {className: "details-body"}, list)));
+}
+
 // --- days ------------------------------------------------------------------
 // A weekend runs over several days, and reading it a day at a time is how a
 // timetable is published. Sessions arrive in running order, so a day is a run
@@ -202,7 +244,7 @@ function weekendRounds(event) {
 }
 
 // --- rendering -------------------------------------------------------------
-let DATA = {series: [], events: []};
+let DATA = {series: [], events: [], changes: []};
 let NAMES = {};
 let COLOR = {};
 let ROUNDS = {};
@@ -336,6 +378,9 @@ function render() {
   try { saved = JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch { saved = {}; }
   saved.series = [...series];
   try { localStorage.setItem(PREFS_KEY, JSON.stringify(saved)); } catch {}
+
+  // Filtered by the same chips, since an entry is about one series' schedule.
+  renderChanges(series);
 
   if (!series.size) {
     box.append(make("div", {className: "event none", textContent: "Pick at least one series."}));
@@ -552,6 +597,23 @@ fetch("/sessions.json").then((response) => {
   const sameDay = events[0].sessions[0];
   check(timeText(sameDay), `${time(starts(sameDay))} – ${time(ends(sameDay))}`,
     "a session finishing the same day says only the clock times");
+
+  // A changelog entry says which of the three levels it came from purely by
+  // which scope fields are filled, so the wrong degradation silently mislabels
+  // whose schedule changed.
+  // changeScope names the series from the map the fetch fills in, and this check
+  // runs before that resolves -- so seed it. The real load overwrites it wholesale.
+  NAMES = {wec: "WEC"};
+  const entry = {series: "wec", season: 2027, event: null, session: null, session_type: null};
+  check(changeScope(entry), "WEC 2027", "a season entry names only its series and year");
+  check(changeScope({...entry, event: "6 Hours of Imola"}), "WEC 2027 · 6 Hours of Imola",
+    "an event entry adds its weekend");
+  check(changeScope({...entry, event: "6 Hours of Imola", session: "Qualifying",
+    session_type: "qualifying"}), "WEC 2027 · 6 Hours of Imola · Qualifying",
+    "a session entry adds its session");
+  check(changeScope({...entry, event: "6 Hours of Imola", session: "", session_type: "race"}),
+    "WEC 2027 · 6 Hours of Imola · Race",
+    "a race carries no label of its own and falls back to its type");
 
   // A weekend is past only once its last session has finished, and an all-day
   // session runs out its whole day rather than ending at midnight.

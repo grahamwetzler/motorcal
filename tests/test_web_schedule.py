@@ -174,6 +174,94 @@ def test_an_unannounced_time_keeps_its_date_and_says_so():
     )
 
 
+CHANGELOG_CONFIG = make_config(
+    series={
+        "wec": make_series(
+            name="WEC",
+            durations={"race": "6h"},
+            changes=[
+                {"season": 2027, "date": "2026-06-12", "text": "Nine-round calendar."},
+            ],
+            events=[
+                EventConfig(
+                    name="6 Hours of Imola",
+                    changes=[{"date": "2026-08-01", "text": "Moved a week later."}],
+                    sessions=[
+                        make_session(
+                            "wec-race",
+                            type="race",
+                            start="2027-04-19T13:00:00+00:00",
+                            changes=[
+                                {"date": "2026-08-07", "text": "Now an hour earlier."}
+                            ],
+                        ),
+                    ],
+                )
+            ],
+        ),
+        "f1": make_series(
+            name="Formula 1",
+            events=[
+                make_event(
+                    "f1-race",
+                    name="Bahrain Grand Prix",
+                    type="race",
+                    date="2026-10-09",
+                    changes=[{"date": "2026-09-01", "text": "Round order swapped."}],
+                )
+            ],
+        ),
+    }
+)
+
+
+def test_the_changelog_flattens_all_three_levels_newest_first():
+    """One list, because the question the page answers is "what changed since I
+    last looked". Each entry has to carry the scope it was found at, or a moved
+    session reads as a change to nothing in particular."""
+    body = _client(CHANGELOG_CONFIG).get("/sessions.json").json()
+
+    assert [
+        (entry["date"], entry["series"], entry["season"], entry["event"])
+        for entry in body["changes"]
+    ] == [
+        ("2026-09-01", "f1", 2026, "Bahrain Grand Prix"),
+        ("2026-08-07", "wec", 2027, "6 Hours of Imola"),
+        ("2026-08-01", "wec", 2027, "6 Hours of Imola"),
+        ("2026-06-12", "wec", 2027, None),
+    ]
+
+
+def test_a_changelog_entry_names_only_the_scope_it_belongs_to():
+    """A season entry has no weekend and no session; an event entry has no session.
+    The page tells the three levels apart by exactly that, so the nulls are the
+    contract."""
+    body = _client(CHANGELOG_CONFIG).get("/sessions.json").json()
+    entries = {entry["date"]: entry for entry in body["changes"]}
+
+    season = entries["2026-06-12"]
+    assert (season["event"], season["session"], season["session_type"]) == (
+        None,
+        None,
+        None,
+    )
+    event = entries["2026-08-01"]
+    assert (event["event"], event["session"], event["session_type"]) == (
+        "6 Hours of Imola",
+        None,
+        None,
+    )
+    # A race carries no label; the type is what lets the page name it anyway.
+    session = entries["2026-08-07"]
+    assert (session["session"], session["session_type"]) == ("", "race")
+    assert session["text"] == "Now an hour earlier."
+
+
+def test_a_schedule_with_no_changelog_serves_an_empty_list():
+    """The page filters this list on every render, so it must always be there."""
+    assert _client(CONFIG).get("/sessions.json").json()["changes"] == []
+
+
 def test_the_schedule_page_and_stylesheet_are_served():
     client = _client(CONFIG)
 

@@ -252,3 +252,11 @@
   details.past > summary { color: var(--muted); }
   details.past .details-body { padding-bottom: 0; }
   details.past .month:first-child { margin-top: .3rem; }
+  /* The changelog, folded away above the schedule. Same quiet treatment as the
+     past weekends: it is there to be looked up, not read on the way past. */
+  details.changes { border: 0; margin-bottom: .2rem; }
+  details.changes > summary { color: var(--muted); }
+  .changelog { list-style: none; margin: 0; padding: 0; }
+  .changelog li + li { margin-top: .7rem; }
+  .changelog .when { font-size: .76rem; color: var(--muted); }
+  .changelog .what { font-size: .88rem; line-height: 1.45; }
