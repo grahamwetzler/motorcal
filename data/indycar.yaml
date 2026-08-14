@@ -148,32 +148,36 @@ events:
       - uid: indycar-2026-markham-practice-1
         label: Practice 1
         type: practice
-        start: '2026-08-14T19:00:00+00:00'
-        duration: 90m
-        status: CONFIRMED
-      - uid: indycar-2026-markham-practice-2
-        label: Practice 2
-        type: practice
         start: '2026-08-15T14:00:00+00:00'
         duration: 90m
         status: CONFIRMED
+        note: Rescheduled from Friday to Saturday 10am ET after incomplete tire barrier/fencing construction delayed FIA certification of the new street circuit
+      - uid: indycar-2026-markham-practice-2
+        label: Practice 2
+        type: practice
+        start: '2026-08-15T18:30:00+00:00'
+        duration: 90m
+        status: CONFIRMED
+        note: Rescheduled from Saturday 10am to 2:30pm ET as Friday's sessions were condensed into Saturday
       - uid: indycar-2026-markham-qualifying
         label: Qualifying
         type: qualifying
-        start: '2026-08-15T18:25:00+00:00'
-        duration: 95m
+        start: '2026-08-15T22:30:00+00:00'
+        duration: 90m
         status: CONFIRMED
+        note: Rescheduled from Saturday 2:25pm to 6:30pm ET as Friday's sessions were condensed into Saturday
       - uid: indycar-2026-markham-warmup
         label: Warmup
         type: warmup
-        start: '2026-08-16T12:30:00+00:00'
-        duration: 60m
+        start: '2026-08-16T12:40:00+00:00'
+        duration: 30m
         status: CONFIRMED
       - uid: indycar-2026-ontario-honda-dealers-indy-at-markham-race
         type: race
         start: '2026-08-16T16:00:00+00:00'
         duration: 150m
         status: CONFIRMED
+        note: Green flag start+22m. Fox. Inaugural Markham race, IndyCar's only round in Canada, moved from Toronto's Exhibition Place
   - name: Freedom 250 Grand Prix of Washington, D.C.
     url: https://www.indycar.com/Schedule/2026/Washington-DC
     location: Streets of Washington, United States
