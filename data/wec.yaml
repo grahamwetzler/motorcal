@@ -253,6 +253,12 @@ events:
         date: '2026-09-26'
         tbc: true
         status: CONFIRMED
+      - uid: wec-2026-6-hours-of-fuji-hyperpole-lmgt3
+        label: Hyperpole - LMGT3
+        type: hyperpole
+        date: '2026-09-26'
+        tbc: true
+        status: CONFIRMED
       - uid: wec-2026-6-hours-of-fuji-qualifying-hypercar
         label: Qualifying - Hypercar
         type: qualifying
