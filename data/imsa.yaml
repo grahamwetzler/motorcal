@@ -139,6 +139,7 @@ events:
         type: race
         start: '2026-08-23T16:00:00+00:00'
         status: CONFIRMED
+        note: Green flag start+10m per IMSA's Aug 12 Entry List Notebook article. NBC 12-3pm ET, Peacock flag-to-flag.
   - name: TireRack.com Battle On The Bricks
     url: https://www.imsa.com/events/2026-indianapolis-motor-speedway/
     location: Indianapolis Motor Speedway, United States
