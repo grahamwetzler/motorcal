@@ -4,14 +4,22 @@ on:
   pull_request:
     types: [opened]
 
+permissions:
+  contents: read
+
 jobs:
   ntfy:
     runs-on: ubuntu-latest
     steps:
       - name: Send ntfy notification
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          NTFY_URL: ${{ secrets.NTFY_URL }}
         run: |
+          title="$(printf '%s' "$PR_TITLE" | tr -d '\r\n')"
           curl -sf \
-            -H "Title: PR opened: ${{ github.event.pull_request.title }}" \
-            -H "Click: ${{ github.event.pull_request.html_url }}" \
-            -d "${{ github.event.pull_request.html_url }}" \
-            "${{ secrets.NTFY_URL }}"
+            -H "Title: PR opened: $title" \
+            -H "Click: $PR_URL" \
+            -d "$PR_URL" \
+            "$NTFY_URL"
