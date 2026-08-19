@@ -1,0 +1,17 @@
+name: Notify PR Opened
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  ntfy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send ntfy notification
+        run: |
+          curl -sf \
+            -H "Title: PR opened: ${{ github.event.pull_request.title }}" \
+            -H "Click: ${{ github.event.pull_request.html_url }}" \
+            -d "${{ github.event.pull_request.html_url }}" \
+            "${{ secrets.NTFY_URL }}"
