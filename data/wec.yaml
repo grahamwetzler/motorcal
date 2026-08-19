@@ -179,49 +179,41 @@ events:
       - uid: wec-2026-lone-star-le-mans-free-practice-1
         label: Free Practice 1
         type: practice
-        date: '2026-09-04'
-        tbc: true
+        start: '2026-09-04T16:30:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-lone-star-le-mans-free-practice-2
         label: Free Practice 2
         type: practice
-        date: '2026-09-04'
-        tbc: true
+        start: '2026-09-04T21:00:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-lone-star-le-mans-free-practice-3
         label: Free Practice 3
         type: practice
-        date: '2026-09-05'
-        tbc: true
+        start: '2026-09-05T16:00:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-lone-star-le-mans-qualifying-lmgt3
         label: Qualifying - LMGT3
         type: qualifying
-        date: '2026-09-05'
-        tbc: true
+        start: '2026-09-05T20:00:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-lone-star-le-mans-hyperpole-lmgt3
         label: Hyperpole - LMGT3
         type: hyperpole
-        date: '2026-09-05'
-        tbc: true
+        start: '2026-09-05T20:20:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-lone-star-le-mans-qualifying-hypercar
         label: Qualifying - Hypercar
         type: qualifying
-        date: '2026-09-05'
-        tbc: true
+        start: '2026-09-05T20:40:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-lone-star-le-mans-hyperpole-hypercar
         label: Hyperpole - Hypercar
         type: hyperpole
-        date: '2026-09-05'
-        tbc: true
+        start: '2026-09-05T21:00:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-lone-star-le-mans-race
         type: race
-        date: '2026-09-06'
-        tbc: true
+        start: '2026-09-06T18:00:00+00:00'
         duration: 360m
         status: CONFIRMED
   - name: 6 Hours of Fuji
@@ -232,49 +224,41 @@ events:
       - uid: wec-2026-6-hours-of-fuji-free-practice-1
         label: Free Practice 1
         type: practice
-        date: '2026-09-25'
-        tbc: true
+        start: '2026-09-25T01:15:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-fuji-free-practice-2
         label: Free Practice 2
         type: practice
-        date: '2026-09-25'
-        tbc: true
+        start: '2026-09-25T05:30:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-fuji-free-practice-3
         label: Free Practice 3
         type: practice
-        date: '2026-09-26'
-        tbc: true
+        start: '2026-09-26T00:50:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-fuji-qualifying-lmgt3
         label: Qualifying - LMGT3
         type: qualifying
-        date: '2026-09-26'
-        tbc: true
+        start: '2026-09-26T05:20:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-fuji-hyperpole-lmgt3
         label: Hyperpole - LMGT3
         type: hyperpole
-        date: '2026-09-26'
-        tbc: true
+        start: '2026-09-26T05:40:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-fuji-qualifying-hypercar
         label: Qualifying - Hypercar
         type: qualifying
-        date: '2026-09-26'
-        tbc: true
+        start: '2026-09-26T06:00:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-fuji-hyperpole-hypercar
         label: Hyperpole - Hypercar
         type: hyperpole
-        date: '2026-09-26'
-        tbc: true
+        start: '2026-09-26T06:20:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-fuji-race
         type: race
-        date: '2026-09-27'
-        tbc: true
+        start: '2026-09-27T02:00:00+00:00'
         status: CONFIRMED
   - name: 6 Hours of Barcelona
     url: https://www.fiawec.com/en/race/6-hours-of-barcelona-2026
