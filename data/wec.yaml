@@ -224,7 +224,7 @@ events:
         tbc: true
         duration: 360m
         status: CONFIRMED
-        note: truTV (full race), HBO Max (streaming, all sessions). Round 5 of 8.
+        note: truTV and HBO Max stream the race live. Round 5 of 8.
   - name: 6 Hours of Fuji
     url: https://www.fiawec.com/en/race/6-hours-of-fuji-2026
     location: Fuji Speedway, Japan
@@ -277,7 +277,7 @@ events:
         date: '2026-09-27'
         tbc: true
         status: CONFIRMED
-        note: HBO Max (streaming, all sessions). Round 6 of 8.
+        note: HBO Max streams the race live. Round 6 of 8.
   - name: 6 Hours of Barcelona
     url: https://www.fiawec.com/en/race/6-hours-of-barcelona-2026
     location: Circuit de Barcelona-Catalunya, Spain
