@@ -180,11 +180,13 @@ events:
         label: Free Practice 1
         type: practice
         start: '2026-09-04T16:30:00+00:00'
+        duration: 90m
         status: CONFIRMED
       - uid: wec-2026-lone-star-le-mans-free-practice-2
         label: Free Practice 2
         type: practice
         start: '2026-09-04T21:00:00+00:00'
+        duration: 90m
         status: CONFIRMED
       - uid: wec-2026-lone-star-le-mans-free-practice-3
         label: Free Practice 3
@@ -225,11 +227,13 @@ events:
         label: Free Practice 1
         type: practice
         start: '2026-09-25T01:15:00+00:00'
+        duration: 90m
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-fuji-free-practice-2
         label: Free Practice 2
         type: practice
         start: '2026-09-25T05:30:00+00:00'
+        duration: 90m
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-fuji-free-practice-3
         label: Free Practice 3
