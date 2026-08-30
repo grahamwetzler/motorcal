@@ -234,10 +234,10 @@ events:
       - uid: indycar-2026-snap-on-milwaukee-250-race-1
         label: 'Race #1'
         type: race
-        start: '2026-08-30T13:00:00+00:00'
+        start: '2026-08-30T22:00:00+00:00'
         duration: 150m
         status: CONFIRMED
-        note: Red-flagged for rain after 91 laps Saturday; resumes Sunday 9am ET ahead of Race #2
+        note: Red-flagged for rain after 91 laps Saturday; resumption postponed from Sunday 9am ET to 5pm CT
       - uid: indycar-2026-snap-on-milwaukee-250-race-2
         label: 'Race #2'
         type: race
