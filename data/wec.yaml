@@ -338,31 +338,26 @@ events:
       - uid: wec-2026-6-hours-of-monza-qualifying-lmgt3
         label: Qualifying - LMGT3
         type: qualifying
-        date: '2026-11-07'
-        tbc: true
+        start: '2026-11-07T13:20:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-monza-hyperpole-lmgt3
         label: Hyperpole - LMGT3
         type: hyperpole
-        date: '2026-11-07'
-        tbc: true
+        start: '2026-11-07T13:40:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-monza-qualifying-hypercar
         label: Qualifying - Hypercar
         type: qualifying
-        date: '2026-11-07'
-        tbc: true
+        start: '2026-11-07T14:00:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-monza-hyperpole-hypercar
         label: Hyperpole - Hypercar
         type: hyperpole
-        date: '2026-11-07'
-        tbc: true
+        start: '2026-11-07T14:20:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-monza-race
         type: race
-        date: '2026-11-08'
-        tbc: true
+        start: '2026-11-08T10:00:00+00:00'
         duration: 360m
         status: CONFIRMED
   # 2027 calendar announced 2026-06-12: https://www.fiawec.com/en/news/fia-wec-reveals-nine-round-2027-calendar-as-series-expands/13598
