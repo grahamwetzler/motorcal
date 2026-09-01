@@ -245,7 +245,7 @@ events:
         duration: 150m
         status: CONFIRMED
         round: 17
-  - name: IndyCar Grand Prix of Monterey
+  - name: Mission Foods Grand Prix of Monterey
     url: https://www.indycar.com/Schedule/2026/Laguna-Seca
     location: WeatherTech Raceway Laguna Seca, United States
     round: 18
