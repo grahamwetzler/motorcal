@@ -290,31 +290,26 @@ events:
       - uid: wec-2026-6-hours-of-barcelona-qualifying-lmgt3
         label: Qualifying - LMGT3
         type: qualifying
-        date: '2026-10-17'
-        tbc: true
+        start: '2026-10-17T09:50:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-barcelona-hyperpole-lmgt3
         label: Hyperpole - LMGT3
         type: hyperpole
-        date: '2026-10-17'
-        tbc: true
+        start: '2026-10-17T10:10:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-barcelona-qualifying-hypercar
         label: Qualifying - Hypercar
         type: qualifying
-        date: '2026-10-17'
-        tbc: true
+        start: '2026-10-17T10:30:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-barcelona-hyperpole-hypercar
         label: Hyperpole - Hypercar
         type: hyperpole
-        date: '2026-10-17'
-        tbc: true
+        start: '2026-10-17T10:50:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-barcelona-race
         type: race
-        date: '2026-10-18'
-        tbc: true
+        start: '2026-10-18T10:00:00+00:00'
         duration: 360m
         status: CONFIRMED
   - name: 6 Hours of Monza
