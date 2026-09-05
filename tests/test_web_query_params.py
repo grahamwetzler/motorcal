@@ -20,14 +20,24 @@ PREBUILT = b"BEGIN:VCALENDAR\r\nSUMMARY:prebuilt\r\nEND:VCALENDAR\r\n"
 
 
 def _event(
-    uid, session_type=SessionType.RACE, *, series="wec", alarms=None, confirmed=True
+    uid,
+    session_type=SessionType.RACE,
+    *,
+    series="wec",
+    event_name=None,
+    event_round=None,
+    start=None,
+    alarms=None,
+    confirmed=True,
 ):
     return PublishedEvent(
         uid=uid,
         series=series,
         session_type=session_type,
+        event_name=event_name if event_name is not None else uid,
+        event_round=event_round,
         summary=uid,
-        start=datetime(2026, 4, 19, 13, tzinfo=UTC) if confirmed else None,
+        start=(start or datetime(2026, 4, 19, 13, tzinfo=UTC)) if confirmed else None,
         all_day_date=None if confirmed else "2026-04-19",
         time_confirmed=confirmed,
         duration_seconds=3600,
@@ -295,6 +305,48 @@ def test_an_unknown_prefix_is_reported_as_an_unknown_series():
 
     assert response.status_code == 400
     assert "unknown series" in response.json()["detail"]
+
+
+# --------------------------------------------------------- combine_qualifying
+
+
+def test_combine_qualifying_defaults_to_off():
+    assert b"Combines:" not in _get(query="sessions=race").content
+
+
+def test_combine_qualifying_cannot_be_set_for_one_series():
+    assert _get(query="wec.combine_qualifying=true").status_code == 400
+
+
+def test_an_invalid_combine_qualifying_value_is_rejected():
+    assert _get(query="combine_qualifying=maybe").status_code == 400
+
+
+def test_combine_qualifying_merges_a_weekends_qualifying_family_sessions():
+    published = {
+        "wec": [
+            _event(
+                "wec-lsl-qualifying-lmgt3",
+                SessionType.QUALIFYING,
+                event_name="Lone Star Le Mans",
+                start=datetime(2026, 9, 5, 20, 0, tzinfo=UTC),
+            ),
+            _event(
+                "wec-lsl-hyperpole-lmgt3",
+                SessionType.HYPERPOLE,
+                event_name="Lone Star Le Mans",
+                start=datetime(2026, 9, 5, 20, 20, tzinfo=UTC),
+            ),
+        ]
+    }
+
+    body = (
+        _client(published).get("/events.ics?series=wec&combine_qualifying=true").content
+    )
+
+    assert body.count(b"BEGIN:VEVENT") == 1
+    assert b"SUMMARY:WEC: Lone Star Le Mans Qualifying" in body
+    assert b"Combines:" in body
 
 
 def test_settings_for_a_series_outside_the_selection_are_rejected():

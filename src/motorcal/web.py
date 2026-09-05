@@ -36,8 +36,8 @@ from motorcal.config import (
     parse_alarm_offset,
 )
 from motorcal.ics import build_title, compute_content_hash, render_combined_bytes
-from motorcal.merge import resolve_duration
-from motorcal.models import PublishedEvent, SessionType
+from motorcal.merge import compute_fingerprint, resolve_duration
+from motorcal.models import EventStatus, PublishedEvent, SessionType
 
 _access_logger = logging.getLogger("motorcal.access")
 
@@ -84,7 +84,7 @@ _SERIES_PARAMS = {"sessions", "alarms", *_ALARM_PARAMS}
 # `practices`/`qualifying` predate `sessions` and are kept for feeds already
 # subscribed to in people's calendar apps.
 _LEGACY_PARAMS = {"practices", "qualifying"}
-_GLOBAL_ONLY_PARAMS = {"series", "emoji", "name", *_LEGACY_PARAMS}
+_GLOBAL_ONLY_PARAMS = {"series", "emoji", "name", "combine_qualifying", *_LEGACY_PARAMS}
 _GLOBAL_PARAMS = _SERIES_PARAMS | _GLOBAL_ONLY_PARAMS
 
 _BOOLEANS = {
@@ -144,6 +144,7 @@ class Selection:
     filters: dict[str, _Filters]
     prefix: str
     calname: str | None
+    combine_qualifying: bool
     is_default: bool
 
 
@@ -255,6 +256,11 @@ def create_app(config: Config, *, public_domain: str | None = None) -> FastAPI:
                 )
                 for series in selection.series
             }
+            if selection.combine_qualifying:
+                published = {
+                    series: _combine_qualifying(events)
+                    for series, events in published.items()
+                }
             ics_bytes = render_combined_bytes(
                 publication.config,
                 published,
@@ -676,6 +682,9 @@ def _parse_selection(query: QueryParams, config: Config) -> Selection:
         calname=_parse_calendar_name(global_raw["name"])
         if "name" in global_raw
         else None,
+        combine_qualifying=_parse_bool(
+            global_raw.get("combine_qualifying", "false"), "combine_qualifying"
+        ),
         is_default=not items,
     )
 
@@ -699,6 +708,113 @@ def _select(events: list[PublishedEvent], filters: _Filters) -> list[PublishedEv
             event = replace(event, alarms=list(alarms))
         selected.append(event)
     return selected
+
+
+# `?combine_qualifying=true` merges every qualifying-family session of one
+# weekend into a single event. CANCELLED beats TENTATIVE beats CONFIRMED: one
+# cancelled sub-session is enough to flag the whole combined block.
+_STATUS_SEVERITY = {
+    EventStatus.CONFIRMED: 0,
+    EventStatus.TENTATIVE: 1,
+    EventStatus.CANCELLED: 2,
+}
+
+
+def _merge_group(group: list[PublishedEvent]) -> PublishedEvent:
+    """Collapse one weekend's qualifying-family sessions into one event.
+
+    Every field a subscriber would actually see is recomputed from the whole
+    group; everything else (series, location, url, event_name) is shared
+    across the group already, so it is copied from an arbitrary member.
+    """
+    first = group[0]
+    start = min(event.start for event in group)
+    end = max(
+        event.start + timedelta(seconds=event.duration_seconds or 0) for event in group
+    )
+    duration_seconds = int((end - start).total_seconds())
+    status = max(group, key=lambda event: _STATUS_SEVERITY[event.status]).status
+    alarms = sorted({offset for event in group for offset in event.alarms})
+    summary = f"{first.event_name} Qualifying"
+
+    sub_sessions = ", ".join(
+        event.summary for event in sorted(group, key=lambda e: e.start)
+    )
+    description_lines = list(
+        dict.fromkeys(
+            line for event in group for line in event.description.splitlines() if line
+        )
+    )
+    description_lines.append(f"Combines: {sub_sessions}")
+    description = "\n".join(description_lines)
+
+    uid_local, _, domain = first.uid.partition("@")
+    uid = f"{uid_local}-combined@{domain}" if domain else f"{uid_local}-combined"
+
+    fingerprint = compute_fingerprint(
+        summary=summary,
+        description=description,
+        location=first.location,
+        status=status.value,
+        start=start.isoformat(),
+        all_day_date=None,
+        duration_seconds=duration_seconds,
+        alarms=alarms,
+        series_name=first.series,
+        url=first.url,
+    )
+
+    return replace(
+        first,
+        uid=uid,
+        session_type=SessionType.QUALIFYING,
+        summary=summary,
+        start=start,
+        all_day_date=None,
+        time_confirmed=True,
+        duration_seconds=duration_seconds,
+        description=description,
+        status=status,
+        sequence=max(event.sequence for event in group),
+        dtstamp=max(event.dtstamp for event in group),
+        last_modified=max(event.last_modified for event in group),
+        fingerprint=fingerprint,
+        alarms=alarms,
+    )
+
+
+def _combine_qualifying(events: list[PublishedEvent]) -> list[PublishedEvent]:
+    """Merge each weekend's qualifying-family sessions into one combined event.
+
+    Groups the already-filtered list by `(event_name, event_round)` -- the
+    weekend's name alone is not a safe key, since a series reuses one event
+    name across seasons (WEC's "Lone Star Le Mans" every year, each its own
+    round). A group combines only if it has 2+ qualifying-family sessions and
+    every one has a confirmed start -- an unconfirmed/TBC session has no real
+    time to build a span from, so that group is left untouched. Everything
+    else in the list passes through as-is.
+    """
+    grouped: dict[tuple[str, int | None], list[PublishedEvent]] = {}
+    order: list[tuple[str, int | None]] = []
+    others: list[PublishedEvent] = []
+    for event in events:
+        if event.session_type not in _QUALIFYING_TYPES:
+            others.append(event)
+            continue
+        key = (event.event_name, event.event_round)
+        if key not in grouped:
+            order.append(key)
+        grouped.setdefault(key, []).append(event)
+
+    combined: list[PublishedEvent] = []
+    for key in order:
+        group = grouped[key]
+        if len(group) < 2 or any(not event.time_confirmed for event in group):
+            combined.extend(group)
+        else:
+            combined.append(_merge_group(group))
+
+    return others + combined
 
 
 def _client_ip(request: Request) -> str:

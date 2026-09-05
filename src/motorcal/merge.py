@@ -209,6 +209,8 @@ def build_published_event(
         uid=uid,
         series=series,
         session_type=session_type,
+        event_name=event.name,
+        event_round=event.round,
         summary=summary,
         start=start,
         all_day_date=all_day_date,
