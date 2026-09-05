@@ -257,6 +257,90 @@ def test_two_seasons_sharing_both_name_and_round_are_still_kept_apart():
     assert {e.start.year for e in combined} == {2026, 2027}  # ...never together
 
 
+def test_sprint_qualifying_never_merges_with_the_weekends_own_qualifying():
+    """An F1 sprint weekend (e.g. Singapore) runs sprint qualifying on Friday
+    and the race's own qualifying over 24 hours later on Saturday, with the
+    sprint race itself in between -- the two decide different races' grids
+    and must never become one combined block, unlike WEC's hyperpole (a stage
+    of the *same* qualifying process).
+    """
+    events = [
+        _event(
+            "f1-2026-singapore-sprint-qualifying",
+            SessionType.SPRINT_QUALIFYING,
+            event_name="Singapore Grand Prix",
+            event_key="f1-2026-singapore-practice-1",
+            series="f1",
+            start=datetime(2026, 10, 9, 12, 30, tzinfo=UTC),
+        ),
+        _event(
+            "f1-2026-singapore-qualifying",
+            SessionType.QUALIFYING,
+            event_name="Singapore Grand Prix",
+            event_key="f1-2026-singapore-practice-1",
+            series="f1",
+            start=datetime(2026, 10, 10, 13, 0, tzinfo=UTC),
+        ),
+    ]
+
+    result = _combine_qualifying(events)
+
+    assert {e.uid for e in result} == {
+        "f1-2026-singapore-sprint-qualifying",
+        "f1-2026-singapore-qualifying",
+    }
+
+
+def test_a_cancelled_session_in_the_group_blocks_the_merge():
+    """Calendar apps can hide or strike through a CANCELLED event -- one
+    cancelled sub-session must not paint the rest of a still-happening block
+    that way.
+    """
+    events = [
+        _event(
+            "wec-2026-lsl-qualifying-lmgt3",
+            SessionType.QUALIFYING,
+            start=datetime(2026, 9, 5, 20, 0, tzinfo=UTC),
+        ),
+        _event(
+            "wec-2026-lsl-hyperpole-lmgt3",
+            SessionType.HYPERPOLE,
+            start=datetime(2026, 9, 5, 20, 20, tzinfo=UTC),
+            status=EventStatus.CANCELLED,
+        ),
+    ]
+
+    result = _combine_qualifying(events)
+
+    assert {e.uid for e in result} == {
+        "wec-2026-lsl-qualifying-lmgt3",
+        "wec-2026-lsl-hyperpole-lmgt3",
+    }
+
+
+def test_a_uniformly_cancelled_group_still_merges():
+    """The block is still one combined CANCELLED event when every member agrees."""
+    events = [
+        _event(
+            "wec-2026-lsl-qualifying-lmgt3",
+            SessionType.QUALIFYING,
+            start=datetime(2026, 9, 5, 20, 0, tzinfo=UTC),
+            status=EventStatus.CANCELLED,
+        ),
+        _event(
+            "wec-2026-lsl-hyperpole-lmgt3",
+            SessionType.HYPERPOLE,
+            start=datetime(2026, 9, 5, 20, 20, tzinfo=UTC),
+            status=EventStatus.CANCELLED,
+        ),
+    ]
+
+    result = _combine_qualifying(events)
+
+    combined = _combined(result)
+    assert combined.status == EventStatus.CANCELLED
+
+
 def test_combining_is_deterministic_across_repeated_requests():
     """A subscriber polls the same feed URL repeatedly -- the merged event must be stable."""
     first = _combine_qualifying(_lone_star_le_mans())

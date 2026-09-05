@@ -37,7 +37,7 @@ from motorcal.config import (
 )
 from motorcal.ics import build_title, compute_content_hash, render_combined_bytes
 from motorcal.merge import compute_fingerprint, resolve_duration
-from motorcal.models import EventStatus, PublishedEvent, SessionType
+from motorcal.models import PublishedEvent, SessionType
 
 _access_logger = logging.getLogger("motorcal.access")
 
@@ -711,12 +711,15 @@ def _select(events: list[PublishedEvent], filters: _Filters) -> list[PublishedEv
 
 
 # `?combine_qualifying=true` merges every qualifying-family session of one
-# weekend into a single event. CANCELLED beats TENTATIVE beats CONFIRMED: one
-# cancelled sub-session is enough to flag the whole combined block.
-_STATUS_SEVERITY = {
-    EventStatus.CONFIRMED: 0,
-    EventStatus.TENTATIVE: 1,
-    EventStatus.CANCELLED: 2,
+# weekend into a single event -- but hyperpole is a *stage of the same*
+# qualifying process as a plain "qualifying" (WEC splits it by class), while a
+# sprint weekend's sprint qualifying decides an entirely different race's grid,
+# a full day apart with the sprint race itself in between. The two must never
+# share a combined block, even on the same weekend.
+_QUALIFYING_FAMILY = {
+    SessionType.QUALIFYING: "qualifying",
+    SessionType.HYPERPOLE: "qualifying",
+    SessionType.SPRINT_QUALIFYING: "sprint_qualifying",
 }
 
 
@@ -725,7 +728,9 @@ def _merge_group(group: list[PublishedEvent]) -> PublishedEvent:
 
     Every field a subscriber would actually see is recomputed from the whole
     group; everything else (series, location, url, event_name) is shared
-    across the group already, so it is copied from an arbitrary member.
+    across the group already, so it is copied from an arbitrary member. The
+    group is guaranteed (by `_combine_qualifying`) to share one status, so
+    there is no cancelled-vs-confirmed conflict to resolve here.
     """
     first = group[0]
     start = min(event.start for event in group)
@@ -733,7 +738,7 @@ def _merge_group(group: list[PublishedEvent]) -> PublishedEvent:
         event.start + timedelta(seconds=event.duration_seconds or 0) for event in group
     )
     duration_seconds = int((end - start).total_seconds())
-    status = max(group, key=lambda event: _STATUS_SEVERITY[event.status]).status
+    status = first.status
     alarms = sorted({offset for event in group for offset in event.alarms})
     summary = f"{first.event_name} Qualifying"
 
@@ -786,23 +791,29 @@ def _merge_group(group: list[PublishedEvent]) -> PublishedEvent:
 def _combine_qualifying(events: list[PublishedEvent]) -> list[PublishedEvent]:
     """Merge each weekend's qualifying-family sessions into one combined event.
 
-    Groups the already-filtered list by `event_key` -- the weekend's name and
-    round are not safe for this: a series reuses an event name across seasons
-    (WEC's "Lone Star Le Mans" every year), and round numbers are seasonal
-    ordinals that can coincide across two different seasons. A group combines
-    only if it has 2+ qualifying-family sessions and every one has a confirmed
-    start -- an unconfirmed/TBC session has no real time to build a span from,
-    so that group is left untouched. Everything else in the list passes
-    through as-is.
+    Groups the already-filtered list by `(event_key, family)`: `event_key`
+    since the weekend's name and round are not safe for this (a series reuses
+    an event name across seasons, e.g. WEC's "Lone Star Le Mans" every year,
+    and round numbers are seasonal ordinals that can coincide across two
+    different seasons); `family` because a sprint weekend's sprint qualifying
+    decides a different race's grid than the weekend's plain qualifying, so
+    the two must never merge even though both count as "qualifying-family".
+
+    A group combines only if it has 2+ sessions, every one has a confirmed
+    start (an unconfirmed/TBC session has no real time to build a span from),
+    and every one shares the same status (a cancelled sub-session must not
+    mark the rest of a still-happening block as CANCELLED). Anything that
+    fails those tests -- including everything else in the list -- passes
+    through untouched.
     """
-    grouped: dict[str, list[PublishedEvent]] = {}
-    order: list[str] = []
+    grouped: dict[tuple[str, str], list[PublishedEvent]] = {}
+    order: list[tuple[str, str]] = []
     others: list[PublishedEvent] = []
     for event in events:
         if event.session_type not in _QUALIFYING_TYPES:
             others.append(event)
             continue
-        key = event.event_key
+        key = (event.event_key, _QUALIFYING_FAMILY[event.session_type])
         if key not in grouped:
             order.append(key)
         grouped.setdefault(key, []).append(event)
@@ -810,7 +821,11 @@ def _combine_qualifying(events: list[PublishedEvent]) -> list[PublishedEvent]:
     combined: list[PublishedEvent] = []
     for key in order:
         group = grouped[key]
-        if len(group) < 2 or any(not event.time_confirmed for event in group):
+        if (
+            len(group) < 2
+            or any(not event.time_confirmed for event in group)
+            or len({event.status for event in group}) > 1
+        ):
             combined.extend(group)
         else:
             combined.append(_merge_group(group))
