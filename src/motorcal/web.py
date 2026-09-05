@@ -786,22 +786,23 @@ def _merge_group(group: list[PublishedEvent]) -> PublishedEvent:
 def _combine_qualifying(events: list[PublishedEvent]) -> list[PublishedEvent]:
     """Merge each weekend's qualifying-family sessions into one combined event.
 
-    Groups the already-filtered list by `(event_name, event_round)` -- the
-    weekend's name alone is not a safe key, since a series reuses one event
-    name across seasons (WEC's "Lone Star Le Mans" every year, each its own
-    round). A group combines only if it has 2+ qualifying-family sessions and
-    every one has a confirmed start -- an unconfirmed/TBC session has no real
-    time to build a span from, so that group is left untouched. Everything
-    else in the list passes through as-is.
+    Groups the already-filtered list by `event_key` -- the weekend's name and
+    round are not safe for this: a series reuses an event name across seasons
+    (WEC's "Lone Star Le Mans" every year), and round numbers are seasonal
+    ordinals that can coincide across two different seasons. A group combines
+    only if it has 2+ qualifying-family sessions and every one has a confirmed
+    start -- an unconfirmed/TBC session has no real time to build a span from,
+    so that group is left untouched. Everything else in the list passes
+    through as-is.
     """
-    grouped: dict[tuple[str, int | None], list[PublishedEvent]] = {}
-    order: list[tuple[str, int | None]] = []
+    grouped: dict[str, list[PublishedEvent]] = {}
+    order: list[str] = []
     others: list[PublishedEvent] = []
     for event in events:
         if event.session_type not in _QUALIFYING_TYPES:
             others.append(event)
             continue
-        key = (event.event_name, event.event_round)
+        key = event.event_key
         if key not in grouped:
             order.append(key)
         grouped.setdefault(key, []).append(event)

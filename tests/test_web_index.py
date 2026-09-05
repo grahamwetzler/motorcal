@@ -41,7 +41,7 @@ def _event(
         series=series,
         session_type=session_type,
         event_name=summary or uid,
-        event_round=None,
+        event_key=uid,
         summary=summary or uid,
         start=start,
         all_day_date=all_day_date,

@@ -15,7 +15,7 @@ def _event(
     session_type,
     *,
     event_name="Lone Star Le Mans",
-    event_round=5,
+    event_key="wec-2026-lsl-fp1",  # the weekend's first session's uid, as merge.py assigns it
     series="wec",
     start=None,
     duration_seconds=1200,
@@ -31,7 +31,7 @@ def _event(
         series=series,
         session_type=session_type,
         event_name=event_name,
-        event_round=event_round,
+        event_key=event_key,
         summary=f"{event_name} {uid}",
         start=start if time_confirmed else None,
         all_day_date=None if time_confirmed else "2026-09-05",
@@ -180,26 +180,26 @@ def test_two_seasons_of_the_same_named_event_are_not_merged_together():
         _event(
             "wec-2026-lsl-qualifying-lmgt3",
             SessionType.QUALIFYING,
-            event_round=5,
+            event_key="wec-2026-lsl-fp1",
             start=datetime(2026, 9, 5, 20, 0, tzinfo=UTC),
         ),
         _event(
             "wec-2026-lsl-hyperpole-lmgt3",
             SessionType.HYPERPOLE,
-            event_round=5,
+            event_key="wec-2026-lsl-fp1",
             start=datetime(2026, 9, 5, 20, 20, tzinfo=UTC),
         ),
-        # Next year's edition -- same name, different round, still TBC.
+        # Next year's edition -- same name, still TBC.
         _event(
             "wec-2027-lsl-qualifying-lmgt3",
             SessionType.QUALIFYING,
-            event_round=7,
+            event_key="wec-2027-lsl-fp1",
             time_confirmed=False,
         ),
         _event(
             "wec-2027-lsl-hyperpole-lmgt3",
             SessionType.HYPERPOLE,
-            event_round=7,
+            event_key="wec-2027-lsl-fp1",
             time_confirmed=False,
         ),
     ]
@@ -213,6 +213,48 @@ def test_two_seasons_of_the_same_named_event_are_not_merged_together():
         "wec-2027-lsl-qualifying-lmgt3",
         "wec-2027-lsl-hyperpole-lmgt3",
     }
+
+
+def test_two_seasons_sharing_both_name_and_round_are_still_kept_apart():
+    """Round numbers are seasonal ordinals, not identities -- two different
+    seasons can coincidentally share one (e.g. both happen to be round 5).
+    `event_key` (derived from the weekend's own first session uid, globally
+    unique) must still tell them apart even then.
+    """
+    events = [
+        _event(
+            "wec-2026-lsl-qualifying-lmgt3",
+            SessionType.QUALIFYING,
+            event_key="wec-2026-lsl-fp1",
+            start=datetime(2026, 9, 5, 20, 0, tzinfo=UTC),
+        ),
+        _event(
+            "wec-2026-lsl-hyperpole-lmgt3",
+            SessionType.HYPERPOLE,
+            event_key="wec-2026-lsl-fp1",
+            start=datetime(2026, 9, 5, 20, 20, tzinfo=UTC),
+        ),
+        # A different season, same event name, coincidentally also "round 5" --
+        # but a genuinely different weekend, confirmed with its own real times.
+        _event(
+            "wec-2027-lsl-qualifying-lmgt3",
+            SessionType.QUALIFYING,
+            event_key="wec-2027-lsl-fp1",
+            start=datetime(2027, 9, 11, 20, 0, tzinfo=UTC),
+        ),
+        _event(
+            "wec-2027-lsl-hyperpole-lmgt3",
+            SessionType.HYPERPOLE,
+            event_key="wec-2027-lsl-fp1",
+            start=datetime(2027, 9, 11, 20, 20, tzinfo=UTC),
+        ),
+    ]
+
+    result = _combine_qualifying(events)
+
+    combined = [e for e in result if "combined" in e.uid]
+    assert len(combined) == 2  # each season merges on its own...
+    assert {e.start.year for e in combined} == {2026, 2027}  # ...never together
 
 
 def test_combining_is_deterministic_across_repeated_requests():

@@ -18,7 +18,7 @@ def test_published_event_construction():
         series="wec",
         session_type=SessionType.RACE,
         event_name="6 Hours of Imola",
-        event_round=None,
+        event_key="imola-race",
         summary="6 Hours of Imola",
         start=now,
         all_day_date=None,
