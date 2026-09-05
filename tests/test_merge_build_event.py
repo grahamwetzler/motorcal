@@ -77,6 +77,13 @@ def test_an_all_day_session_that_is_not_tbc_is_left_alone():
     assert "TBC" not in built.description
 
 
+def test_event_name_carries_the_weekends_name_for_grouping():
+    assert (
+        _build(make_event("r", name="6 Hours of Imola")).event_name
+        == "6 Hours of Imola"
+    )
+
+
 def test_the_uid_is_built_from_the_sessions_own_uid():
     assert _build(make_event("mine")).uid == f"local-mine@{UID_DOMAIN}"
 

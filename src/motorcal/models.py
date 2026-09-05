@@ -35,6 +35,16 @@ class PublishedEvent:
     uid: str
     series: str
     session_type: SessionType
+    event_name: str  # the weekend's EventConfig.name -- for display, not unique alone
+    # A weekend's own identity, for grouping sessions back to the EventConfig they
+    # came from -- name and round are not safe for this: a series reuses an event
+    # name across seasons (WEC's "Lone Star Le Mans" every year), and round numbers
+    # are seasonal ordinals that can coincide across two different seasons. Every
+    # session uid is enforced unique across the whole data directory (config.py's
+    # `load_config`), so the weekend's first session's uid is a safe, stable stand-in
+    # for "which EventConfig this came from" without carrying the object itself
+    # through rendering. Grouping key only, never part of the fingerprint.
+    event_key: str
     summary: str
     start: datetime | None  # None when the time is unconfirmed (rendered all-day)
     all_day_date: str | None  # "YYYY-MM-DD" when rendered as an all-day event

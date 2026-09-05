@@ -40,6 +40,8 @@ def _event(
         uid=uid,
         series=series,
         session_type=session_type,
+        event_name=summary or uid,
+        event_key=uid,
         summary=summary or uid,
         start=start,
         all_day_date=all_day_date,

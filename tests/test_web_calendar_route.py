@@ -26,6 +26,8 @@ def _event(uid, session_type):
         uid=uid,
         series="wec",
         session_type=session_type,
+        event_name=uid,
+        event_key=uid,
         summary=uid,
         start=datetime(2026, 4, 19, 13, tzinfo=UTC),
         all_day_date=None,

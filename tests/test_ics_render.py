@@ -12,6 +12,8 @@ def _published(uid, series="wec", summary="S"):
         uid=uid,
         series=series,
         session_type=SessionType.RACE,
+        event_name=summary,
+        event_key=uid,
         summary=summary,
         start=datetime(2026, 4, 19, 13, tzinfo=UTC),
         all_day_date=None,
