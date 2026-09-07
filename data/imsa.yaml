@@ -148,7 +148,7 @@ events:
       - uid: imsa-2026-indianapolis-practice-1
         label: Practice 1
         type: practice
-        start: '2026-09-18T19:15:00+00:00'
+        start: '2026-09-18T19:25:00+00:00'
         duration: 90m
         status: CONFIRMED
       - uid: imsa-2026-indianapolis-practice-2
@@ -160,7 +160,7 @@ events:
       - uid: imsa-2026-indianapolis-qualifying
         label: Qualifying
         type: qualifying
-        start: '2026-09-19T21:00:00+00:00'
+        start: '2026-09-19T21:05:00+00:00'
         duration: 80m
         status: CONFIRMED
       - uid: imsa-2026-tirerack-com-battle-on-the-bricks-race
