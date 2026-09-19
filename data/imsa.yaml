@@ -167,6 +167,7 @@ events:
         type: race
         start: '2026-09-20T19:00:00+00:00'
         status: CONFIRMED
+        note: Green flag start+10m per Indianapolis Motor Speedway's own schedule and NBC Sports. NBC/Peacock.
   - name: Motul Petit Le Mans
     url: https://www.imsa.com/events/2026-michelin-raceway-road-atlanta/
     location: Michelin Raceway Road Atlanta, United States
