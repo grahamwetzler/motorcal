@@ -238,27 +238,27 @@ events:
       - uid: wec-2026-6-hours-of-fuji-free-practice-3
         label: Free Practice 3
         type: practice
-        start: '2026-09-26T00:50:00+00:00'
+        start: '2026-09-26T00:30:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-fuji-qualifying-lmgt3
         label: Qualifying - LMGT3
         type: qualifying
-        start: '2026-09-26T05:20:00+00:00'
+        start: '2026-09-26T05:00:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-fuji-hyperpole-lmgt3
         label: Hyperpole - LMGT3
         type: hyperpole
-        start: '2026-09-26T05:40:00+00:00'
+        start: '2026-09-26T05:20:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-fuji-qualifying-hypercar
         label: Qualifying - Hypercar
         type: qualifying
-        start: '2026-09-26T06:00:00+00:00'
+        start: '2026-09-26T05:40:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-fuji-hyperpole-hypercar
         label: Hyperpole - Hypercar
         type: hyperpole
-        start: '2026-09-26T06:20:00+00:00'
+        start: '2026-09-26T06:00:00+00:00'
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-fuji-race
         type: race
