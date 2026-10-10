@@ -277,13 +277,15 @@ events:
         label: Free Practice 1
         type: practice
         start: '2026-10-16T09:30:00+00:00'
+        duration: 90m
         status: CONFIRMED
       - uid: wec-2026-6-hours-of-barcelona-free-practice-2
         label: Free Practice 2
         type: practice
         start: '2026-10-16T14:30:00+00:00'
+        duration: 90m
         status: CONFIRMED
-      - uid: wec-2026-6-hours-of-barcelona-free-practice-3-lmgt3
+      - uid: wec-2026-6-hours-of-barcelona-free-practice-3
         label: Free Practice 3 - LMGT3
         type: practice
         start: '2026-10-17T06:50:00+00:00'
