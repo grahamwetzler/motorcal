@@ -331,14 +331,16 @@ events:
         label: Free Practice 1
         type: practice
         start: '2026-11-06T09:30:00+00:00'
+        duration: 90m
         status: CONFIRMED
-        note: Per fiawec.com official event page (checked Oct 13, 2026); official timetable bulletin not yet published.
+        note: Per fiawec.com official event page (checked Oct 13, 2026); official timetable bulletin not yet published. 90m duration per WEC's standard six-hour-round format (as at Lone Star Le Mans, Fuji, Barcelona).
       - uid: wec-2026-6-hours-of-monza-free-practice-2
         label: Free Practice 2
         type: practice
         start: '2026-11-06T13:30:00+00:00'
+        duration: 90m
         status: CONFIRMED
-        note: Per fiawec.com official event page (checked Oct 13, 2026); official timetable bulletin not yet published.
+        note: Per fiawec.com official event page (checked Oct 13, 2026); official timetable bulletin not yet published. 90m duration per WEC's standard six-hour-round format (as at Lone Star Le Mans, Fuji, Barcelona).
       - uid: wec-2026-6-hours-of-monza-free-practice-3
         label: Free Practice 3
         type: practice
