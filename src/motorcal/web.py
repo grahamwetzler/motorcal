@@ -722,6 +722,13 @@ _QUALIFYING_FAMILY = {
     SessionType.SPRINT_QUALIFYING: "sprint_qualifying",
 }
 
+# Sessions further apart than this are separate qualifying blocks, even within
+# one weekend and family: WEC's Barcelona runs LMGT3 qualifying/hyperpole in the
+# morning and Hypercar's in the afternoon with a practice in between, and Le
+# Mans holds qualifying and hyperpole on different days. Real back-to-back
+# sessions sit at most ~35 minutes apart.
+_MAX_QUALIFYING_GAP = timedelta(hours=1)
+
 
 def _merge_group(group: list[PublishedEvent]) -> PublishedEvent:
     """Collapse one weekend's qualifying-family sessions into one event.
@@ -799,12 +806,15 @@ def _combine_qualifying(events: list[PublishedEvent]) -> list[PublishedEvent]:
     decides a different race's grid than the weekend's plain qualifying, so
     the two must never merge even though both count as "qualifying-family".
 
-    A group combines only if it has 2+ sessions, every one has a confirmed
-    start (an unconfirmed/TBC session has no real time to build a span from),
-    and every one shares the same status (a cancelled sub-session must not
-    mark the rest of a still-happening block as CANCELLED). Anything that
-    fails those tests -- including everything else in the list -- passes
-    through untouched.
+    A group is left untouched if any session lacks a confirmed start (an
+    unconfirmed/TBC session has no real time to build a span from). Otherwise
+    it is split into runs wherever one session starts more than
+    `_MAX_QUALIFYING_GAP` after the previous one ends, so a combined event
+    never spans the unrelated sessions or idle hours between two blocks. A run
+    combines only if it has 2+ sessions that all share the same status (a
+    cancelled sub-session must not mark the rest of a still-happening block as
+    CANCELLED). Anything that fails those tests -- including everything else
+    in the list -- passes through untouched.
     """
     grouped: dict[tuple[str, str], list[PublishedEvent]] = {}
     order: list[tuple[str, str]] = []
@@ -821,16 +831,31 @@ def _combine_qualifying(events: list[PublishedEvent]) -> list[PublishedEvent]:
     combined: list[PublishedEvent] = []
     for key in order:
         group = grouped[key]
-        if (
-            len(group) < 2
-            or any(not event.time_confirmed for event in group)
-            or len({event.status for event in group}) > 1
-        ):
+        if any(not event.time_confirmed for event in group):
             combined.extend(group)
-        else:
-            combined.append(_merge_group(group))
+            continue
+        for run in _split_on_gaps(group):
+            if len(run) < 2 or len({event.status for event in run}) > 1:
+                combined.extend(run)
+            else:
+                combined.append(_merge_group(run))
 
     return others + combined
+
+
+def _split_on_gaps(group: list[PublishedEvent]) -> list[list[PublishedEvent]]:
+    """Split time-confirmed sessions into runs separated by gaps over `_MAX_QUALIFYING_GAP`."""
+    runs: list[list[PublishedEvent]] = []
+    run_end = None
+    for event in sorted(group, key=lambda e: e.start):
+        if run_end is None or event.start - run_end > _MAX_QUALIFYING_GAP:
+            runs.append([])
+            run_end = event.start
+        runs[-1].append(event)
+        run_end = max(
+            run_end, event.start + timedelta(seconds=event.duration_seconds or 0)
+        )
+    return runs
 
 
 def _client_ip(request: Request) -> str:
