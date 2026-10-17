@@ -349,3 +349,123 @@ def test_combining_is_deterministic_across_repeated_requests():
     assert _combined(first).uid == _combined(second).uid
     assert _combined(first).sequence == _combined(second).sequence
     assert _combined(first).fingerprint == _combined(second).fingerprint
+
+
+def test_class_blocks_hours_apart_combine_separately():
+    """WEC Barcelona 2026: LMGT3 qualifying/hyperpole in the morning, Hypercar's
+    in the afternoon with FP3 Hypercar in between -- two blocks, not one span
+    swallowing the practice.
+    """
+    key = "wec-2026-bcn-fp1"
+    events = [
+        _event(
+            "wec-2026-bcn-qualifying-lmgt3",
+            SessionType.QUALIFYING,
+            event_key=key,
+            start=datetime(2026, 10, 17, 9, 50, tzinfo=UTC),
+        ),
+        _event(
+            "wec-2026-bcn-hyperpole-lmgt3",
+            SessionType.HYPERPOLE,
+            event_key=key,
+            start=datetime(2026, 10, 17, 10, 10, tzinfo=UTC),
+        ),
+        _event(
+            "wec-2026-bcn-fp3-hypercar",
+            SessionType.PRACTICE,
+            event_key=key,
+            start=datetime(2026, 10, 17, 10, 40, tzinfo=UTC),
+            duration_seconds=3600,
+        ),
+        _event(
+            "wec-2026-bcn-qualifying-hypercar",
+            SessionType.QUALIFYING,
+            event_key=key,
+            start=datetime(2026, 10, 17, 13, 40, tzinfo=UTC),
+        ),
+        _event(
+            "wec-2026-bcn-hyperpole-hypercar",
+            SessionType.HYPERPOLE,
+            event_key=key,
+            start=datetime(2026, 10, 17, 14, 0, tzinfo=UTC),
+        ),
+    ]
+
+    result = _combine_qualifying(events)
+
+    blocks = sorted((e for e in result if "combined" in e.uid), key=lambda e: e.start)
+    assert [(e.uid, e.start, e.duration_seconds) for e in blocks] == [
+        (
+            "wec-2026-bcn-qualifying-lmgt3-combined",
+            datetime(2026, 10, 17, 9, 50, tzinfo=UTC),
+            40 * 60,
+        ),
+        (
+            "wec-2026-bcn-qualifying-hypercar-combined",
+            datetime(2026, 10, 17, 13, 40, tzinfo=UTC),
+            40 * 60,
+        ),
+    ]
+    assert "wec-2026-bcn-fp3-hypercar" in {e.uid for e in result}
+
+
+def test_qualifying_and_hyperpole_on_different_days_combine_separately():
+    """Le Mans: qualifying on Wednesday, hyperpole on Thursday."""
+    key = "wec-2026-lm-fp1"
+    events = [
+        _event(
+            "lm-q-lmgt3",
+            SessionType.QUALIFYING,
+            event_key=key,
+            start=datetime(2026, 6, 10, 16, 45, tzinfo=UTC),
+        ),
+        _event(
+            "lm-q-hypercar",
+            SessionType.QUALIFYING,
+            event_key=key,
+            start=datetime(2026, 6, 10, 17, 30, tzinfo=UTC),
+        ),
+        _event(
+            "lm-hp1-lmgt3",
+            SessionType.HYPERPOLE,
+            event_key=key,
+            start=datetime(2026, 6, 11, 18, 0, tzinfo=UTC),
+        ),
+        _event(
+            "lm-hp1-hypercar",
+            SessionType.HYPERPOLE,
+            event_key=key,
+            start=datetime(2026, 6, 11, 18, 35, tzinfo=UTC),
+        ),
+    ]
+
+    result = _combine_qualifying(events)
+
+    assert sorted(e.uid for e in result) == [
+        "lm-hp1-lmgt3-combined",
+        "lm-q-lmgt3-combined",
+    ]
+
+
+def test_a_lone_session_split_off_by_a_gap_is_left_alone():
+    events = [
+        _event(
+            "q-lmgt3",
+            SessionType.QUALIFYING,
+            start=datetime(2026, 10, 17, 9, 50, tzinfo=UTC),
+        ),
+        _event(
+            "hp-lmgt3",
+            SessionType.HYPERPOLE,
+            start=datetime(2026, 10, 17, 10, 10, tzinfo=UTC),
+        ),
+        _event(
+            "q-hypercar",
+            SessionType.QUALIFYING,
+            start=datetime(2026, 10, 17, 13, 40, tzinfo=UTC),
+        ),
+    ]
+
+    result = _combine_qualifying(events)
+
+    assert sorted(e.uid for e in result) == ["q-hypercar", "q-lmgt3-combined"]
