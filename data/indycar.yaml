@@ -279,3 +279,189 @@ events:
         start: '2026-09-06T18:30:00+00:00'
         duration: 180m
         status: CONFIRMED
+  # 2027 calendar per https://www.indycar.com/Schedule (17 rounds); race dates set, tune-in times TBD.
+  - name: Grand Prix of St. Petersburg
+    url: https://www.indycar.com/Schedule/2027/St-Petersburg
+    location: Streets of St. Petersburg, United States
+    round: 1
+    sessions:
+      - uid: indycar-2027-st-petersburg-race
+        type: race
+        date: '2027-03-07'
+        tbc: true
+        status: CONFIRMED
+        note: Round 1 of 17. Fox, FOX One
+  - name: Phoenix
+    url: https://www.indycar.com/Schedule/2027/Phoenix
+    location: Phoenix Raceway, United States
+    round: 2
+    sessions:
+      - uid: indycar-2027-phoenix-race
+        type: race
+        date: '2027-03-13'
+        tbc: true
+        status: CONFIRMED
+        note: Round 2 of 17. Fox, FOX One
+  - name: Grand Prix of Arlington
+    url: https://www.indycar.com/Schedule/2027/Arlington
+    location: Streets of Arlington, United States
+    round: 3
+    sessions:
+      - uid: indycar-2027-arlington-race
+        type: race
+        date: '2027-03-21'
+        tbc: true
+        status: CONFIRMED
+        note: Round 3 of 17. Fox, FOX One
+  - name: Barber
+    url: https://www.indycar.com/Schedule/2027/Barber
+    location: Barber Motorsports Park, United States
+    round: 4
+    sessions:
+      - uid: indycar-2027-barber-race
+        type: race
+        date: '2027-04-04'
+        tbc: true
+        status: CONFIRMED
+        note: Round 4 of 17. Fox, FOX One
+  - name: Grand Prix of Long Beach
+    url: https://www.indycar.com/Schedule/2027/Long-Beach
+    location: Streets of Long Beach, United States
+    round: 5
+    sessions:
+      - uid: indycar-2027-long-beach-race
+        type: race
+        date: '2027-04-18'
+        tbc: true
+        status: CONFIRMED
+        note: Round 5 of 17. Fox, FOX One
+  - name: Indianapolis Road Course
+    url: https://www.indycar.com/Schedule/2027/Indianapolis
+    location: Indianapolis Motor Speedway Road Course, United States
+    round: 6
+    sessions:
+      - uid: indycar-2027-indianapolis-road-course-race
+        type: race
+        date: '2027-05-15'
+        tbc: true
+        status: CONFIRMED
+        note: Round 6 of 17. Fox, FOX One
+  - name: 111th Running of the Indianapolis 500
+    url: https://www.indycar.com/Schedule/2027/Indianapolis-500
+    location: Indianapolis Motor Speedway, United States
+    round: 7
+    sessions:
+      - uid: indycar-2027-indianapolis-500-race
+        type: race
+        date: '2027-05-30'
+        tbc: true
+        status: CONFIRMED
+        note: Round 7 of 17. Fox, FOX One
+  - name: Detroit Grand Prix
+    url: https://www.indycar.com/Schedule/2027/Detroit
+    location: Streets of Detroit, United States
+    round: 8
+    sessions:
+      - uid: indycar-2027-detroit-race
+        type: race
+        date: '2027-06-06'
+        tbc: true
+        status: CONFIRMED
+        note: Round 8 of 17. Fox, FOX One
+  - name: World Wide Technology Raceway
+    url: https://www.indycar.com/Schedule/2027/WWTR
+    location: World Wide Technology Raceway, United States
+    round: 9
+    sessions:
+      - uid: indycar-2027-wwtr-race
+        type: race
+        date: '2027-06-13'
+        tbc: true
+        status: CONFIRMED
+        note: Round 9 of 17. Fox, FOX One
+  - name: Road America
+    url: https://www.indycar.com/Schedule/2027/Road-America
+    location: Road America, United States
+    round: 10
+    sessions:
+      - uid: indycar-2027-road-america-race
+        type: race
+        date: '2027-06-27'
+        tbc: true
+        status: CONFIRMED
+        note: Round 10 of 17. Fox, FOX One
+  - name: Mid-Ohio
+    url: https://www.indycar.com/Schedule/2027/Mid-Ohio
+    location: Mid-Ohio Sports Car Course, United States
+    round: 11
+    sessions:
+      - uid: indycar-2027-mid-ohio-race
+        type: race
+        date: '2027-07-04'
+        tbc: true
+        status: CONFIRMED
+        note: Round 11 of 17. Fox, FOX One
+  - name: Barcelona
+    url: https://www.indycar.com/Schedule/2027/Barcelona
+    location: Circuit de Barcelona-Catalunya, Spain
+    round: 12
+    sessions:
+      - uid: indycar-2027-barcelona-race
+        type: race
+        date: '2027-07-18'
+        tbc: true
+        status: CONFIRMED
+        note: Round 12 of 17. Fox, FOX One
+  - name: Grand Prix of Portland
+    url: https://www.indycar.com/Schedule/2027/Portland
+    location: Portland International Raceway, United States
+    round: 13
+    sessions:
+      - uid: indycar-2027-portland-race
+        type: race
+        date: '2027-08-01'
+        tbc: true
+        status: CONFIRMED
+        note: Round 13 of 17. Fox, FOX One
+  - name: Markham
+    url: https://www.indycar.com/Schedule/2027/Markham
+    location: Streets of Markham, Canada
+    round: 14
+    sessions:
+      - uid: indycar-2027-markham-race
+        type: race
+        date: '2027-08-15'
+        tbc: true
+        status: CONFIRMED
+        note: Round 14 of 17. Fox, FOX One
+  - name: Milwaukee
+    url: https://www.indycar.com/Schedule/2027/Milwaukee-Race1
+    location: Milwaukee Mile, United States
+    round: 15
+    sessions:
+      - uid: indycar-2027-milwaukee-race-1
+        label: 'Race #1'
+        type: race
+        date: '2027-08-28'
+        tbc: true
+        status: CONFIRMED
+        note: Round 15 of 17. Fox, FOX One
+      - uid: indycar-2027-milwaukee-race-2
+        label: 'Race #2'
+        type: race
+        date: '2027-08-29'
+        tbc: true
+        status: CONFIRMED
+        note: Round 16 of 17. Fox, FOX One
+        round: 16
+  - name: Grand Prix of Monterey
+    url: https://www.indycar.com/Schedule/2027/Laguna-Seca
+    location: WeatherTech Raceway Laguna Seca, United States
+    round: 17
+    sessions:
+      - uid: indycar-2027-monterey-race
+        type: race
+        date: '2027-09-05'
+        tbc: true
+        status: CONFIRMED
+        note: Round 17 of 17. Fox, FOX One
